@@ -10,8 +10,8 @@ module RecursiveArrayTools
     end
   end
 
-  function vecvec_to_mat{T}(vecvec)
-    mat = Matrix{T}(length(vecvec),length(vecvec[1]))
+  function vecvec_to_mat(vecvec)
+    mat = Matrix{eltype(eltype(vecvec))}(length(vecvec),length(vecvec[1]))
     for i in 1:length(vecvec)
       mat[i,:] = vecvec[i]
     end
@@ -19,7 +19,7 @@ module RecursiveArrayTools
   end
 
 
-  function vecvecapply{T<:Number,N}(f::Base.Callable,v)
+  function vecvecapply(f::Base.Callable,v)
     sol = Vector{eltype(eltype(v))}(0)
     for i in eachindex(v)
       for j in eachindex(v[i])
