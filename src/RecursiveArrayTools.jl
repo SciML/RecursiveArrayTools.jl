@@ -50,6 +50,9 @@ module RecursiveArrayTools
     nothing
   end
 
-  export recursivecopy!, vecvecapply, copyat_or_push!, vecvec_to_mat
+  recursive_one(a) = recursive_one(a[1])
+  recursive_one{T<:Number}(a::T) = one(a)
+
+  export recursivecopy!, vecvecapply, copyat_or_push!, vecvec_to_mat, recursive_one
 
 end # module
