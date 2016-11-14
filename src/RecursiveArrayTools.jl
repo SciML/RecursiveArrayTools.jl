@@ -1,3 +1,5 @@
+__precompile__()
+
 module RecursiveArrayTools
 
   function recursivecopy!{T<:Number,N}(b::Array{T,N},a::Array{T,N})
