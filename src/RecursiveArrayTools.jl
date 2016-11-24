@@ -2,6 +2,8 @@ __precompile__()
 
 module RecursiveArrayTools
 
+  import Base: mean
+
   function recursivecopy!{T<:Number,N}(b::Array{T,N},a::Array{T,N})
     @inbounds copy!(b,a)
   end
@@ -54,7 +56,29 @@ module RecursiveArrayTools
 
   recursive_one(a) = recursive_one(a[1])
   recursive_one{T<:Number}(a::T) = one(a)
+  
+  function mean{T<:AbstractArray}(vecvec::Vector{T})
+    out = zeros(vecvec[1])
+    for i in eachindex(vecvec)
+      out+= vecvec[i]
+    end
+    out/length(vecvec)
+  end
 
-  export recursivecopy!, vecvecapply, copyat_or_push!, vecvec_to_mat, recursive_one
+  function mean{T<:AbstractArray}(matarr::Matrix{T},region=0)
+    if region == 0
+      return mean(vec(matarr))
+    elseif region == 1
+      out = [zeros(matarr[1,i]) for i in 1:size(matarr,2)]
+      for j in 1:size(matarr,2), i in 1:size(matarr,1)
+        out[j] += matarr[i,j]
+      end
+      return out/size(matarr,1)
+    elseif region == 2
+      return mean(matarr',1)
+    end
+  end
+
+  export recursivecopy!, vecvecapply, copyat_or_push!, vecvec_to_mat, recursive_one,mean
 
 end # module
