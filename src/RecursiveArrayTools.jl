@@ -23,7 +23,7 @@ module RecursiveArrayTools
   end
 
 
-  function vecvecapply(f::Base.Callable,v)
+  function vecvecapply(f,v)
     sol = Vector{eltype(eltype(v))}(0)
     for i in eachindex(v)
       for j in eachindex(v[i])
@@ -33,7 +33,7 @@ module RecursiveArrayTools
     f(sol)
   end
 
-  function vecvecapply{T<:Number}(f::Base.Callable,v::Vector{T})
+  function vecvecapply{T<:Number}(f,v::Vector{T})
     f(v)
   end
 
@@ -45,7 +45,7 @@ module RecursiveArrayTools
         recursivecopy!(a[i],x)
       end
     else
-      if T <: Number
+      if eltype(x) <: Number
         push!(a,copy(x))
       else
         push!(a,deepcopy(x))
@@ -56,7 +56,7 @@ module RecursiveArrayTools
 
   recursive_one(a) = recursive_one(a[1])
   recursive_one{T<:Number}(a::T) = one(a)
-  
+
   function mean{T<:AbstractArray}(vecvec::Vector{T})
     out = zeros(vecvec[1])
     for i in eachindex(vecvec)
