@@ -45,9 +45,10 @@ module RecursiveArrayTools
         recursivecopy!(a[i],x)
       end
     else
-      if eltype(x) <: Number && typeof(x) <: Array
+      if eltype(x) <: Number && (typeof(x) <: Array || typeof(x) <: Number)
         # Have to check that it's <: Array or can have problems
         # with abstract arrays like MultiScaleModels.
+        # Have to check <: Number since it could just be a number...
         push!(a,copy(x))
       else
         push!(a,deepcopy(x))
