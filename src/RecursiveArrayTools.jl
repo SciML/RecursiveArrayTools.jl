@@ -33,7 +33,11 @@ module RecursiveArrayTools
     f(sol)
   end
 
-  function vecvecapply{T<:Number}(f,v::Vector{T})
+  function vecvecapply{T<:Number}(f,v::Array{T})
+    f(v)
+  end
+
+  function vecvecapply{T<:Number}(f,v::T)
     f(v)
   end
 
