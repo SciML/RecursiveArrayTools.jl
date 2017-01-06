@@ -41,9 +41,9 @@ module RecursiveArrayTools
     f(v)
   end
 
-  @inline function copyat_or_push!{T}(a::AbstractVector{T},i::Int,x)
+  @inline function copyat_or_push!{T,perform_copy}(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true})
     @inbounds if length(a) >= i
-      if T <: Number
+      if T <: Number || !perform_copy
         a[i] = x
       else
         recursivecopy!(a[i],x)
@@ -53,9 +53,17 @@ module RecursiveArrayTools
         # Have to check that it's <: Array or can have problems
         # with abstract arrays like MultiScaleModels.
         # Have to check <: Number since it could just be a number...
-        push!(a,copy(x))
+        if perform_copy
+          push!(a,copy(x))
+        else
+          push!(a,x)
+        end
       else
-        push!(a,deepcopy(x))
+        if perform_copy
+          push!(a,deepcopy(x))
+        else
+          push!(a,x)
+        end
       end
     end
     nothing
