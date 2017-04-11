@@ -2,6 +2,9 @@ __precompile__()
 
 module RecursiveArrayTools
 
+  include("vector_of_array.jl")
+  export VectorOfArray, vecarr_to_arr
+
   import Base: mean
 
   function recursivecopy!{T<:Number,N}(b::Array{T,N},a::Array{T,N})

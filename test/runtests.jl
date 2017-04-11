@@ -2,6 +2,9 @@ using OrdinaryDiffEq, ParameterizedFunctions,
       DiffEqBase, RecursiveArrayTools
 using Base.Test
 
+# Test the VectorOfArray code
+include("basic_indexing.jl")
+include("interface_tests.jl")
 
 # Here's the problem to solve
 
