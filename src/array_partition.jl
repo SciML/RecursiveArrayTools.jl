@@ -19,10 +19,28 @@ Base.:*(A::ArrayPartition, B::Number) = ArrayPartition((x .* B for x in A.x)...)
 Base.:/(A::ArrayPartition, B::Number) = ArrayPartition((x ./ B for x in A.x)...)
 Base.:\(A::Number, B::ArrayPartition) = ArrayPartition((x ./ A for x in B.x)...)
 
-Base.getindex( A::ArrayPartition,    i::Int) = ArrayPartition((x[i] for x in A.x)...)
-Base.setindex!(A::ArrayPartition, v, i::Int) = ArrayPartition((x[i]=v for x in A.x)...)
-Base.getindex( A::ArrayPartition,    i::Int...) = ArrayPartition((x[i...] for x in A.x)...)
-Base.setindex!(A::ArrayPartition, v, i::Int...) = ArrayPartition((x[i...]=v for x in A.x)...)
+@inline function Base.getindex( A::ArrayPartition,i::Int)
+  @boundscheck i > length(A) && throw(BoundsError("Index out of bounds"))
+  @inbounds for j in 1:length(A.x)
+    i -= length(A.x[j])
+    if i <= 0
+      return A.x[j][length(A.x[j])+i]
+    end
+  end
+end
+Base.getindex( A::ArrayPartition,::Colon) = [A[i] for i in 1:length(A)]
+@inline function Base.setindex!(A::ArrayPartition, v, i::Int)
+  @boundscheck i > length(A) && throw(BoundsError("Index out of bounds"))
+  @inbounds for j in 1:length(A.x)
+    i -= length(A.x[j])
+    if i <= 0
+      A.x[j][length(A.x[j])+i] = v
+      break
+    end
+  end
+end
+Base.getindex( A::ArrayPartition,    i::Int...) = A.x[i[1]][Base.tail(i)...]
+Base.setindex!(A::ArrayPartition, v, i::Int...) = A.x[i[1]][Base.tail(i)...]=v
 
 function recursivecopy!(A::ArrayPartition,B::ArrayPartition)
   for (a,b) in zip(A.x,B.x)
@@ -38,6 +56,7 @@ Base.start(A::ArrayPartition) = chain(A.x...)
 Base.next(iter::ArrayPartition,state) = next(state,state)
 Base.done(iter::ArrayPartition,state) = done(state,state)
 
-Base.length(A::ArrayPartition) = ((length(x) for x in A.x)...)
+Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
+Base.size(A::ArrayPartition) = (length(A),)
 Base.indices(A::ArrayPartition) = ((indices(x) for x in A.x)...)
 Base.eachindex(A::ArrayPartition) = ((indices(x) for x in A.x)...)
