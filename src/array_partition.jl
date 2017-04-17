@@ -59,4 +59,23 @@ Base.done(iter::ArrayPartition,state) = done(state,state)
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
 Base.indices(A::ArrayPartition) = ((indices(x) for x in A.x)...)
-Base.eachindex(A::ArrayPartition) = ((indices(x) for x in A.x)...)
+Base.eachindex(A::ArrayPartition) = Base.OneTo(length(A))
+
+add_idxs(x,expr) = expr
+add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
+
+@generated function Base.broadcast!(f,A::ArrayPartition,B...)
+  exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
+  res = :(for i in eachindex(A.x)
+    broadcast!(f,A.x[i],$(exs...))
+  end)
+  res
+end
+
+@generated function Base.broadcast(f,B::Union{Number,ArrayPartition}...)
+  exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
+  res = :(for i in eachindex(A.x)
+    broadcast(f,$(exs...))
+  end)
+  res
+end
