@@ -66,16 +66,21 @@ add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
 
 @generated function Base.broadcast!(f,A::ArrayPartition,B...)
   exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
-  res = :(for i in eachindex(A.x)
+  :(for i in eachindex(A.x)
     broadcast!(f,A.x[i],$(exs...))
   end)
-  res
 end
 
 @generated function Base.broadcast(f,B::Union{Number,ArrayPartition}...)
   exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
-  res = :(for i in eachindex(A.x)
+  arr_idx = 0
+  for (i,b) in enumerate(B)
+    if b <: ArrayPartition
+      arr_idx = i
+      break
+    end
+  end
+  :(for i in eachindex(B[$arr_idx].x)
     broadcast(f,$(exs...))
   end)
-  res
 end
