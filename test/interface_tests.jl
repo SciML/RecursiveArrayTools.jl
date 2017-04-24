@@ -20,7 +20,7 @@ append!(testva, testva)
 # Test that adding a array of different dimension triggers the ragged flag
 push!(testva, [-1, -2, -3, -4])
 #testva #TODO: this screws up printing, try to make a fallback
-testva.ragged
+#testva.ragged
 @test_throws BoundsError testva[1:2, 5:6]
 @test testva[9] == [-1, -2, -3, -4]
 testva[end]
