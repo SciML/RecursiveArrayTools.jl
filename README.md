@@ -1,7 +1,7 @@
 # RecursiveArrayTools.jl
 
 [![Build Status](https://travis-ci.org/JuliaDiffEq/RecursiveArrayTools.jl.svg?branch=master)](https://travis-ci.org/JuliaDiffEq/RecursiveArrayTools.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/esjxtbl5lv9vun1j?svg=true)](https://ci.appveyor.com/project/ChrisRackauckas/recursivearraytools-jl)
+[![Build status](https://ci.appveyor.com/api/projects/status/4v9mfweq4er0nv3t?svg=true)](https://ci.appveyor.com/project/ChrisRackauckas/recursivearraytools-jl-acpw5)
 [![Coverage Status](https://coveralls.io/repos/ChrisRackauckas/RecursiveArrayTools.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/ChrisRackauckas/RecursiveArrayTools.jl?branch=master)
 [![codecov.io](http://codecov.io/github/ChrisRackauckas/RecursiveArrayTools.jl/coverage.svg?branch=master)](http://codecov.io/github/ChrisRackauckas/RecursiveArrayTools.jl?branch=master)
 
