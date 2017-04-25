@@ -13,6 +13,8 @@ function VectorOfArray(vec::AbstractVector)
 end
 
 VectorOfArray{T, N}(vec::AbstractVector{T}, dims::NTuple{N}) = VectorOfArray{eltype(T), N, typeof(vec)}(vec, dims)
+
+Base.endof(S::VectorOfArray) = endof(S.data)
 Base.size(S::VectorOfArray) = (size(S.data[1])..., length(S.data))
 
 @inline function Base.getindex{T, N}(S::VectorOfArray{T, N}, I::Vararg{Int, N})
@@ -47,3 +49,8 @@ end
 Base.start{T, N}(S::VectorOfArray{T, N}) = 1
 Base.next{T, N}(S::VectorOfArray{T, N}, state) = (S[state], state + 1)
 Base.done{T, N}(S::VectorOfArray{T, N}, state) = state >= length(S.data) + 1
+
+# conversion tools
+function vecarr_to_arr(S::VectorOfArray)
+  return cat(length(size(S)), S.data...)
+end

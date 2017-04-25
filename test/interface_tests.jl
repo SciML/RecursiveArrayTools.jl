@@ -17,14 +17,14 @@ push!(testva2, [13, 14, 15])
 append!(testva, testva)
 @test testva[1:2, 5:6] == [1 4; 2 5]
 
-# Test that adding a array of different dimension triggers the ragged flag
+# Test that adding a array of different dimension makes the array ragged
 push!(testva, [-1, -2, -3, -4])
 #testva #TODO: this screws up printing, try to make a fallback
-#testva.ragged
-@test_throws BoundsError testva[1:2, 5:6]
+@test testva[1:2, 5:6] == [1 4; 2 5] # we just let the indexing happen if it works
+testva[4, 9] # == testva.data[9][4]
+@test testva[4:5, 5:6]
 @test testva[9] == [-1, -2, -3, -4]
-testva[end]
-testva.dims #TODO: what to do about dims when ragged?
+@test testva[end] == [-1, -2, -3, -4]
 
 # Currently we enforce the general shape, they can just be different lengths, ie we
 # can't do
@@ -37,3 +37,7 @@ recs = [rand(10, 7) for i = 1:8]
 testva = VectorOfArray(recs)
 testa = cat(3, recs...)
 @test vecarr_to_arr(testva) == testa
+
+recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
+testva = VectorOfArray(recs)
+vecarr_to_arr(testva)

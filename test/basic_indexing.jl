@@ -1,4 +1,3 @@
-using RecursiveArrayTools
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -14,10 +13,10 @@ testa = cat(2, recs...)
 testva = VectorOfArray(recs)
 
 # ## Linear indexing
-testva[1] == testa[:, 1]
-testva[:] == recs
-testva[end] == testa[:, end]
-testva[2:end] == [recs[i] for i = 2:length(recs)]
+@test testva[1] == testa[:, 1]
+@test testva[:] == recs
+@test testva[end] == testa[:, end]
+@test testva[2:end] == [recs[i] for i = 2:length(recs)]
 
 # ## (Int, Int)
 @test testa[5, 4] == testva[5, 4]
@@ -61,3 +60,8 @@ testva = VectorOfArray(recs)
 @test testa[1:1, 2:3, 1:2] == testva[1:1, 2:3, 1:2]
 
 # ## Test ragged arrays work, or give errors as needed
+#TODO: I am not really sure what the behavior of this is, what does Mathematica do?
+recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
+testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
+@test testva[:, 1] == recs[1]
+testva[1:2, 1:2]
