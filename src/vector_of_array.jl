@@ -1,4 +1,4 @@
-# Based on code from M. Bauman VAtackexchange answer + Gitter discussion
+# Based on code from M. Bauman Stackexchange answer + Gitter discussion
 
 type VectorOfArray{T, N, A} <: AbstractArray{T, N}
   data::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
@@ -14,7 +14,6 @@ Base.size(VA::VectorOfArray) = (size(VA.data[1])..., length(VA.data))
 #TODO: should we redefine length to be over the VA.data? Currently it is the number of total elements
 
 @inline function Base.getindex{T, N}(VA::VectorOfArray{T, N}, I::Vararg{Int, N})
-    @boundscheck checkbounds(VA, I...) # is this needed?
     VA.data[I[end]][Base.front(I)...]
 end
 # Linear indexing will be over the container elements, not the individual elements
