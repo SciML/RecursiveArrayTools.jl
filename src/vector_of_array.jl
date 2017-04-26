@@ -1,6 +1,7 @@
-# Based on code from M. Bauman Stackexchange answer + Gitter discussion
+abstract AbstractVectorOfArray{T, N} <: AbstractArray{T, N}
 
-type VectorOfArray{T, N, A} <: AbstractArray{T, N}
+# Based on code from M. Bauman Stackexchange answer + Gitter discussion
+type VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N}
   data::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
 end
 
@@ -8,39 +9,36 @@ VectorOfArray{T, N}(vec::AbstractVector{T}, dims::NTuple{N}) = VectorOfArray{elt
 # Assume that the first element is representative all all other elements
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 
-
-Base.endof(VA::VectorOfArray) = endof(VA.data)
-Base.size(VA::VectorOfArray) = (size(VA.data[1])..., length(VA.data))
-#TODO: should we redefine length to be over the VA.data? Currently it is the number of total elements
-
-@inline function Base.getindex{T, N}(VA::VectorOfArray{T, N}, I::Vararg{Int, N})
-    VA.data[I[end]][Base.front(I)...]
-end
+# Interface for the linear indexing. This is just a view of the underlying nested structure
+@inline Base.endof(VA::AbstractVectorOfArray) = endof(VA.data)
+@inline Base.length(VA::AbstractVectorOfArray) = length(VA.data)
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
-@inline Base.getindex{T, N}(VA::VectorOfArray{T, N}, I::Int) = VA.data[I]
-@inline Base.getindex{T, N}(VA::VectorOfArray{T, N}, I::Colon) = VA.data[I]
-@inline Base.getindex{T, N}(VA::VectorOfArray{T, N}, I::AbstractArray{Int}) = VA.data[I]
+@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int) = VA.data[I]
+@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Colon) = VA.data[I]
+@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) = VA.data[I]
 
-Base.copy(VA::VectorOfArray) = VectorOfArray(copy(VA.data), size(VA))
+# Interface for the two dimensional indexing, a more standard AbstractArray interface
+@inline Base.size(VA::AbstractVectorOfArray) = (size(VA.data[1])..., length(VA.data))
+@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Vararg{Int, N}) = VA.data[I[end]][Base.front(I)...]
 
-Base.sizehint!{T, N}(VA::VectorOfArray{T, N}, i) = sizehint!(VA.data, i)
+# The iterator will be over the subarrays of the container, not the individual elements
+# unlike an true AbstractArray
+Base.start{T, N}(VA::AbstractVectorOfArray{T, N}) = 1
+Base.next{T, N}(VA::AbstractVectorOfArray{T, N}, state) = (VA[state], state + 1)
+Base.done{T, N}(VA::AbstractVectorOfArray{T, N}, state) = state >= length(VA.data) + 1
 
-Base.push!{T, N}(VA::VectorOfArray{T, N}, new_item::AbstractVector) = push!(VA.data, new_item)
+# Growing the array simply adds to the container vector
+Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.data))
+Base.sizehint!{T, N}(VA::AbstractVectorOfArray{T, N}, i) = sizehint!(VA.data, i)
+Base.push!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVector) = push!(VA.data, new_item)
 
-function Base.append!{T, N}(VA::VectorOfArray{T, N}, new_item::VectorOfArray{T, N})
+function Base.append!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVectorOfArray{T, N})
     for item in copy(new_item)
         push!(VA, item)
     end
     return VA
 end
 
-
-# The iterator will be over the subarrays of the container, not the individual elements
-# unlike an true AbstractArray
-Base.start{T, N}(VA::VectorOfArray{T, N}) = 1
-Base.next{T, N}(VA::VectorOfArray{T, N}, state) = (VA[state], state + 1)
-Base.done{T, N}(VA::VectorOfArray{T, N}, state) = state >= length(VA.data) + 1
-
 # conversion tools
-vecarr_to_arr(VA::VectorOfArray) = cat(length(size(VA)), VA.data...)
+vecarr_to_arr(VA::AbstractVectorOfArray) = cat(length(size(VA)), VA.data...)

@@ -22,7 +22,7 @@ push!(testva, [-1, -2, -3, -4])
 #testva #TODO: this screws up printing, try to make a fallback
 @test testva[1:2, 5:6] == [1 4; 2 5] # we just let the indexing happen if it works
 testva[4, 9] # == testva.data[9][4]
-@test testva[4:5, 5:6]
+@test_throws BoundsError testva[4:5, 5:6]
 @test testva[9] == [-1, -2, -3, -4]
 @test testva[end] == [-1, -2, -3, -4]
 
@@ -40,4 +40,4 @@ testa = cat(3, recs...)
 
 recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs)
-vecarr_to_arr(testva)
+@test_throws DimensionMismatch vecarr_to_arr(testva)
