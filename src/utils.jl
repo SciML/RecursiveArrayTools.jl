@@ -66,7 +66,7 @@ end
 recursive_one(a) = recursive_one(a[1])
 recursive_one{T<:Number}(a::T) = one(a)
 
-recursive_mean(x) = mean(x)
+recursive_mean(x...) = mean(x...)
 function recursive_mean{T<:AbstractArray}(vecvec::Vector{T})
   out = zeros(vecvec[1])
   for i in eachindex(vecvec)
