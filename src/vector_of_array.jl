@@ -12,6 +12,7 @@ VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.endof(VA::AbstractVectorOfArray) = endof(VA.u)
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
+@inline Base.eachindex(VA::AbstractVectorOfArray) = Base.OneTo(length(VA.u))
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int) = VA.u[I]
