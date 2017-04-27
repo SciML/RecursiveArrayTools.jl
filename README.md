@@ -10,6 +10,35 @@ arrays of arrays. The current functionality includes:
 
 ### Types
 
+#### VectorOfArray
+
+```julia
+VectorOfArray(vec::AbstractVector)
+```
+
+A `VectorOfArray` is an array which has the underlying data structure `Vector{AbstractArray{T}}`
+(but hopefully concretely typed!). This wrapper over such data structures allows one to lazily
+act like it's a higher dimensional vector, and easily convert to different forms. The indexing
+structure is:
+
+```julia
+A[i] # Returns the ith array in the vector of arrays
+A[j,i] # Returns the jth component in the ith array
+A[j1,...,jN,i] # Returns the (j1,...,jN) component of the ith array
+```
+
+which presents itself as a column-major matrix with the columns being the arrays from the vector.
+The `AbstractArray` interface is implemented, giving access to `copy`, `push`, `append!`, etc. function
+which act appropriate. Points to note are:
+
+- The length is the number of vectors, or `length(A.u)` where `u` is the vector of arrays.
+- Iteration follows the linear index and goes over the vectors
+
+Additionally, the `vecarr_to_arr(VA::AbstractVectorOfArray)` function is provided which transforms
+the `VectorOfArray` into a matrix/tensor.
+
+#### ArrayPartition
+
 ```julia
 ArrayPartition(x::AbstractArray...)
 ```
