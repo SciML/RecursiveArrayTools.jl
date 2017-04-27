@@ -21,17 +21,17 @@ data = vecvec_to_mat(randomized)
 
 ## Test means
 A = [[1 2; 3 4],[1 3;4 6],[5 6;7 8]]
-@test mean(A) ≈ [2.33333333 3.666666666
+@test recursive_mean(A) ≈ [2.33333333 3.666666666
            4.6666666666 6.0]
 B = Matrix{Matrix{Int64}}(2,3)
 B[1,:] = [[1 2; 3 4],[1 3;4 6],[5 6;7 8]]
 B[2,:] = [[1 2; 3 4],[1 5;4 3],[5 8;2 1]]
 
 ans = [[1 2; 3 4],[1 4; 4 4.5],[5 7; 4.5 4.5]]
-@test mean(B,1)[1] ≈ ans[1]
-@test mean(B,1)[2] ≈ ans[2]
-@test mean(B,1)[3] ≈ ans[3]
+@test recursive_mean(B,1)[1] ≈ ans[1]
+@test recursive_mean(B,1)[2] ≈ ans[2]
+@test recursive_mean(B,1)[3] ≈ ans[3]
 
 ans = [[2.333333333333 4.666666666666; 3.6666666666666 6.0], [2.3333333 3.0; 5.0 2.6666666]]
-@test mean(B,2)[1] ≈ ans[1]
-@test mean(B,2)[2] ≈ ans[2]
+@test recursive_mean(B,2)[1] ≈ ans[1]
+@test recursive_mean(B,2)[2] ≈ ans[2]

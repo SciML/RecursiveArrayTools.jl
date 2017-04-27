@@ -66,7 +66,8 @@ end
 recursive_one(a) = recursive_one(a[1])
 recursive_one{T<:Number}(a::T) = one(a)
 
-function mean{T<:AbstractArray}(vecvec::Vector{T})
+recursive_mean(x) = mean(x)
+function recursive_mean{T<:AbstractArray}(vecvec::Vector{T})
   out = zeros(vecvec[1])
   for i in eachindex(vecvec)
     out+= vecvec[i]
@@ -74,9 +75,9 @@ function mean{T<:AbstractArray}(vecvec::Vector{T})
   out/length(vecvec)
 end
 
-function mean{T<:AbstractArray}(matarr::Matrix{T},region=0)
+function recursive_mean{T<:AbstractArray}(matarr::Matrix{T},region=0)
   if region == 0
-    return mean(vec(matarr))
+    return recursive_mean(vec(matarr))
   elseif region == 1
     out = [zeros(matarr[1,i]) for i in 1:size(matarr,2)]
     for j in 1:size(matarr,2), i in 1:size(matarr,1)
@@ -84,6 +85,6 @@ function mean{T<:AbstractArray}(matarr::Matrix{T},region=0)
     end
     return out/size(matarr,1)
   elseif region == 2
-    return mean(matarr',1)
+    return recursive_mean(matarr',1)
   end
 end
