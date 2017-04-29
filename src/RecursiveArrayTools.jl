@@ -2,7 +2,7 @@ __precompile__()
 
 module RecursiveArrayTools
 
-  using Iterators
+  using Iterators, Compat
 
   @compat abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
 
