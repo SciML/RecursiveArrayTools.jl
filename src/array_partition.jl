@@ -4,9 +4,9 @@ end
 ArrayPartition(x...) = ArrayPartition((x...))
 function ArrayPartition{T,T2<:Tuple}(x::T2,::Type{Val{T}}=Val{false})
   if T
-    return ArrayPartition(((copy(a) for a in x)...))
+    return ArrayPartition{T2}(((copy(a) for a in x)...))
   else
-    return ArrayPartition((x...))
+    return ArrayPartition{T2}((x...))
   end
 end
 Base.similar(A::ArrayPartition) = ArrayPartition((similar(x) for x in A.x)...)
