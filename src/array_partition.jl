@@ -2,7 +2,7 @@ immutable ArrayPartition{T}
   x::T
 end
 ArrayPartition(x...) = ArrayPartition((x...))
-function ArrayPartition{T}(x::Tuple,::Type{Val{T}}=Val{false})
+function ArrayPartition{T,T2<:Tuple}(x::T2,::Type{Val{T}}=Val{false})
   if T
     return ArrayPartition(((copy(a) for a in x)...))
   else
