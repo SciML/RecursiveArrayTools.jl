@@ -1,5 +1,3 @@
-abstract AbstractVectorOfArray{T, N} <: AbstractArray{T, N}
-
 # Based on code from M. Bauman Stackexchange answer + Gitter discussion
 type VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}

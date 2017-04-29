@@ -4,6 +4,8 @@ module RecursiveArrayTools
 
   using Iterators
 
+  @compat abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
+
   include("utils.jl")
   include("vector_of_array.jl")
   include("array_partition.jl")
