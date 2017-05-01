@@ -13,7 +13,7 @@ module RecursiveArrayTools
   export VectorOfArray, AbstractVectorOfArray, vecarr_to_arr
 
   export recursivecopy!, vecvecapply, copyat_or_push!, vecvec_to_mat, recursive_one,
-         recursive_mean
+         recursive_mean, recursive_eltype
 
   export ArrayPartition
 

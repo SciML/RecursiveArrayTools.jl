@@ -66,6 +66,9 @@ end
 recursive_one(a) = recursive_one(a[1])
 recursive_one{T<:Number}(a::T) = one(a)
 
+recursive_eltype(a) = recursive_eltype(eltype(a))
+recursive_eltype{T<:Number}(a::Type{T}) = eltype(a)
+
 recursive_mean(x...) = mean(x...)
 function recursive_mean{T<:AbstractArray}(vecvec::Vector{T})
   out = zeros(vecvec[1])

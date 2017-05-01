@@ -19,7 +19,7 @@ VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length
 
 # Interface for the two dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Vararg{Int, N}) = VA.u[I[end]][Base.front(I)...]
+@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int...) = VA.u[I[end]][Base.front(I)...]
 
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray
@@ -41,3 +41,7 @@ end
 
 # conversion tools
 vecarr_to_arr(VA::AbstractVectorOfArray) = cat(length(size(VA)), VA.u...)
+
+# make it show just like its data
+Base.show(io::IO, x::AbstractVectorOfArray) = show(io, x.u)
+Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray) = show(io, m, x.u)
