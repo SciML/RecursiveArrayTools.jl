@@ -1,3 +1,5 @@
 julia 0.5
 Iterators
 Compat 0.17.0
+Juno
+RecipesBase 0.1.0

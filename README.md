@@ -13,7 +13,7 @@ arrays of arrays. The current functionality includes:
 #### VectorOfArray
 
 ```julia
-VectorOfArray(vec::AbstractVector)
+VectorOfArray(u::AbstractVector)
 ```
 
 A `VectorOfArray` is an array which has the underlying data structure `Vector{AbstractArray{T}}`
@@ -35,7 +35,20 @@ which act appropriate. Points to note are:
 - Iteration follows the linear index and goes over the vectors
 
 Additionally, the `vecarr_to_arr(VA::AbstractVectorOfArray)` function is provided which transforms
-the `VectorOfArray` into a matrix/tensor.
+the `VectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractVectorOfArray)`
+returns a vector of the series for each component, that is `A[i,:]` for each `i`.
+A plot recipe is provided which plots the `A[i,:]` series.
+
+#### DiffEqArray
+
+Related to the `VectorOfArray` is the `DiffEqArray`
+
+```julia
+DiffEqArray(u::AbstractVector,t::AbstractVector)
+```
+
+This is a `VectorOfArray` which stores `A.t` which matches `A.u`. This will plot
+`(A.t[i],A[i,:])`. The function `tuples(diffeq_arr)` returns tuples of `(t,u)`.
 
 #### ArrayPartition
 
