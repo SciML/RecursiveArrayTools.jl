@@ -23,3 +23,15 @@ p .= (*).(p,5)
 p .= (*).(p,a)
 p .= (*).(p,p2)
 K = (*).(p,p2)
+
+x = ArrayPartition([1, 2], [3.0, 4.0])
+@inferred(similar(x))
+@inferred(similar(x, (2, 2)))
+@test_broken @inferred(similar(x, Int, (2, 2)))
+@test_broken @inferred(similar(x, (Int, Float64), (2, 2)))
+
+_scalar_op(y) = y + 1
+# Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
+_broadcast_wrapper(y) = _scalar_op.(y)
+# Issue #8
+@inferred(_broadcast_wrapper(x))
