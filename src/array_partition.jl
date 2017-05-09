@@ -9,9 +9,10 @@ function ArrayPartition{T,T2<:Tuple}(x::T2,::Type{Val{T}}=Val{false})
     return ArrayPartition{T2}((x...))
   end
 end
-Base.similar(A::ArrayPartition) = ArrayPartition((similar(x) for x in A.x)...)
-Base.similar(A::ArrayPartition,dims::Tuple) = ArrayPartition((similar(x,dim) for (x,dim) in zip(A.x,dims))...)
-Base.similar(A::ArrayPartition,T,dims::Tuple) = ArrayPartition((similar(x,T,dim) for (x,dim) in zip(A.x,dims))...)
+Base.similar(A::ArrayPartition) = ArrayPartition((similar.(A.x))...)
+Base.similar(A::ArrayPartition, dims::Tuple) = ArrayPartition(similar.(A.x, dims)...)
+Base.similar(A::ArrayPartition, T, dims::Tuple) = ArrayPartition(similar.(A.x, T, dims)...)
+
 Base.copy(A::ArrayPartition) = Base.similar(A)
 Base.zeros(A::ArrayPartition) = ArrayPartition((zeros(x) for x in A.x)...)
 
