@@ -1,8 +1,8 @@
-function recursivecopy!{T<:Number,N}(b::Array{T,N},a::Array{T,N})
+function recursivecopy!{T<:Number,N}(b::AbstractArray{T,N},a::AbstractArray{T,N})
   @inbounds copy!(b,a)
 end
 
-function recursivecopy!{T<:AbstractArray,N}(b::Array{T,N},a::Array{T,N})
+function recursivecopy!{T<:AbstractArray,N}(b::AbstractArray{T,N},a::AbstractArray{T,N})
   @inbounds for i in eachindex(a)
     recursivecopy!(b[i],a[i])
   end
