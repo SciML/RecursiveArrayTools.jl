@@ -25,10 +25,12 @@ function Base.ones(A::ArrayPartition)
   B
 end
 
-Base.:+(A::ArrayPartition, B::ArrayPartition) = ArrayPartition((x .+ y for (x,y) in zip(A.x,B.x))...)
+Base.:+(A::ArrayPartition, B::ArrayPartition) =
+    ArrayPartition((x .+ y for (x,y) in zip(A.x,B.x))...)
 Base.:+(A::Number, B::ArrayPartition) = ArrayPartition((A .+ x for x in B.x)...)
 Base.:+(A::ArrayPartition, B::Number) = ArrayPartition((B .+ x for x in A.x)...)
-Base.:-(A::ArrayPartition, B::ArrayPartition) = ArrayPartition((x .- y for (x,y) in zip(A.x,B.x))...)
+Base.:-(A::ArrayPartition, B::ArrayPartition) =
+    ArrayPartition((x .- y for (x,y) in zip(A.x,B.x))...)
 Base.:-(A::Number, B::ArrayPartition) = ArrayPartition((A .- x for x in B.x)...)
 Base.:-(A::ArrayPartition, B::Number) = ArrayPartition((x .- B for x in A.x)...)
 Base.:*(A::Number, B::ArrayPartition) = ArrayPartition((A .* x for x in B.x)...)
@@ -36,19 +38,22 @@ Base.:*(A::ArrayPartition, B::Number) = ArrayPartition((x .* B for x in A.x)...)
 Base.:/(A::ArrayPartition, B::Number) = ArrayPartition((x ./ B for x in A.x)...)
 Base.:\(A::Number, B::ArrayPartition) = ArrayPartition((x ./ A for x in B.x)...)
 
-if VERSION < v"0.6-"
-  Base.:.+(A::ArrayPartition, B::ArrayPartition) = ArrayPartition((x .+ y for (x,y) in zip(A.x,B.x))...)
-  Base.:.+(A::Number, B::ArrayPartition) = ArrayPartition((A .+ x for x in B.x)...)
-  Base.:.+(A::ArrayPartition, B::Number) = ArrayPartition((B .+ x for x in A.x)...)
-  Base.:.-(A::ArrayPartition, B::ArrayPartition) = ArrayPartition((x .- y for (x,y) in zip(A.x,B.x))...)
-  Base.:.-(A::Number, B::ArrayPartition) = ArrayPartition((A .- x for x in B.x)...)
-  Base.:.-(A::ArrayPartition, B::Number) = ArrayPartition((x .- B for x in A.x)...)
-  Base.:.*(A::ArrayPartition, B::ArrayPartition) = ArrayPartition((x .* y for (x,y) in zip(A.x,B.x))...)
-  Base.:.*(A::Number, B::ArrayPartition) = ArrayPartition((A .* x for x in B.x)...)
-  Base.:.*(A::ArrayPartition, B::Number) = ArrayPartition((x .* B for x in A.x)...)
-  Base.:./(A::ArrayPartition, B::ArrayPartition) = ArrayPartition((x ./ y for (x,y) in zip(A.x,B.x))...)
-  Base.:./(A::ArrayPartition, B::Number) = ArrayPartition((x ./ B for x in A.x)...)
-  Base.:.\(A::Number, B::ArrayPartition) = ArrayPartition((x ./ A for x in B.x)...)
+@static if VERSION < v"0.6.0-dev.1614"
+    include_string(
+"""
+    Base.:(.+)(A::ArrayPartition, B::ArrayPartition) = A+B
+    Base.:(.+)(A::Number, B::ArrayPartition) = A+B
+    Base.:(.+)(A::ArrayPartition, B::Number) = A+B
+    Base.:(.-)(A::ArrayPartition, B::ArrayPartition) = A-B
+    Base.:(.-)(A::Number, B::ArrayPartition) = A-B
+    Base.:(.-)(A::ArrayPartition, B::Number) = A-B
+    Base.:(.*)(A::ArrayPartition, B::ArrayPartition) = A*B
+    Base.:(.*)(A::Number, B::ArrayPartition) = A*B
+    Base.:(.*)(A::ArrayPartition, B::Number) = A*B
+    Base.:(./)(A::ArrayPartition, B::ArrayPartition) = A/B
+    Base.:(./)(A::ArrayPartition, B::Number) = A/B
+    Base.:(.\\)(A::Number, B::ArrayPartition) = A\\B
+""")
 end
 
 @inline function Base.getindex( A::ArrayPartition,i::Int)
