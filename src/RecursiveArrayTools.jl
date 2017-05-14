@@ -2,7 +2,7 @@ __precompile__()
 
 module RecursiveArrayTools
 
-  using Iterators, Compat, Juno, RecipesBase
+  using Iterators, Compat, Juno, RecipesBase, StaticArrays
 
   @compat abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
 
@@ -13,8 +13,8 @@ module RecursiveArrayTools
   export VectorOfArray, DiffEqArray, AbstractVectorOfArray, vecarr_to_arr,
          vecarr_to_vectors, tuples
 
-  export recursivecopy!, vecvecapply, copyat_or_push!, vecvec_to_mat,
-         recursive_one, recursive_mean, recursive_eltype
+  export recursivecopy, recursivecopy!, vecvecapply, copyat_or_push!,
+         vecvec_to_mat, recursive_one, recursive_mean, recursive_eltype
 
   export ArrayPartition
 
