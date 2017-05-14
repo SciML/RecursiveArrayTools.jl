@@ -15,6 +15,7 @@ Base.similar(A::ArrayPartition, T, dims::Tuple) = ArrayPartition(similar.(A.x, T
 
 Base.copy(A::ArrayPartition) = Base.similar(A)
 Base.zeros(A::ArrayPartition) = ArrayPartition((zeros(x) for x in A.x)...)
+Base.eltype(A::ArrayPartition) = eltype(A.x[1])
 
 # Special to work with units
 function Base.ones(A::ArrayPartition)
