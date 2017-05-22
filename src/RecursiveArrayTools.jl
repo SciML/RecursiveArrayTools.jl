@@ -2,7 +2,7 @@ __precompile__()
 
 module RecursiveArrayTools
 
-  using Iterators, Compat, Juno, RecipesBase, StaticArrays
+  using Compat, Juno, RecipesBase, StaticArrays
 
   @compat abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
 
