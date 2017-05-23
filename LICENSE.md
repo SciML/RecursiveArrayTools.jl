@@ -22,3 +22,5 @@ The RecursiveArrayTools.jl package is licensed under the MIT "Expat" License:
 > 
 
 The chain function is from Iterators.jl and is licensed under the MIT License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
