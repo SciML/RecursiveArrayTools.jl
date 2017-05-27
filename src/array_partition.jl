@@ -39,24 +39,6 @@ Base.:*(A::ArrayPartition, B::Number) = ArrayPartition((x .* B for x in A.x)...)
 Base.:/(A::ArrayPartition, B::Number) = ArrayPartition((x ./ B for x in A.x)...)
 Base.:\(A::Number, B::ArrayPartition) = ArrayPartition((x ./ A for x in B.x)...)
 
-@static if VERSION < v"0.6.0-dev.1614"
-    include_string(
-"""
-    Base.:(.+)(A::ArrayPartition, B::ArrayPartition) = A+B
-    Base.:(.+)(A::Number, B::ArrayPartition) = A+B
-    Base.:(.+)(A::ArrayPartition, B::Number) = A+B
-    Base.:(.-)(A::ArrayPartition, B::ArrayPartition) = A-B
-    Base.:(.-)(A::Number, B::ArrayPartition) = A-B
-    Base.:(.-)(A::ArrayPartition, B::Number) = A-B
-    Base.:(.*)(A::ArrayPartition, B::ArrayPartition) = A*B
-    Base.:(.*)(A::Number, B::ArrayPartition) = A*B
-    Base.:(.*)(A::ArrayPartition, B::Number) = A*B
-    Base.:(./)(A::ArrayPartition, B::ArrayPartition) = A/B
-    Base.:(./)(A::ArrayPartition, B::Number) = A/B
-    Base.:(.\\)(A::Number, B::ArrayPartition) = A\\B
-""")
-end
-
 @inline function Base.getindex( A::ArrayPartition,i::Int)
   @boundscheck i > length(A) && throw(BoundsError("Index out of bounds"))
   @inbounds for j in 1:length(A.x)

@@ -1,4 +1,4 @@
-julia 0.5
+julia 0.6-pre
 Compat 0.17.0
 Juno
 RecipesBase 0.1.0
