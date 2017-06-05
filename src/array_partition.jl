@@ -79,6 +79,15 @@ Base.done(A::ArrayPartition,state) = done(chain(A.x...),state)
 
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
+Base.isempty(A::ArrayPartition) = (length(A) == 0)
+Base.indices(A::ArrayPartition) = ((indices(x) for x in A.x)...)
+function Base.indices(A::ArrayPartition,i::Int)
+  if i == 1
+    return Base.OneTo(length(A))
+  else
+    return Base.OneTo(1)
+  end
+end
 Base.eachindex(A::ArrayPartition) = Base.OneTo(length(A))
 
 # restore the type rendering in Juno
@@ -86,6 +95,12 @@ Juno.@render Juno.Inline x::ArrayPartition begin
   fields = fieldnames(typeof(x))
   Juno.LazyTree(typeof(x), () -> [Juno.SubTree(Juno.Text("$f → "), Juno.getfield′(x, f)) for f in fields])
 end
+Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
+Base.show(M::MIME"text/plain",A::ArrayPartition) = (Base.showarray.(A.x); nothing)
+Base.show(A::ArrayPartition) = (Base.show.(A.x); nothing)
+Base.display(A::ArrayPartition) = (println(summary(A));display.(A.x);nothing)
+Base.print(A::ArrayPartition) = show(A)
+Base.println(A::ArrayPartition) = show(A)
 
 add_idxs(x,expr) = expr
 add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
