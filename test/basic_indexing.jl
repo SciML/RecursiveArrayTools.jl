@@ -1,8 +1,12 @@
+using RecursiveArrayTools
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testa = cat(2, recs...)
 testva = VectorOfArray(recs)
+t = [1,2,3]
+diffeq = DiffEqArray(recs,t)
+
 testa[1:2, 1:2] == [1 4; 2 5]
 testva[1:2, 1:2] == [1 4; 2 5]
 testa[1:2, 1:2] == [1 4; 2 5]
