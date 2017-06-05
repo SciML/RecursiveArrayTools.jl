@@ -4,8 +4,8 @@ module RecursiveArrayTools
 
   using Compat, Juno, RecipesBase, StaticArrays
 
-  @compat abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
-  @compat abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
+  abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
+  abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
 
   include("utils.jl")
   include("vector_of_array.jl")
