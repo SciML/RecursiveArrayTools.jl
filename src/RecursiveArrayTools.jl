@@ -2,7 +2,7 @@ __precompile__()
 
 module RecursiveArrayTools
 
-  using Compat, Juno, RecipesBase, StaticArrays
+  using Juno, RecipesBase, StaticArrays
 
   abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
   abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
