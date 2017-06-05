@@ -1,4 +1,4 @@
-immutable ArrayPartition{T}
+immutable ArrayPartition{T} <: AbstractVector{Any}
   x::T
 end
 ArrayPartition(x...) = ArrayPartition((x...))
@@ -11,7 +11,8 @@ function ArrayPartition{T,T2<:Tuple}(x::T2,::Type{Val{T}}=Val{false})
 end
 Base.similar(A::ArrayPartition) = ArrayPartition((similar.(A.x))...)
 Base.similar(A::ArrayPartition, dims::Tuple) = ArrayPartition(similar.(A.x, dims)...)
-Base.similar(A::ArrayPartition, T, dims::Tuple) = ArrayPartition(similar.(A.x, T, dims)...)
+Base.similar{T}(A::ArrayPartition, ::Type{T}) = ArrayPartition(similar.(A.x, T)...)
+Base.similar{T}(A::ArrayPartition, ::Type{T}, dims::Tuple) = ArrayPartition(similar.(A.x, T, dims)...)
 
 Base.copy(A::ArrayPartition) = Base.similar(A)
 Base.zeros(A::ArrayPartition) = ArrayPartition((zeros(x) for x in A.x)...)
@@ -78,8 +79,13 @@ Base.done(A::ArrayPartition,state) = done(chain(A.x...),state)
 
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
-Base.indices(A::ArrayPartition) = ((indices(x) for x in A.x)...)
 Base.eachindex(A::ArrayPartition) = Base.OneTo(length(A))
+
+# restore the type rendering in Juno
+Juno.@render Juno.Inline x::ArrayPartition begin
+  fields = fieldnames(typeof(x))
+  Juno.LazyTree(typeof(x), () -> [Juno.SubTree(Juno.Text("$f → "), Juno.getfield′(x, f)) for f in fields])
+end
 
 add_idxs(x,expr) = expr
 add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
