@@ -6,15 +6,9 @@ function recursivecopy{T<:AbstractArray,N}(a::AbstractArray{T,N})
   [recursivecopy(x) for x in a]
 end
 
-function recursivecopy!{T<:StaticArray,N}(b::AbstractArray{T,N},a::AbstractArray{T,N})
+function recursivecopy!{T<:SArray,N}(b::AbstractArray{T,N},a::AbstractArray{T,N})
   @inbounds for i in eachindex(a)
     b[i] = a[i]
-  end
-end
-
-function recursivecopy!{T<:MArray,N}(b::AbstractArray{T,N},a::AbstractArray{T,N})
-  @inbounds for i in eachindex(a)
-    recursivecopy!(b[i],a[i])
   end
 end
 
