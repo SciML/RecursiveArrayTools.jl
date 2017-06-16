@@ -53,6 +53,7 @@ end
 
 # conversion tools
 vecarr_to_arr(VA::AbstractVectorOfArray) = cat(length(size(VA)), VA.u...)
+vecarr_to_arr{T<:AbstractArray}(VA::Vector{T}) = cat(length(size(VA[1]))+1,VA...)
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1])]
 
 # make it show just like its data
@@ -81,3 +82,28 @@ end
   A = vecarr_to_vectors(VA)
   VA.t,A
 end
+
+# Broadcast
+
+#add_idxs(x,expr) = expr
+#add_idxs{T<:AbstractVectorOfArray}(::Type{T},expr) = :($(expr)[i])
+#add_idxs{T<:AbstractArray}(::Type{Vector{T}},expr) = :($(expr)[i])
+#=
+@generated function Base.broadcast!(f,A::AbstractVectorOfArray,B...)
+  exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
+  :(for i in eachindex(A)
+    broadcast!(f,A[i],$(exs...))
+  end)
+end
+
+@generated function Base.broadcast(f,B::Union{Number,AbstractVectorOfArray}...)
+  arr_idx = 0
+  for (i,b) in enumerate(B)
+    if b <: ArrayPartition
+      arr_idx = i
+      break
+    end
+  end
+  :(A = similar(B[$arr_idx]); broadcast!(f,A,B...); A)
+end
+=#
