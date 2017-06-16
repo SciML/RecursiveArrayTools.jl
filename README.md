@@ -86,10 +86,11 @@ A recursive `copy!` function. Acts like a `deepcopy!` on arrays of arrays, but
 like `copy!` on arrays of scalars.
 
 ```julia
-vecvec_to_mat(vecvec)
+vecarr_to_arr(vecvec)
 ```
 
-Takes in a vector of vectors, returns a matrix.
+Takes in a vector of arrays, returns an array of dimension one greater than the
+original elements. Works on `AbstractVectorOfArray`.
 
 ```julia
 vecvecapply(f::Base.Callable,v)
