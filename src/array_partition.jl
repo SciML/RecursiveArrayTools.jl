@@ -99,7 +99,7 @@ Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
 Base.show(A::ArrayPartition) = (Base.show.(A.x); nothing)
 Base.display(A::ArrayPartition) = (println(summary(A));display.(A.x);nothing)
 Base.show(V::AbstractArray{<:ArrayPartition}) = ((Base.show.(A.x) for A in V); nothing)
-Base.display(V::AbstractArray{ArrayPartition}) = ((println(summary(A));display.(A.x) for A in V);nothing)
+Base.display(V::AbstractArray{<:ArrayPartition}) = ((println(summary(A));display.(A.x) for A in V);nothing)
 Base.print(A::ArrayPartition) = show(A)
 Base.println(A::ArrayPartition) = show(A)
 
