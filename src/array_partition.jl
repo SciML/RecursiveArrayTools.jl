@@ -96,12 +96,8 @@ Juno.@render Juno.Inline x::ArrayPartition begin
   Juno.LazyTree(typeof(x), () -> [Juno.SubTree(Juno.Text("$f → "), Juno.getfield′(x, f)) for f in fields])
 end
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
-Base.show(A::ArrayPartition) = (Base.show.(A.x); nothing)
-Base.display(A::ArrayPartition) = (println(summary(A));display.(A.x);nothing)
-Base.show(V::AbstractArray{<:ArrayPartition}) = ((Base.show.(A.x) for A in V); nothing)
-Base.display(V::AbstractArray{<:ArrayPartition}) = ((println(summary(A));display.(A.x) for A in V);nothing)
-Base.print(A::ArrayPartition) = show(A)
-Base.println(A::ArrayPartition) = show(A)
+Base.show(io::IO,A::ArrayPartition) = (Base.show.(io,A.x); nothing)
+Base.display(io::IO,A::ArrayPartition) = (println(summary(A));display.(io,A.x);nothing)
 
 add_idxs(x,expr) = expr
 add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
