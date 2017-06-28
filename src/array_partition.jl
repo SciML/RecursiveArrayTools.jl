@@ -97,7 +97,7 @@ Juno.@render Juno.Inline x::ArrayPartition begin
 end
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
 Base.show(io::IO,A::ArrayPartition) = (Base.show.(io,A.x); nothing)
-Base.display(io::IO,A::ArrayPartition) = (println(summary(A));display.(io,A.x);nothing)
+Base.display(io::IO,A::ArrayPartition) = (println(io,summary(A));display.(io,A.x);nothing)
 
 add_idxs(x,expr) = expr
 add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
