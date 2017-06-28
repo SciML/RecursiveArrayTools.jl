@@ -34,7 +34,7 @@ which act appropriate. Points to note are:
 - The length is the number of vectors, or `length(A.u)` where `u` is the vector of arrays.
 - Iteration follows the linear index and goes over the vectors
 
-Additionally, the `vecarr_to_arr(VA::AbstractVectorOfArray)` function is provided which transforms
+Additionally, the `convert(Array,VA::AbstractVectorOfArray)` function is provided which transforms
 the `VectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractVectorOfArray)`
 returns a vector of the series for each component, that is `A[i,:]` for each `i`.
 A plot recipe is provided which plots the `A[i,:]` series.
@@ -86,11 +86,14 @@ A recursive `copy!` function. Acts like a `deepcopy!` on arrays of arrays, but
 like `copy!` on arrays of scalars.
 
 ```julia
-vecarr_to_arr(vecvec)
+convert(Array,vecvec)
 ```
 
-Takes in a vector of arrays, returns an array of dimension one greater than the
-original elements. Works on `AbstractVectorOfArray`.
+Technically just a Base fallback that works well. Takes in a vector of arrays,
+returns an array of dimension one greater than the original elements.
+Works on `AbstractVectorOfArray`. If the `vecvec` is ragged, i.e. not all of the
+elements are the same, then it uses the size of the first element to determine
+the conversion.
 
 ```julia
 vecvecapply(f::Base.Callable,v)

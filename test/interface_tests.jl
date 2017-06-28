@@ -1,3 +1,4 @@
+using RecursiveArrayTools, Base.Test
 
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testva = VectorOfArray(recs)
@@ -36,8 +37,8 @@ testva[4, 9] # == testva.data[9][4]
 recs = [rand(10, 7) for i = 1:8]
 testva = VectorOfArray(recs)
 testa = cat(3, recs...)
-@test vecarr_to_arr(testva) == testa
+@test convert(Array,testva) == testa
 
 recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs)
-@test_throws DimensionMismatch vecarr_to_arr(testva)
+@test size(convert(Array,testva)) == (3,3)

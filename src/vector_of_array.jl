@@ -52,8 +52,8 @@ function Base.append!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractV
 end
 
 # conversion tools
-vecarr_to_arr(VA::AbstractVectorOfArray) = cat(length(size(VA)), VA.u...)
-vecarr_to_arr{T<:AbstractArray}(VA::Vector{T}) = cat(length(size(VA[1]))+1,VA...)
+@deprecate vecarr_to_arr(VA::AbstractVectorOfArray) convert(Array,VA)
+@deprecate vecarr_to_arr{T<:AbstractArray}(VA::Vector{T}) convert(Array,VA)
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1])]
 
 # make it show just like its data
@@ -76,10 +76,10 @@ end
 
 # plot recipes
 @recipe function f(VA::AbstractVectorOfArray)
-  vecarr_to_vectors(VA)
+  convert(Array,VA)
 end
 @recipe function f(VA::AbstractDiffEqArray)
-  A = vecarr_to_vectors(VA)
+  A = convert(Array,VA)
   VA.t,A
 end
 
