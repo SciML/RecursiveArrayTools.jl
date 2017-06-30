@@ -79,8 +79,7 @@ end
   convert(Array,VA)
 end
 @recipe function f(VA::AbstractDiffEqArray)
-  A = convert(Array,VA)
-  VA.t,A
+  VA.t,VA'
 end
 
 # Broadcast
