@@ -70,6 +70,7 @@ function recursivecopy!(A::ArrayPartition,B::ArrayPartition)
 end
 
 recursive_one(A::ArrayPartition) = recursive_one(first(A.x))
+recursive_mean(A::ArrayPartition) = mean((recursive_mean(x) for x in A.x))
 Base.zero(A::ArrayPartition) = zero(first(A.x))
 Base.first(A::ArrayPartition) = first(A.x)
 
