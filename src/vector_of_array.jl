@@ -27,10 +27,19 @@ DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Colon) = VA.u[I]
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) = VA.u[I]
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) = [VA.u[j][i] for j in 1:length(VA)]
+@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Int) = VA.u[I] = v
+@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Colon) = VA.u[I] = v
+@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::AbstractArray{Int}) = VA.u[I] = v
+@inline function Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, i::Int,::Colon)
+  for j in 1:length(VA)
+    VA.u[j][i] = v[j]
+  end
+end
 
 # Interface for the two dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int...) = VA.u[I[end]][Base.front(I)...]
+@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Int...) = VA.u[I[end]][Base.front(I)...] = v
 
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray
