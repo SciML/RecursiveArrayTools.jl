@@ -10,7 +10,7 @@ function ArrayPartition{T,T2<:Tuple}(x::T2,::Type{Val{T}}=Val{false})
   end
 end
 Base.similar(A::ArrayPartition) = ArrayPartition((similar.(A.x))...)
-Base.similar(A::ArrayPartition, dims::Tuple) = ArrayPartition(similar.(A.x, dims)...)
+Base.similar(A::ArrayPartition, dims::Tuple) = ArrayPartition((similar.(A.x))...) # Ignore dims / indices since it's a vector
 Base.similar{T}(A::ArrayPartition, ::Type{T}) = ArrayPartition(similar.(A.x, T)...)
 Base.similar{T}(A::ArrayPartition, ::Type{T}, dims::Tuple) = ArrayPartition(similar.(A.x, T, dims)...)
 
@@ -81,14 +81,6 @@ Base.done(A::ArrayPartition,state) = done(chain(A.x...),state)
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
 Base.isempty(A::ArrayPartition) = (length(A) == 0)
-Base.indices(A::ArrayPartition) = ((indices(x) for x in A.x)...)
-function Base.indices(A::ArrayPartition,i::Int)
-  if i == 1
-    return Base.OneTo(length(A))
-  else
-    return Base.OneTo(1)
-  end
-end
 Base.eachindex(A::ArrayPartition) = Base.OneTo(length(A))
 
 # restore the type rendering in Juno
