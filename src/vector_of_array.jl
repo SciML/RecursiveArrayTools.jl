@@ -21,6 +21,7 @@ DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size
 @inline Base.endof(VA::AbstractVectorOfArray) = endof(VA.u)
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
 @inline Base.eachindex(VA::AbstractVectorOfArray) = Base.OneTo(length(VA.u))
+@inline Base.iteratorsize(VA::AbstractVectorOfArray) = Base.HasLength()
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int) = VA.u[I]
