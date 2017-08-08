@@ -14,8 +14,12 @@ Base.similar(A::ArrayPartition, dims::Tuple) = ArrayPartition((similar.(A.x))...
 Base.similar{T}(A::ArrayPartition, ::Type{T}) = ArrayPartition(similar.(A.x, T)...)
 Base.similar{T}(A::ArrayPartition, ::Type{T}, dims::Tuple) = ArrayPartition(similar.(A.x, T, dims)...)
 
-Base.copy(A::ArrayPartition) = Base.similar(A)
 Base.zeros(A::ArrayPartition) = ArrayPartition((zeros(x) for x in A.x)...)
+Base.zeros(A::ArrayPartition, dims::Tuple) = ArrayPartition((zeros.(A.x))...) # Ignore dims / indices since it's a vector
+Base.zeros{T}(A::ArrayPartition, ::Type{T}) = ArrayPartition(zeros.(A.x, T)...)
+Base.zeros{T}(A::ArrayPartition, ::Type{T}, dims::Tuple) = ArrayPartition(zeros.(A.x, T, dims)...)
+
+Base.copy(A::ArrayPartition) = Base.similar(A)
 Base.eltype(A::ArrayPartition) = eltype(A.x[1])
 
 # Special to work with units
@@ -72,7 +76,7 @@ end
 recursive_one(A::ArrayPartition) = recursive_one(first(A.x))
 recursive_mean(A::ArrayPartition) = mean((recursive_mean(x) for x in A.x))
 Base.zero(A::ArrayPartition) = zero(first(A.x))
-Base.first(A::ArrayPartition) = first(A.x)
+Base.first(A::ArrayPartition) = first(first(A.x))
 
 Base.start(A::ArrayPartition) = start(chain(A.x...))
 Base.next(A::ArrayPartition,state) = next(chain(A.x...),state)
@@ -91,6 +95,7 @@ end
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
 Base.show(io::IO,A::ArrayPartition) = (Base.show.(io,A.x); nothing)
 Base.display(A::ArrayPartition) = (println(summary(A));display.(A.x);nothing)
+Base.display(io::IO,A::ArrayPartition) = (println(summary(A));display.(io,A.x);nothing)
 
 add_idxs(x,expr) = expr
 add_idxs{T<:ArrayPartition}(::Type{T},expr) = :($(expr).x[i])
