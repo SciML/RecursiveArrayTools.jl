@@ -24,12 +24,38 @@ p .= (*).(p,a)
 p .= (*).(p,p2)
 K = (*).(p,p2)
 
+## inference tests
+
 x = ArrayPartition([1, 2], [3.0, 4.0])
+
+# similar partitions
 @inferred(similar(x))
 @inferred(similar(x, (2, 2)))
-@test_broken @inferred(similar(x, Int, (2, 2)))
-@test_broken @inferred(similar(x, (Int, Float64), (2, 2)))
+@inferred(similar(x, Int))
+@inferred(similar(x, Int, (2, 2)))
+@inferred(similar(x, Int, Float64))
 
+# zeros
+@inferred(zeros(x))
+@inferred(zeros(x, (2,2)))
+
+# ones
+@inferred(ones(x))
+@inferred(ones(x, (2,2)))
+
+# vector space calculations
+@inferred(x+5)
+@inferred(5+x)
+@inferred(x-5)
+@inferred(5-x)
+@inferred(x*5)
+@inferred(5*x)
+@inferred(x/5)
+@inferred(5\x)
+@inferred(x+x)
+@inferred(x-x)
+
+# broadcasting
 _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
 _broadcast_wrapper(y) = _scalar_op.(y)
