@@ -195,6 +195,10 @@ Base.done(A::ArrayPartition,state) = done(Chain(A.x),state)
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
 
+# redefine first and last to avoid slow and not type-stable indexing
+Base.first(A::ArrayPartition) = first(first(A.x))
+Base.last(A::ArrayPartition) = last(last(A.x))
+
 ## display
 
 # restore the type rendering in Juno
