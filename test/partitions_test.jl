@@ -60,6 +60,11 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @inferred first(x)
 @inferred last(x)
 
+# recursive
+@inferred recursive_mean(x)
+@inferred recursive_one(x)
+@inferred recursive_eltype(x)
+
 # broadcasting
 _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:

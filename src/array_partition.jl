@@ -182,9 +182,11 @@ function recursivecopy!(A::ArrayPartition, B::ArrayPartition)
   end
 end
 
-recursive_one(A::ArrayPartition) = recursive_one(first(A.x))
-
 recursive_mean(A::ArrayPartition) = mean((recursive_mean(x) for x in A.x))
+
+# note: consider only first partition for recursive one and eltype
+recursive_one(A::ArrayPartition) = recursive_one(first(A.x))
+recursive_eltype(A::ArrayPartition) = recursive_eltype(first(A.x))
 
 ## iteration
 
