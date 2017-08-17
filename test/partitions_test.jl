@@ -4,6 +4,9 @@ A = (rand(5),rand(5))
 p = ArrayPartition(A)
 @test (p.x[1][1],p.x[2][1]) == (p[1],p[6])
 
+p = ArrayPartition(A,Val{true})
+@test !(p.x[1] === A[1])
+
 p2 = similar(p)
 p2[1] = 1
 @test p2.x[1] != p.x[1]
