@@ -6,10 +6,9 @@ end
 
 ArrayPartition(x...) = ArrayPartition((x...))
 
-function ArrayPartition(x::S, ::Type{Val{copy}}=Val{false}) where {S<:Tuple,copy}
+function ArrayPartition(x::S, ::Type{Val{copy_x}}=Val{false}) where {S<:Tuple,copy_x}
   T = promote_type(eltype.(x)...)
-
-  if copy
+  if copy_x
     return ArrayPartition{T,S}(copy.(x))
   else
     return ArrayPartition{T,S}(x)
