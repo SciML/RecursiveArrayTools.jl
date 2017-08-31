@@ -8,7 +8,8 @@ end
 
 function recursivecopy!{T<:StaticArray,N}(b::AbstractArray{T,N},a::AbstractArray{T,N})
   @inbounds for i in eachindex(a)
-    b[i] = a[i]
+    # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
+    b[i] = copy(a[i])
   end
 end
 
