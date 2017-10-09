@@ -40,7 +40,7 @@ Base.similar(A::ArrayPartition, ::Type{T}, dims::NTuple{N,Int}) where {T,N} = si
     N != length(R) + 2 &&
         throw(DimensionMismatch("number of types must be equal to number of partitions"))
 
-    types = (T, S, parameter.(R)) # new types
+    types = (T, S, parameter.(R)...) # new types
     expr = :(similar(A.x[i], ($types)[i]))
 
     build_arraypartition(N, expr)
@@ -292,3 +292,4 @@ common_number(a, b) =
 Return type `T` of singleton.
 """
 parameter(::Type{T}) where {T} = T
+parameter(::Type{Type{T}}) where {T} = T
