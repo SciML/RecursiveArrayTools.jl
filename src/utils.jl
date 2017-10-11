@@ -52,7 +52,9 @@ end
 
 @inline function copyat_or_push!{T,perform_copy}(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true})
   @inbounds if length(a) >= i
-    if T <: Number || !perform_copy
+    if T <: Number || T <: StaticArray || !perform_copy
+      # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
+      #       or `b[i] = a[i]`, see #19
       a[i] = x
     else
       recursivecopy!(a[i],x)
