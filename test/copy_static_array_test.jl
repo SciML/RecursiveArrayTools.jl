@@ -32,6 +32,8 @@ a[1][1] *= 5
 @test a[1] != b[1]
 copyat_or_push!(a, 2, b[1])
 @test a[2] == b[1]
+a[2][1] *= 5
+@test a[2] != b[1]
 b[1] = 2*b[1]
 copyat_or_push!(a, 2, b[1])
 @test a[2] == b[1]
@@ -57,6 +59,8 @@ a[1][1] *= 5
 @test a[1] != b[1]
 copyat_or_push!(a, 2, b[1])
 @test a[2] == b[1]
+a[2][1] *= 5
+@test a[2] != b[1]
 b[1] = 2*b[1]
 copyat_or_push!(a, 2, b[1])
 @test a[2] == b[1]
