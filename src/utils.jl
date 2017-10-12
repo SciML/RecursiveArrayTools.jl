@@ -1,3 +1,12 @@
+"""
+    is_mutable_type(x::DataType)
+
+Query whether a type is mutable or not, see
+https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19.
+"""
+Base.@pure is_mutable_type(x::DataType) = x.mutable
+
+
 function recursivecopy{T<:Number,N}(a::AbstractArray{T,N})
   copy(a)
 end
@@ -52,7 +61,9 @@ end
 
 @inline function copyat_or_push!{T,perform_copy}(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true})
   @inbounds if length(a) >= i
-    if T <: Number || !perform_copy
+    if T <: Number || T <: SArray || (T <: FieldVector && !is_mutable_type(T)) || !perform_copy
+      # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
+      #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
     else
       recursivecopy!(a[i],x)
