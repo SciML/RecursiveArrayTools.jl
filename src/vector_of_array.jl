@@ -70,13 +70,11 @@ vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1]
 Base.show(io::IO, x::AbstractVectorOfArray) = show(io, x.u)
 Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray) = show(io, m, x.u)
 Base.summary(A::AbstractVectorOfArray) = string("VectorOfArray{",eltype(A),",",ndims(A),"}")
-Base.display(A::AbstractVectorOfArray) = (println(summary(A));println("u:");display(A.u);nothing)
 Base.print(A::AbstractVectorOfArray) = show(A)
 Base.println(A::AbstractVectorOfArray) = show(A)
 
 Base.show(io::IO, x::AbstractDiffEqArray) = (print(io,"t: ");show(io, x.t);println(io);print(io,"u: ");show(io, x.u))
 Base.show(io::IO, m::MIME"text/plain", x::AbstractDiffEqArray) = (print(io,"t: ");show(io,m,x.t);println(io);print(io,"u: ");show(io,m,x.u))
-Base.display(A::AbstractDiffEqArray) = (println(summary(A));println("t:");display(A.t);println("u:");display(A.u);nothing)
 
 # restore the type rendering in Juno
 Juno.@render Juno.Inline x::AbstractVectorOfArray begin

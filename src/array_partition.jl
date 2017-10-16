@@ -209,8 +209,6 @@ Juno.@render Juno.Inline x::ArrayPartition begin
 end
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
 Base.show(io::IO,A::ArrayPartition) = (Base.show.(io,A.x); nothing)
-Base.display(A::ArrayPartition) = (println(summary(A));display.(A.x);nothing)
-Base.display(io::IO,A::ArrayPartition) = (println(summary(A));display.(io,A.x);nothing)
 
 ## broadcasting
 
