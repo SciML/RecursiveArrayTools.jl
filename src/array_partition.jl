@@ -208,7 +208,7 @@ Juno.@render Juno.Inline x::ArrayPartition begin
   Juno.LazyTree(typeof(x), () -> [Juno.SubTree(Juno.Text("$f → "), Juno.getfield′(x, f)) for f in fields])
 end
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
-Base.show(io::IO,A::ArrayPartition) = (Base.show.(io,A.x); nothing)
+Base.show(io::IO,A::ArrayPartition) = Base.show.(io,A.x)
 
 ## broadcasting
 
