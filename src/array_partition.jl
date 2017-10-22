@@ -119,6 +119,11 @@ end
     build_arraypartition(N, expr)
 end
 
+## Functional Constructs
+
+Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
+Base.any(f,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
+
 ## indexing
 
 @inline function Base.getindex(A::ArrayPartition, i::Int)
