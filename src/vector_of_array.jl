@@ -61,6 +61,22 @@ function Base.append!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractV
     return VA
 end
 
+# Tools for creating similar objects
+@inline Base.similar(VA::VectorOfArray{T}) where {T} = similar(VA, T)
+@inline Base.similar(VA::VectorOfArray, ::Type{T}) where {T} = VectorOfArray([similar(VA[i], T) for i in eachindex(VA)])
+
+# fill!
+# For DiffEqArray it ignores ts and fills only u
+function Base.fill!(VA::AbstractVectorOfArray, x)
+    for i in eachindex(VA)
+        fill!(VA[i], x)
+    end
+    return VA
+end
+
+# Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
+@inline Base.any(f, VA::AbstractVectorOfArray) = any(any(f,VA[i]) for i in eachindex(VA))
+
 # conversion tools
 @deprecate vecarr_to_arr(VA::AbstractVectorOfArray) convert(Array,VA)
 @deprecate vecarr_to_arr{T<:AbstractArray}(VA::Vector{T}) convert(Array,VA)
