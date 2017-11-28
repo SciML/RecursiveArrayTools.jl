@@ -62,8 +62,7 @@ function Base.append!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractV
 end
 
 # Tools for creating similar objects
-@inline Base.similar(VA::VectorOfArray{T}) where {T} = similar(VA, T)
-@inline Base.similar(VA::VectorOfArray, ::Type{T}) where {T} = VectorOfArray([similar(VA[i], T) for i in eachindex(VA)])
+@inline Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T} = VectorOfArray([similar(VA[i], T) for i in eachindex(VA)])
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
