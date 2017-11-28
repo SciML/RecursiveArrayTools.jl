@@ -42,3 +42,29 @@ testa = cat(3, recs...)
 recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs)
 @test size(convert(Array,testva)) == (3,3)
+
+# create similar VectorOfArray
+recs = [rand(6) for i = 1:4]
+testva = VectorOfArray(recs)
+testva2 = similar(testva)
+@test typeof(testva2) == typeof(testva)
+@test size(testva2) == size(testva)
+
+# Fill AbstractVectorOfArray and check all
+testval = 3.0
+fill!(testva2, testval)
+@test all(x->(x==testval), testva2)
+testts = rand(size(testva.u))
+testda = DiffEqArray(recursivecopy(testva.u), testts)
+fill!(testda, testval)
+@test all(x->(x==testval), testda)
+
+# check any
+recs = [collect(1:5), collect(6:10), collect(11:15)]
+testts = rand(5)
+testva = VectorOfArray(recs)
+testda = DiffEqArray(recs, testts)
+testval1 = 4
+testval2 = 17
+@test any(x->(x==testval1), testva)
+@test !any(x->(x==testval2), testda)
