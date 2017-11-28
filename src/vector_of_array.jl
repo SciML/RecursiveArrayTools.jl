@@ -40,6 +40,7 @@ end
 # Interface for the two dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
 @inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int...) = VA.u[I[end]][Base.front(I)...]
+@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, ::Colon, I::Int) = VA.u[I]
 @inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Int...) = VA.u[I[end]][Base.front(I)...] = v
 
 # The iterator will be over the subarrays of the container, not the individual elements
