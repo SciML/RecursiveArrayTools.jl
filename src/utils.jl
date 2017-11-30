@@ -7,26 +7,26 @@ https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19.
 Base.@pure is_mutable_type(x::DataType) = x.mutable
 
 
-function recursivecopy{T<:Number,N}(a::AbstractArray{T,N})
+function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
   copy(a)
 end
 
-function recursivecopy{T<:AbstractArray,N}(a::AbstractArray{T,N})
+function recursivecopy(a::AbstractArray{T,N}) where {T<:AbstractArray,N}
   [recursivecopy(x) for x in a]
 end
 
-function recursivecopy!{T<:StaticArray,T2<:StaticArray,N}(b::AbstractArray{T,N},a::AbstractArray{T2,N})
+function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:StaticArray,T2<:StaticArray,N}
   @inbounds for i in eachindex(a)
     # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
     b[i] = copy(a[i])
   end
 end
 
-function recursivecopy!{T<:Number,T2<:Number,N}(b::AbstractArray{T,N},a::AbstractArray{T2,N})
+function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:Number,T2<:Number,N}
   copy!(b,a)
 end
 
-function recursivecopy!{T<:AbstractArray,T2<:AbstractArray,N}(b::AbstractArray{T,N},a::AbstractArray{T2,N})
+function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:AbstractArray,T2<:AbstractArray,N}
   @inbounds for i in eachindex(a)
     recursivecopy!(b[i],a[i])
   end
@@ -51,15 +51,15 @@ function vecvecapply(f,v)
   f(sol)
 end
 
-function vecvecapply{T<:Number}(f,v::Array{T})
+function vecvecapply(f,v::Array{T}) where T<:Number
   f(v)
 end
 
-function vecvecapply{T<:Number}(f,v::T)
+function vecvecapply(f,v::T) where T<:Number
   f(v)
 end
 
-@inline function copyat_or_push!{T,perform_copy}(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true})
+@inline function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
     if T <: Number || T <: SArray || (T <: FieldVector && !is_mutable_type(T)) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
@@ -90,13 +90,13 @@ end
 end
 
 recursive_one(a) = recursive_one(a[1])
-recursive_one{T<:Number}(a::T) = one(a)
+recursive_one(a::T) where {T<:Number} = one(a)
 
 recursive_eltype(a) = recursive_eltype(eltype(a))
-recursive_eltype{T<:Number}(a::Type{T}) = eltype(a)
+recursive_eltype(a::Type{T}) where {T<:Number} = eltype(a)
 
 recursive_mean(x...) = mean(x...)
-function recursive_mean{T<:AbstractArray}(vecvec::Vector{T})
+function recursive_mean(vecvec::Vector{T}) where T<:AbstractArray
   out = zeros(vecvec[1])
   for i in eachindex(vecvec)
     out+= vecvec[i]
@@ -104,7 +104,7 @@ function recursive_mean{T<:AbstractArray}(vecvec::Vector{T})
   out/length(vecvec)
 end
 
-function recursive_mean{T<:AbstractArray}(matarr::Matrix{T},region=0)
+function recursive_mean(matarr::Matrix{T},region=0) where T<:AbstractArray
   if region == 0
     return recursive_mean(vec(matarr))
   elseif region == 1
@@ -122,7 +122,7 @@ end
 # From Iterators.jl. Moved here since Iterators.jl is not precompile safe anymore.
 
 # Concatenate the output of n iterators
-immutable Chain{T<:Tuple}
+struct Chain{T<:Tuple}
     xss::T
 end
 
@@ -149,7 +149,7 @@ chain(xss...) = Chain(xss)
 Base.length(it::Chain{Tuple{}}) = 0
 Base.length(it::Chain) = sum(length, it.xss)
 
-Base.eltype{T}(::Type{Chain{T}}) = typejoin([eltype(t) for t in T.parameters]...)
+Base.eltype(::Type{Chain{T}}) where {T} = typejoin([eltype(t) for t in T.parameters]...)
 
 function Base.start(it::Chain)
     i = 1
