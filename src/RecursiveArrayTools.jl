@@ -15,7 +15,8 @@ module RecursiveArrayTools
          vecarr_to_arr, vecarr_to_vectors, tuples
 
   export recursivecopy, recursivecopy!, vecvecapply, copyat_or_push!,
-         vecvec_to_mat, recursive_one, recursive_mean, recursive_eltype
+         vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
+         recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
   export ArrayPartition
 
