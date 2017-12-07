@@ -1,18 +1,18 @@
 # Based on code from M. Bauman Stackexchange answer + Gitter discussion
-type VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N}
+mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
 end
 # VectorOfArray with an added series for time
-type DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N}
+mutable struct DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
   t::B
 end
 
-VectorOfArray{T, N}(vec::AbstractVector{T}, dims::NTuple{N}) = VectorOfArray{eltype(T), N, typeof(vec)}(vec)
+VectorOfArray(vec::AbstractVector{T}, dims::NTuple{N}) where {T, N} = VectorOfArray{eltype(T), N, typeof(vec)}(vec)
 # Assume that the first element is representative all all other elements
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 
-DiffEqArray{T, N}(vec::AbstractVector{T}, ts, dims::NTuple{N}) = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts)}(vec, ts)
+DiffEqArray(vec::AbstractVector{T}, ts, dims::NTuple{N}) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts)}(vec, ts)
 # Assume that the first element is representative all all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)))
 
@@ -24,14 +24,14 @@ DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size
 @inline Base.iteratorsize(VA::AbstractVectorOfArray) = Base.HasLength()
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int) = VA.u[I]
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Colon) = VA.u[I]
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) = VA.u[I]
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) = [VA.u[j][i] for j in 1:length(VA)]
-@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Int) = VA.u[I] = v
-@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Colon) = VA.u[I] = v
-@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::AbstractArray{Int}) = VA.u[I] = v
-@inline function Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, i::Int,::Colon)
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) where {T, N} = VA.u[I]
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon) where {T, N} = VA.u[I]
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VA.u[I]
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
+@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int) where {T, N} = VA.u[I] = v
+@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Colon) where {T, N} = VA.u[I] = v
+@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::AbstractArray{Int}) where {T, N} = VA.u[I] = v
+@inline function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, i::Int,::Colon) where {T, N}
   for j in 1:length(VA)
     VA.u[j][i] = v[j]
   end
@@ -39,23 +39,23 @@ end
 
 # Interface for the two dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, I::Int...) = VA.u[I[end]][Base.front(I)...]
-@inline Base.getindex{T, N}(VA::AbstractVectorOfArray{T, N}, ::Colon, I::Int) = VA.u[I]
-@inline Base.setindex!{T, N}(VA::AbstractVectorOfArray{T, N}, v, I::Int...) = VA.u[I[end]][Base.front(I)...] = v
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...]
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, ::Colon, I::Int) where {T, N} = VA.u[I]
+@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...] = v
 
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray
-Base.start{T, N}(VA::AbstractVectorOfArray{T, N}) = 1
-Base.next{T, N}(VA::AbstractVectorOfArray{T, N}, state) = (VA[state], state + 1)
-Base.done{T, N}(VA::AbstractVectorOfArray{T, N}, state) = state >= length(VA.u) + 1
+Base.start(VA::AbstractVectorOfArray{T, N}) where {T, N} = 1
+Base.next(VA::AbstractVectorOfArray{T, N}, state) where {T, N} = (VA[state], state + 1)
+Base.done(VA::AbstractVectorOfArray{T, N}, state) where {T, N} = state >= length(VA.u) + 1
 tuples(VA::DiffEqArray) = tuple.(VA.t,VA.u)
 
 # Growing the array simply adds to the container vector
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
-Base.sizehint!{T, N}(VA::AbstractVectorOfArray{T, N}, i) = sizehint!(VA.u, i)
-Base.push!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVector) = push!(VA.u, new_item)
+Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
+Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVector) where {T, N} = push!(VA.u, new_item)
 
-function Base.append!{T, N}(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVectorOfArray{T, N})
+function Base.append!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVectorOfArray{T, N}) where {T, N}
     for item in copy(new_item)
         push!(VA, item)
     end
