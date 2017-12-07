@@ -1,3 +1,4 @@
 OrdinaryDiffEq 0.3.0
 ParameterizedFunctions 0.3.0
 DiffEqBase 0.3.0
+Unitful
