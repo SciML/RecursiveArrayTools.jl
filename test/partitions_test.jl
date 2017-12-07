@@ -66,7 +66,7 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 # recursive
 @inferred recursive_mean(x)
 @inferred recursive_one(x)
-@inferred recursive_eltype(x)
+@inferred recursive_bottom_eltype(x)
 
 # broadcasting
 _scalar_op(y) = y + 1
