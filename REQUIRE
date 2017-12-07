@@ -1,4 +1,4 @@
-julia 0.6-pre
+julia 0.6
 Juno
 RecipesBase 0.1.0
 StaticArrays
