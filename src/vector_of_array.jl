@@ -91,12 +91,6 @@ Base.summary(A::AbstractVectorOfArray) = string("VectorOfArray{",eltype(A),",",n
 Base.show(io::IO, x::AbstractDiffEqArray) = (print(io,"t: ");show(io, x.t);println(io);print(io,"u: ");show(io, x.u))
 Base.show(io::IO, m::MIME"text/plain", x::AbstractDiffEqArray) = (print(io,"t: ");show(io,m,x.t);println(io);print(io,"u: ");show(io,m,x.u))
 
-# restore the type rendering in Juno
-Juno.@render Juno.Inline x::AbstractVectorOfArray begin
-  fields = fieldnames(typeof(x))
-  Juno.LazyTree(typeof(x), () -> [Juno.SubTree(Juno.Text("$f → "), Juno.getfield′(x, f)) for f in fields])
-end
-
 # plot recipes
 @recipe function f(VA::AbstractVectorOfArray)
   convert(Array,VA)

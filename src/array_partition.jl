@@ -206,12 +206,6 @@ Base.first(A::ArrayPartition) = first(first(A.x))
 Base.last(A::ArrayPartition) = last(last(A.x))
 
 ## display
-
-# restore the type rendering in Juno
-Juno.@render Juno.Inline x::ArrayPartition begin
-  fields = fieldnames(typeof(x))
-  Juno.LazyTree(typeof(x), () -> [Juno.SubTree(Juno.Text("$f → "), Juno.getfield′(x, f)) for f in fields])
-end
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
 Base.show(io::IO,A::ArrayPartition) = Base.show.(io,A.x)
 Base.show(io::IO, m::MIME"text/plain", A::ArrayPartition) = show(io, m, A.x)

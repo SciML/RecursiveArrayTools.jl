@@ -2,7 +2,7 @@ __precompile__()
 
 module RecursiveArrayTools
 
-  using Juno, RecipesBase, StaticArrays
+  using Requires, RecipesBase, StaticArrays
 
   abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
   abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
@@ -10,7 +10,8 @@ module RecursiveArrayTools
   include("utils.jl")
   include("vector_of_array.jl")
   include("array_partition.jl")
-
+  include("juno_rendering.jl")
+  
   export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
          vecarr_to_arr, vecarr_to_vectors, tuples
 
