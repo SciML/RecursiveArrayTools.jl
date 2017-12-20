@@ -1,5 +1,4 @@
-using OrdinaryDiffEq, ParameterizedFunctions,
-      DiffEqBase, RecursiveArrayTools
+using RecursiveArrayTools
 using Base.Test
 
 tic()
@@ -9,4 +8,3 @@ tic()
 @time @testset "VecOfArr Interface Tests" begin include("interface_tests.jl") end
 @time @testset "StaticArrays Tests" begin include("copy_static_array_test.jl") end
 toc()
-# Test the VectorOfArray code
