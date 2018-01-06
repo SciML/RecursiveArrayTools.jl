@@ -80,10 +80,12 @@ end
       end
     else
       if perform_copy
-        if typeof(x) <: Vector && !(eltype(x) <: Number) && !(eltype(x) <: StaticArray)
+        if typeof(x) <: Vector && !(eltype(x) <: Number)
           push!(a,recursivecopy(x))
         elseif typeof(x) <: ArrayPartition || typeof(x) <: AbstractVectorOfArray
           push!(a,copy(x))
+        elseif typeof(x) <: SArray
+          push!(a,x)
         else
           push!(a,deepcopy(x))
         end
