@@ -69,3 +69,7 @@ recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
 @test testva[:, 1] == recs[1]
 testva[1:2, 1:2]
+
+# Test broadcast
+a = testva .+ rand(3,3)
+a.= testva
