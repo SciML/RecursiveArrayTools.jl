@@ -1,5 +1,4 @@
 using RecursiveArrayTools, Base.Test
-
 A = (rand(5),rand(5))
 p = ArrayPartition(A)
 @test (p.x[1][1],p.x[2][1]) == (p[1],p[6])
@@ -26,6 +25,18 @@ p .= (*).(p,5)
 p .= (*).(p,a)
 p .= (*).(p,p2)
 K = (*).(p,p2)
+
+p.*rand(5)
+b = rand(10)
+c = rand(10)
+copy!(b,p)
+
+@test b[1:5] == p.x[1]
+@test b[6:10] == p.x[2]
+
+copy!(p,c)
+@test c[1:5] == p.x[1]
+@test c[6:10] == p.x[2]
 
 ## inference tests
 

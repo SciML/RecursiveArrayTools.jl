@@ -124,6 +124,23 @@ end
 
 Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
 Base.any(f,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
+function Base.copy!(dest::Array,A::ArrayPartition)
+    @assert length(dest) == length(A)
+    cur = 1
+    @inbounds for i in 1:length(A.x)
+        dest[cur:(cur+length(A.x[i])-1)] .= A.x[i]
+        cur += length(A.x[i])
+    end
+end
+
+function Base.copy!(A::ArrayPartition,src::ArrayPartition)
+    @assert length(src) == length(A)
+    cur = 1
+    @inbounds for i in 1:length(A.x)
+        A.x[i] .= @view(src[cur:(cur+length(A.x[i])-1)])
+        cur += length(A.x[i])
+    end
+end
 
 ## indexing
 
@@ -225,7 +242,7 @@ Base.Broadcast.promote_containertype(::Type{Array}, ::Type{ArrayPartition}) = Ar
     N = npartitions(as...)
 
     # broadcast partitions separately
-    expr = :(broadcast(f,
+    expr = :(@show "here!"; broadcast(f,
                        # index partitions
                        $((as[d] <: ArrayPartition ? :(as[$d].x[i]) : :(as[$d])
                           for d in 1:length(as))...)))
@@ -240,6 +257,25 @@ end
 
     # broadcast partitions separately
     quote
+        for i in 1:$N
+            broadcast!(f, dest.x[i],
+                       # index partitions
+                       $((as[d] <: ArrayPartition ? :(as[$d].x[i]) : :(as[$d])
+                          for d in 1:length(as))...))
+        end
+        dest
+    end
+end
+
+@generated function Base.broadcast!(f, ::Type{ArrayPartition}, ::Type,
+                                     dest::Array, as...)
+    # common number of partitions
+    N = npartitions(dest, as...)
+
+    # broadcast partitions separately
+    quote
+        @show "here"
+        @show dest
         for i in 1:$N
             broadcast!(f, dest.x[i],
                        # index partitions
