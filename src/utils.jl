@@ -6,6 +6,9 @@ https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19.
 """
 Base.@pure is_mutable_type(x::DataType) = x.mutable
 
+function recursivecopy(a)
+  deepcopy(a)
+end
 
 function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
   copy(a)
