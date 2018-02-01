@@ -72,22 +72,13 @@ end
       recursivecopy!(a[i],x)
     end
   else
-    if eltype(x) <: Number && (typeof(x) <: Array || typeof(x) <: Number)
-      # Have to check that it's <: Array or can have problems
-      # with abstract arrays like MultiScaleModels.
-      # Have to check <: Number since it could just be a number...
       if perform_copy
-        push!(a,copy(x))
-      else
-        push!(a,x)
-      end
-    else
-      if perform_copy
-        if typeof(x) <: Vector && !(eltype(x) <: Number)
+        if typeof(x) <: Array && !(eltype(x) <: Number)
           push!(a,recursivecopy(x))
-        elseif typeof(x) <: ArrayPartition || typeof(x) <: AbstractVectorOfArray
+        elseif typeof(x) <: Array || typeof(x) <: ArrayPartition ||
+             typeof(x) <: AbstractVectorOfArray
           push!(a,copy(x))
-        elseif typeof(x) <: SArray
+        elseif typeof(x) <: Union{SVector,SMatrix,SArray,Number} # Only immutable
           push!(a,x)
         else
           push!(a,deepcopy(x))
@@ -95,7 +86,6 @@ end
       else
         push!(a,x)
       end
-    end
   end
   nothing
 end
