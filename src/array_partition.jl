@@ -242,7 +242,7 @@ Base.Broadcast.promote_containertype(::Type{Array}, ::Type{ArrayPartition}) = Ar
     N = npartitions(as...)
 
     # broadcast partitions separately
-    expr = :(@show "here!"; broadcast(f,
+    expr = :(broadcast(f,
                        # index partitions
                        $((as[d] <: ArrayPartition ? :(as[$d].x[i]) : :(as[$d])
                           for d in 1:length(as))...)))
@@ -257,25 +257,6 @@ end
 
     # broadcast partitions separately
     quote
-        for i in 1:$N
-            broadcast!(f, dest.x[i],
-                       # index partitions
-                       $((as[d] <: ArrayPartition ? :(as[$d].x[i]) : :(as[$d])
-                          for d in 1:length(as))...))
-        end
-        dest
-    end
-end
-
-@generated function Base.broadcast!(f, ::Type{ArrayPartition}, ::Type,
-                                     dest::Array, as...)
-    # common number of partitions
-    N = npartitions(dest, as...)
-
-    # broadcast partitions separately
-    quote
-        @show "here"
-        @show dest
         for i in 1:$N
             broadcast!(f, dest.x[i],
                        # index partitions
