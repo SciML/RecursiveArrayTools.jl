@@ -113,21 +113,6 @@ function recursive_mean(vecvec::Vector{T}) where T<:AbstractArray
   out/length(vecvec)
 end
 
-function recursive_mean(matarr::Matrix{T},region=0) where T<:AbstractArray
-  if region == 0
-    return recursive_mean(vec(matarr))
-  elseif region == 1
-    out = [zeros(matarr[1,i]) for i in 1:size(matarr,2)]
-    for j in 1:size(matarr,2), i in 1:size(matarr,1)
-      out[j] += matarr[i,j]
-    end
-    return out/size(matarr,1)
-  elseif region == 2
-    return recursive_mean(matarr',1)
-  end
-end
-
-
 # From Iterators.jl. Moved here since Iterators.jl is not precompile safe anymore.
 
 # Concatenate the output of n iterators
