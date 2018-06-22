@@ -100,9 +100,9 @@ recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(eltype(a)
 recursive_unitless_bottom_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
 
 Base.@pure recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
-Base.@pure recursive_unitless_eltype{T<:StaticArray}(a::Type{T}) = similar_type(a,recursive_unitless_eltype(eltype(a)))
-Base.@pure recursive_unitless_eltype{T<:Array}(a::Type{T}) = Array{recursive_unitless_eltype(eltype(a)),ndims(a)}
-Base.@pure recursive_unitless_eltype{T<:Number}(a::Type{T}) = typeof(one(eltype(a)))
+Base.@pure recursive_unitless_eltype(a::Type{T}) where {T<:StaticArray} = similar_type(a,recursive_unitless_eltype(eltype(a)))
+Base.@pure recursive_unitless_eltype(a::Type{T}) where {T<:Array} = Array{recursive_unitless_eltype(eltype(a)),ndims(a)}
+Base.@pure recursive_unitless_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
 
 recursive_mean(x...) = mean(x...)
 function recursive_mean(vecvec::Vector{T}) where T<:AbstractArray
