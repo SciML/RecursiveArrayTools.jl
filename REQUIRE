@@ -1,4 +1,4 @@
-julia 0.6
+julia 0.7-
 Requires
 RecipesBase 0.1.0
 StaticArrays
