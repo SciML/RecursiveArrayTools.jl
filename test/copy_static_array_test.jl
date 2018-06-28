@@ -1,4 +1,4 @@
-using Base.Test, RecursiveArrayTools, StaticArrays
+using Test, RecursiveArrayTools, StaticArrays
 
 struct ImmutableFV <: FieldVector{2,Float64}
     a::Float64

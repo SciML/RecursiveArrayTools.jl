@@ -4,7 +4,7 @@ end
 
 ## constructors
 
-ArrayPartition(x...) = ArrayPartition((x...))
+ArrayPartition(x...) = ArrayPartition((x...,))
 
 function ArrayPartition(x::S, ::Type{Val{copy_x}}=Val{false}) where {S<:Tuple,copy_x}
   T = promote_type(eltype.(x)...)
@@ -145,12 +145,8 @@ end
 ## indexing
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
-@static if VERSION >= v"0.7-"
-  @inline Base.firstindex(A::ArrayPartition) = 1
-  @inline Base.lastindex(A::ArrayPartition) = length(A)
-else
-  @inline Base.endof(A::ArrayPartition) = length(A)
-end
+@inline Base.firstindex(A::ArrayPartition) = 1
+@inline Base.lastindex(A::ArrayPartition) = length(A)
 
 @inline function Base.getindex(A::ArrayPartition, i::Int)
   @boundscheck checkbounds(A, i)

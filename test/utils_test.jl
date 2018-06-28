@@ -1,7 +1,7 @@
 using RecursiveArrayTools, Unitful, StaticArrays
-using Base.Test
+using Test
 
-t = collect(linspace(0,10,200))
+t = collect(range(0, stop=10, length=200))
 randomized = VectorOfArray([.01randn(2) for i in 1:10])
 data = convert(Array,randomized)
 @test typeof(data) <: Matrix{Float64}

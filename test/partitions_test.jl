@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Base.Test
+using RecursiveArrayTools, Test
 A = (rand(5),rand(5))
 p = ArrayPartition(A)
 @test (p.x[1][1],p.x[2][1]) == (p[1],p[6])

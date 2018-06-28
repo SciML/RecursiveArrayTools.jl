@@ -18,12 +18,8 @@ DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size
 
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
-@static if VERSION >= v"0.7-"
-  @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
-  @inline Base.lastindex(VA::AbstractVectorOfArray) = lastindex(VA.u)
-else
-  @inline Base.endof(VA::AbstractVectorOfArray) = endof(VA.u)
-end
+@inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
+@inline Base.lastindex(VA::AbstractVectorOfArray) = lastindex(VA.u)
 
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
 @inline Base.eachindex(VA::AbstractVectorOfArray) = Base.OneTo(length(VA.u))
