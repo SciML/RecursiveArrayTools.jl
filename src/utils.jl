@@ -26,7 +26,7 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
 end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:Number,T2<:Number,N}
-  copy!(b,a)
+  copyto!(b,a)
 end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:AbstractArray,T2<:AbstractArray,N}

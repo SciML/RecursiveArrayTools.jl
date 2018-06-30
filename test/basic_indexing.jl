@@ -2,7 +2,7 @@ using RecursiveArrayTools
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-testa = cat(2, recs...)
+testa = cat(recs..., dims=2)
 testva = VectorOfArray(recs)
 t = [1,2,3]
 diffeq = DiffEqArray(recs,t)
@@ -13,7 +13,7 @@ testa[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2
 recs = [rand(8) for i in 1:10]
-testa = cat(2, recs...)
+testa = cat(recs...,dims=2)
 testva = VectorOfArray(recs)
 
 # ## Linear indexing
@@ -36,7 +36,7 @@ testva = VectorOfArray(recs)
 
 # # ndims == 3
 recs = recs = [rand(10, 8) for i in 1:15]
-testa = cat(3, recs...)
+testa = cat(recs...,dims=3)
 testva = VectorOfArray(recs)
 
 # ## (Int, Int, Int)

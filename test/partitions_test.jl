@@ -11,7 +11,7 @@ p2[1] = 1
 @test p2.x[1] != p.x[1]
 
 C = rand(10)
-p3 = similar(p,indices(p))
+p3 = similar(p,axes(p))
 @test length(p3.x[1]) == length(p3.x[2]) == 5
 @test length(p.x) == length(p2.x) == length(p3.x) == 2
 
@@ -21,20 +21,20 @@ B = (rand(5),rand(5))
 p2 = ArrayPartition(B)
 a = 5
 
-p .= (*).(p,5)
-p .= (*).(p,a)
-p .= (*).(p,p2)
-K = (*).(p,p2)
+@. p = p*5
+@. p = p*a
+@. p = p*p2
+K = p.*p2
 
 p.*rand(5)
 b = rand(10)
 c = rand(10)
-copy!(b,p)
+copyto!(b,p)
 
 @test b[1:5] == p.x[1]
 @test b[6:10] == p.x[2]
 
-copy!(p,c)
+copyto!(p,c)
 @test c[1:5] == p.x[1]
 @test c[6:10] == p.x[2]
 

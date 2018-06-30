@@ -36,7 +36,7 @@ testva[4, 9] # == testva.data[9][4]
 # convert array from VectorOfArray
 recs = [rand(10, 7) for i = 1:8]
 testva = VectorOfArray(recs)
-testa = cat(3, recs...)
+testa = cat(recs...,dims=3)
 @test convert(Array,testva) == testa
 
 recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]

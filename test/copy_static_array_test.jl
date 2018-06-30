@@ -13,7 +13,7 @@ end
 # Immutable FieldVector
 vec = ImmutableFV(1.,2.)
 a = [vec]
-b = zeros(a)
+b = zero(a)
 recursivecopy!(b, a)
 @test a[1] == b[1]
 copyat_or_push!(a, 2, b[1])
@@ -25,7 +25,7 @@ copyat_or_push!(a, 2, b[1])
 # Mutable FieldVector
 vec = MutableFV(1.,2.)
 a = [vec]
-b = zeros(a)
+b = zero(a)
 recursivecopy!(b, a)
 @test a[1] == b[1]
 a[1][1] *= 5
@@ -41,7 +41,7 @@ copyat_or_push!(a, 2, b[1])
 # SArray
 vec = @SArray [1., 2.]
 a = [vec]
-b = zeros(a)
+b = zero(a)
 recursivecopy!(b, a)
 @test a[1] == b[1]
 copyat_or_push!(a, 2, b[1])
@@ -53,7 +53,7 @@ copyat_or_push!(a, 2, b[1])
 # MArray
 vec = @MArray [1., 2.]
 a = [vec]
-b = zeros(a)
+b = zero(a)
 recursivecopy!(b, a)
 a[1][1] *= 5
 @test a[1] != b[1]
