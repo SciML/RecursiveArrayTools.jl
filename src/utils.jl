@@ -145,30 +145,24 @@ Base.length(it::Chain) = sum(length, it.xss)
 
 Base.eltype(::Type{Chain{T}}) where {T} = typejoin([eltype(t) for t in T.parameters]...)
 
-function Base.start(it::Chain)
+function Base.iterate(it::Chain)
     i = 1
     xs_state = nothing
     while i <= length(it.xss)
-        xs_state = start(it.xss[i])
-        if !done(it.xss[i], xs_state)
-            break
-        end
+        xs_state = iterate(it.xss[i])
+        xs_state !== nothing && return xs_state[1], (i, xs_state[2])
         i += 1
     end
-    return i, xs_state
+    return nothing
 end
 
-function Base.next(it::Chain, state)
+function Base.iterate(it::Chain, state)
     i, xs_state = state
-    v, xs_state = next(it.xss[i], xs_state)
-    while done(it.xss[i], xs_state)
+    xs_state = iterate(it.xss[i], xs_state)
+    while xs_state == nothing
         i += 1
-        if i > length(it.xss)
-            break
-        end
-        xs_state = start(it.xss[i])
+        i > length(it.xss) && return nothing
+        xs_state = iterate(it.xss[i])
     end
-    return v, (i, xs_state)
+    return xs_state[1], (i, xs_state[2])
 end
-
-Base.done(it::Chain, state) = state[1] > length(it.xss)

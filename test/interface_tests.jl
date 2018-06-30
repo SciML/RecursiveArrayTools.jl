@@ -54,7 +54,7 @@ testva2 = similar(testva)
 testval = 3.0
 fill!(testva2, testval)
 @test all(x->(x==testval), testva2)
-testts = rand(size(testva.u))
+testts = rand(Float64, size(testva.u))
 testda = DiffEqArray(recursivecopy(testva.u), testts)
 fill!(testda, testval)
 @test all(x->(x==testval), testda)

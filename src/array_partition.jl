@@ -216,9 +216,8 @@ recursive_eltype(A::ArrayPartition) = recursive_eltype(first(A.x))
 
 ## iteration
 
-Base.start(A::ArrayPartition) = start(Chain(A.x))
-Base.next(A::ArrayPartition,state) = next(Chain(A.x),state)
-Base.done(A::ArrayPartition,state) = done(Chain(A.x),state)
+Base.iterate(A::ArrayPartition) = iterate(Chain(A.x))
+Base.iterate(A::ArrayPartition,state) = iterate(Chain(A.x),state)
 
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
