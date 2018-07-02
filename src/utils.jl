@@ -45,7 +45,7 @@ end
 
 
 function vecvecapply(f,v)
-  sol = Vector{eltype(eltype(v))}(0)
+  sol = Vector{eltype(eltype(v))}()
   for i in eachindex(v)
     for j in eachindex(v[i])
       push!(sol,v[i][j])
