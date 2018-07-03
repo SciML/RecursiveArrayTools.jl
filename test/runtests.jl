@@ -1,5 +1,5 @@
 using RecursiveArrayTools
-using Base.Test
+using Test
 
 tic()
 @time @testset "Utils Tests" begin include("utils_test.jl") end

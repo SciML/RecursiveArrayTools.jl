@@ -2,7 +2,7 @@ using RecursiveArrayTools
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-testa = cat(2, recs...)
+testa = cat(recs..., dims=2)
 testva = VectorOfArray(recs)
 t = [1,2,3]
 diffeq = DiffEqArray(recs,t)
@@ -13,7 +13,7 @@ testa[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2
 recs = [rand(8) for i in 1:10]
-testa = cat(2, recs...)
+testa = cat(recs...,dims=2)
 testva = VectorOfArray(recs)
 
 # ## Linear indexing
@@ -36,7 +36,7 @@ testva = VectorOfArray(recs)
 
 # # ndims == 3
 recs = recs = [rand(10, 8) for i in 1:15]
-testa = cat(3, recs...)
+testa = cat(recs...,dims=3)
 testva = VectorOfArray(recs)
 
 # ## (Int, Int, Int)
@@ -65,11 +65,11 @@ testva = VectorOfArray(recs)
 
 # ## Test ragged arrays work, or give errors as needed
 #TODO: I am not really sure what the behavior of this is, what does Mathematica do?
-recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
+recs = [[1, 2, 3], [3, 5, 6, 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
 @test testva[:, 1] == recs[1]
 testva[1:2, 1:2]
 
 # Test broadcast
 a = testva .+ rand(3,3)
-a.= testva
+@test_broken a.= testva

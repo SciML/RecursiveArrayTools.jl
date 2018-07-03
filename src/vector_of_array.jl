@@ -18,16 +18,12 @@ DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size
 
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
-@static if VERSION >= v"0.7-"
-  @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
-  @inline Base.lastindex(VA::AbstractVectorOfArray) = lastindex(VA.u)
-else
-  @inline Base.endof(VA::AbstractVectorOfArray) = endof(VA.u)
-end
+@inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
+@inline Base.lastindex(VA::AbstractVectorOfArray) = lastindex(VA.u)
 
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
 @inline Base.eachindex(VA::AbstractVectorOfArray) = Base.OneTo(length(VA.u))
-@inline Base.iteratorsize(VA::AbstractVectorOfArray) = Base.HasLength()
+@inline Base.IteratorSize(VA::AbstractVectorOfArray) = Base.HasLength()
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
 @inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) where {T, N} = VA.u[I]
@@ -83,6 +79,8 @@ end
 # Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
 @inline Base.any(f, VA::AbstractVectorOfArray) = any(any(f,VA[i]) for i in eachindex(VA))
 @inline Base.all(f, VA::AbstractVectorOfArray) = all(all(f,VA[i]) for i in eachindex(VA))
+@inline Base.any(f::Function, VA::AbstractVectorOfArray) = any(any(f,VA[i]) for i in eachindex(VA))
+@inline Base.all(f::Function, VA::AbstractVectorOfArray) = all(all(f,VA[i]) for i in eachindex(VA))
 
 # conversion tools
 @deprecate vecarr_to_arr(VA::AbstractVectorOfArray) convert(Array,VA)

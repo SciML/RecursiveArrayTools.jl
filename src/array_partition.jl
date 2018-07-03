@@ -4,7 +4,7 @@ end
 
 ## constructors
 
-ArrayPartition(x...) = ArrayPartition((x...))
+ArrayPartition(x...) = ArrayPartition((x...,))
 
 function ArrayPartition(x::S, ::Type{Val{copy_x}}=Val{false}) where {S<:Tuple,copy_x}
   T = promote_type(eltype.(x)...)
@@ -124,7 +124,7 @@ end
 
 Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
 Base.any(f,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
-function Base.copy!(dest::Array,A::ArrayPartition)
+function Base.copyto!(dest::Array,A::ArrayPartition)
     @assert length(dest) == length(A)
     cur = 1
     @inbounds for i in 1:length(A.x)
@@ -133,7 +133,7 @@ function Base.copy!(dest::Array,A::ArrayPartition)
     end
 end
 
-function Base.copy!(A::ArrayPartition,src::ArrayPartition)
+function Base.copyto!(A::ArrayPartition,src::ArrayPartition)
     @assert length(src) == length(A)
     cur = 1
     @inbounds for i in 1:length(A.x)
@@ -145,12 +145,8 @@ end
 ## indexing
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
-@static if VERSION >= v"0.7-"
-  @inline Base.firstindex(A::ArrayPartition) = 1
-  @inline Base.lastindex(A::ArrayPartition) = length(A)
-else
-  @inline Base.endof(A::ArrayPartition) = length(A)
-end
+@inline Base.firstindex(A::ArrayPartition) = 1
+@inline Base.lastindex(A::ArrayPartition) = length(A)
 
 @inline function Base.getindex(A::ArrayPartition, i::Int)
   @boundscheck checkbounds(A, i)
@@ -220,9 +216,8 @@ recursive_eltype(A::ArrayPartition) = recursive_eltype(first(A.x))
 
 ## iteration
 
-Base.start(A::ArrayPartition) = start(Chain(A.x))
-Base.next(A::ArrayPartition,state) = next(Chain(A.x),state)
-Base.done(A::ArrayPartition,state) = done(Chain(A.x),state)
+Base.iterate(A::ArrayPartition) = iterate(Chain(A.x))
+Base.iterate(A::ArrayPartition,state) = iterate(Chain(A.x),state)
 
 Base.length(A::ArrayPartition) = sum((length(x) for x in A.x))
 Base.size(A::ArrayPartition) = (length(A),)
@@ -238,14 +233,19 @@ Base.show(io::IO, m::MIME"text/plain", A::ArrayPartition) = show(io, m, A.x)
 
 ## broadcasting
 
-Base.Broadcast._containertype(::Type{<:ArrayPartition}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{ArrayPartition}, ::Type) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type, ::Type{ArrayPartition}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{ArrayPartition}, ::Type{ArrayPartition}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{ArrayPartition}, ::Type{Array}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{Array}, ::Type{ArrayPartition}) = ArrayPartition
+struct APStyle <: Broadcast.BroadcastStyle end
+Base.BroadcastStyle(::Type{<:ArrayPartition}) = Broadcast.ArrayStyle{ArrayPartition}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle{ArrayPartition},::Broadcast.ArrayStyle) = Broadcast.Style{ArrayPartition}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle,::Broadcast.ArrayStyle{ArrayPartition}) = Broadcast.Style{ArrayPartition}()
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}},::Type{ElType}) where ElType = similar(bc)
 
-@generated function Base.Broadcast.broadcast_c(f, ::Type{ArrayPartition}, as...)
+function Base.copy(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}})
+    ret = Broadcast.flatten(bc)
+    __broadcast(ret.f,ret.args...)
+end
+
+@generated function __broadcast(f,as...)
+
     # common number of partitions
     N = npartitions(as...)
 
@@ -254,12 +254,15 @@ Base.Broadcast.promote_containertype(::Type{Array}, ::Type{ArrayPartition}) = Ar
                        # index partitions
                        $((as[d] <: ArrayPartition ? :(as[$d].x[i]) : :(as[$d])
                           for d in 1:length(as))...)))
-
     build_arraypartition(N, expr)
 end
 
-@generated function Base.Broadcast.broadcast_c!(f, ::Type{ArrayPartition}, ::Type,
-                                     dest::ArrayPartition, as...)
+function Base.copyto!(dest::AbstractArray,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}})
+    ret = Broadcast.flatten(bc)
+    __broadcast!(ret.f,dest,ret.args...)
+end
+
+@generated function __broadcast!(f, dest, as...)
     # common number of partitions
     N = npartitions(dest, as...)
 

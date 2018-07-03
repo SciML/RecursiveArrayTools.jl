@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Base.Test
+using RecursiveArrayTools, Test
 
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testva = VectorOfArray(recs)
@@ -36,7 +36,7 @@ testva[4, 9] # == testva.data[9][4]
 # convert array from VectorOfArray
 recs = [rand(10, 7) for i = 1:8]
 testva = VectorOfArray(recs)
-testa = cat(3, recs...)
+testa = cat(recs...,dims=3)
 @test convert(Array,testva) == testa
 
 recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
@@ -54,7 +54,7 @@ testva2 = similar(testva)
 testval = 3.0
 fill!(testva2, testval)
 @test all(x->(x==testval), testva2)
-testts = rand(size(testva.u))
+testts = rand(Float64, size(testva.u))
 testda = DiffEqArray(recursivecopy(testva.u), testts)
 fill!(testda, testval)
 @test all(x->(x==testval), testda)
