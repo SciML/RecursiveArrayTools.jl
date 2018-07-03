@@ -233,14 +233,19 @@ Base.show(io::IO, m::MIME"text/plain", A::ArrayPartition) = show(io, m, A.x)
 
 ## broadcasting
 
-Base.Broadcast._containertype(::Type{<:ArrayPartition}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{ArrayPartition}, ::Type) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type, ::Type{ArrayPartition}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{ArrayPartition}, ::Type{ArrayPartition}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{ArrayPartition}, ::Type{Array}) = ArrayPartition
-Base.Broadcast.promote_containertype(::Type{Array}, ::Type{ArrayPartition}) = ArrayPartition
+struct APStyle <: Broadcast.BroadcastStyle end
+Base.BroadcastStyle(::Type{<:ArrayPartition}) = Broadcast.ArrayStyle{ArrayPartition}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle{ArrayPartition},::Broadcast.ArrayStyle) = Broadcast.Style{ArrayPartition}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle,::Broadcast.ArrayStyle{ArrayPartition}) = Broadcast.Style{ArrayPartition}()
+Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}},::Type{ElType}) where ElType = similar(bc)
 
-@generated function Base.Broadcast.broadcast_c(f, ::Type{ArrayPartition}, as...)
+function Base.copy(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}})
+    ret = Broadcast.flatten(bc)
+    __broadcast(ret.f,ret.args...)
+end
+
+@generated function __broadcast(f,as...)
+
     # common number of partitions
     N = npartitions(as...)
 
@@ -249,12 +254,15 @@ Base.Broadcast.promote_containertype(::Type{Array}, ::Type{ArrayPartition}) = Ar
                        # index partitions
                        $((as[d] <: ArrayPartition ? :(as[$d].x[i]) : :(as[$d])
                           for d in 1:length(as))...)))
-
     build_arraypartition(N, expr)
 end
 
-@generated function Base.Broadcast.broadcast_c!(f, ::Type{ArrayPartition}, ::Type,
-                                     dest::ArrayPartition, as...)
+function Base.copyto!(dest::AbstractArray,bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}})
+    ret = Broadcast.flatten(bc)
+    __broadcast!(ret.f,dest,ret.args...)
+end
+
+@generated function __broadcast!(f, dest, as...)
     # common number of partitions
     N = npartitions(dest, as...)
 

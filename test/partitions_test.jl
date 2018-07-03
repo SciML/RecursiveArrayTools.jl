@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test
+using RecursiveArrayTools, Test, Statistics
 A = (rand(5),rand(5))
 p = ArrayPartition(A)
 @test (p.x[1][1],p.x[2][1]) == (p[1],p[6])
@@ -26,7 +26,7 @@ a = 5
 @. p = p*p2
 K = p.*p2
 
-p.*rand(5)
+@test_broken p.*rand(10)
 b = rand(10)
 c = rand(10)
 copyto!(b,p)

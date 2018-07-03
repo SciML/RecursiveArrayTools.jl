@@ -79,6 +79,8 @@ end
 # Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
 @inline Base.any(f, VA::AbstractVectorOfArray) = any(any(f,VA[i]) for i in eachindex(VA))
 @inline Base.all(f, VA::AbstractVectorOfArray) = all(all(f,VA[i]) for i in eachindex(VA))
+@inline Base.any(f::Function, VA::AbstractVectorOfArray) = any(any(f,VA[i]) for i in eachindex(VA))
+@inline Base.all(f::Function, VA::AbstractVectorOfArray) = all(all(f,VA[i]) for i in eachindex(VA))
 
 # conversion tools
 @deprecate vecarr_to_arr(VA::AbstractVectorOfArray) convert(Array,VA)

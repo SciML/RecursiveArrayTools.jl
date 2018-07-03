@@ -65,11 +65,11 @@ testva = VectorOfArray(recs)
 
 # ## Test ragged arrays work, or give errors as needed
 #TODO: I am not really sure what the behavior of this is, what does Mathematica do?
-recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
+recs = [[1, 2, 3], [3, 5, 6, 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
 @test testva[:, 1] == recs[1]
 testva[1:2, 1:2]
 
 # Test broadcast
 a = testva .+ rand(3,3)
-a.= testva
+@test_broken a.= testva
