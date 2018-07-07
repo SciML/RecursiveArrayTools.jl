@@ -83,8 +83,6 @@ end
 @inline Base.all(f::Function, VA::AbstractVectorOfArray) = all(all(f,VA[i]) for i in eachindex(VA))
 
 # conversion tools
-@deprecate vecarr_to_arr(VA::AbstractVectorOfArray) convert(Array,VA)
-@deprecate vecarr_to_arr{T<:AbstractArray}(VA::Vector{T}) convert(Array,VA)
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1])]
 
 # make it show just like its data
