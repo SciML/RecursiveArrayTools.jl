@@ -14,7 +14,6 @@ A = [[1 2; 3 4],[1 3;4 6],[5 6;7 8]]
 A = zeros(5,5)
 recursive_unitless_eltype(A) == Float64
 
-#=
 using Unitful
 A = zeros(5,5)*1u"kg"
 recursive_unitless_eltype(A) == Float64
@@ -28,4 +27,3 @@ AofuSA = [@SVector [2.0u"kg",3.0u"kg"] for i in 1:5]
 recursive_unitless_eltype(AofuSA) == SVector{2,Float64}
 
 @inferred recursive_unitless_eltype(AofuSA)
-=#

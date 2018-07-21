@@ -49,9 +49,9 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @inferred similar(x, Int, (2, 2))
 @inferred similar(x, Int, Float64)
 
-# zeros
-@inferred zeros(x)
-@inferred zeros(x, (2,2))
+# zero
+@inferred zero(x)
+@inferred zero(x, (2,2))
 @inferred zero(x)
 
 # ones

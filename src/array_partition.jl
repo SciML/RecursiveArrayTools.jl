@@ -49,12 +49,11 @@ end
 Base.copy(A::ArrayPartition{T,S}) where {T,S} = ArrayPartition{T,S}(copy.(A.x))
 
 ## zeros
-
 Base.zero(A::ArrayPartition{T,S}) where {T,S} = ArrayPartition{T,S}(zero.(A.x))
-Base.zeros(A::ArrayPartition{T,S}) where {T,S} = ArrayPartition{T,S}(zeros.(A.x))
-
 # ignore dims since array partitions are vectors
-Base.zeros(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = zeros(A)
+Base.zero(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = zero(A)
+
+
 
 ## ones
 

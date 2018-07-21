@@ -106,7 +106,7 @@ Base.@pure recursive_unitless_eltype(a::Type{T}) where {T<:Number} = typeof(one(
 
 recursive_mean(x...) = mean(x...)
 function recursive_mean(vecvec::Vector{T}) where T<:AbstractArray
-  out = zeros(vecvec[1])
+  out = zero(vecvec[1])
   for i in eachindex(vecvec)
     out+= vecvec[i]
   end
