@@ -47,9 +47,9 @@ end
 
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray
-Base.start(VA::AbstractVectorOfArray{T, N}) where {T, N} = 1
-Base.next(VA::AbstractVectorOfArray{T, N}, state) where {T, N} = (VA[state], state + 1)
-Base.done(VA::AbstractVectorOfArray{T, N}, state) where {T, N} = state >= length(VA.u) + 1
+function Base.iterate(VA::AbstractVectorOfArray,state=1)
+  state >= length(VA.u) + 1 ? nothing : (VA[state], state + 1)
+end
 tuples(VA::DiffEqArray) = tuple.(VA.t,VA.u)
 
 # Growing the array simply adds to the container vector
@@ -84,6 +84,7 @@ end
 
 # conversion tools
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1])]
+Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array,VA)) # Allocates
 
 # make it show just like its data
 Base.show(io::IO, x::AbstractVectorOfArray) = show(io, x.u)
