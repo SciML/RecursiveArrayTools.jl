@@ -42,7 +42,6 @@ Base.similar(A::ArrayPartition, ::Type{T}, dims::NTuple{N,Int}) where {T,N} = si
 
     types = (T, S, parameter.(R)...) # new types
     expr = :(similar(A.x[i], ($types)[i]))
-
     build_arraypartition(N, expr)
 end
 
@@ -235,8 +234,8 @@ Base.show(io::IO, m::MIME"text/plain", A::ArrayPartition) = show(io, m, A.x)
 
 struct APStyle <: Broadcast.BroadcastStyle end
 Base.BroadcastStyle(::Type{<:ArrayPartition}) = Broadcast.ArrayStyle{ArrayPartition}()
-Base.BroadcastStyle(::Broadcast.ArrayStyle{ArrayPartition},::Broadcast.ArrayStyle) = Broadcast.Style{ArrayPartition}()
-Base.BroadcastStyle(::Broadcast.ArrayStyle,::Broadcast.ArrayStyle{ArrayPartition}) = Broadcast.Style{ArrayPartition}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle{ArrayPartition},::Broadcast.ArrayStyle) = Broadcast.ArrayStyle{ArrayPartition}()
+Base.BroadcastStyle(::Broadcast.ArrayStyle,::Broadcast.ArrayStyle{ArrayPartition}) = Broadcast.ArrayStyle{ArrayPartition}()
 Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}},::Type{ElType}) where ElType = similar(bc)
 
 function Base.copy(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{ArrayPartition}})
