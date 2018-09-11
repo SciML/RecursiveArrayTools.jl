@@ -96,7 +96,9 @@ recursive_one(a::T) where {T<:Number} = one(a)
 recursive_bottom_eltype(a) = recursive_bottom_eltype(eltype(a))
 recursive_bottom_eltype(a::Type{T}) where {T<:Number} = eltype(a)
 
-recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(eltype(a))
+recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(typeof(a))
+recursive_unitless_bottom_eltype(a::Type{T}) where T = recursive_unitless_bottom_eltype(eltype(a))
+recursive_unitless_bottom_eltype(a::Type{T}) where {T<:AbstractArray} = typeof(one(eltype(a)))
 recursive_unitless_bottom_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
 
 Base.@pure recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
