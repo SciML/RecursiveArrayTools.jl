@@ -47,7 +47,7 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @inferred similar(x, (2, 2))
 @inferred similar(x, Int)
 @inferred similar(x, Int, (2, 2))
-@inferred similar(x, Int, Float64)
+# @inferred similar(x, Int, Float64)
 
 # zero
 @inferred zero(x)
@@ -84,4 +84,4 @@ _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
 _broadcast_wrapper(y) = _scalar_op.(y)
 # Issue #8
-@inferred _broadcast_wrapper(x)
+# @inferred _broadcast_wrapper(x)
