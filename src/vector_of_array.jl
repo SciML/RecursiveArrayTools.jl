@@ -101,6 +101,9 @@ end
 @recipe function f(VA::AbstractDiffEqArray)
   VA.t,VA'
 end
+@recipe function f(VA::DiffEqArray{T,1}) where {T}
+  VA.t,VA.u
+end
 
 # Broadcast
 
