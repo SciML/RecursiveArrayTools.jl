@@ -64,7 +64,7 @@ end
 
 @inline function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
-    if T <: Number || T <: SArray || (T <: FieldVector && !is_mutable_type(T)) || !perform_copy
+      if T <: Number || T <: SArray || T <: LVector{E,<:SArray,S} where {E,S} || (T <: FieldVector && !is_mutable_type(T)) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
       #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
@@ -73,13 +73,13 @@ end
     end
   else
       if perform_copy
-        if typeof(x) <: Array && !(eltype(x) <: Number)
+        if typeof(x) <: Array && !(eltype(x) <: Union{SArray,Number,LVector{E,<:SArray,S} where {E,S}})
           push!(a,recursivecopy(x))
+        elseif typeof(x) <: Union{SArray,Number,LVector{E,<:SArray,S} where {E,S}} # Only immutable
+          push!(a,x)
         elseif typeof(x) <: Array || typeof(x) <: ArrayPartition ||
              typeof(x) <: AbstractVectorOfArray
           push!(a,copy(x))
-        elseif typeof(x) <: Union{SVector,SMatrix,SArray,Number} # Only immutable
-          push!(a,x)
         else
           push!(a,deepcopy(x))
         end

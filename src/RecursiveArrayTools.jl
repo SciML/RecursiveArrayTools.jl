@@ -2,7 +2,7 @@ __precompile__()
 
 module RecursiveArrayTools
 
-  using Requires, RecipesBase, StaticArrays, Statistics
+  using Requires, RecipesBase, StaticArrays, Statistics, LabelledArrays
 
   abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
   abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
