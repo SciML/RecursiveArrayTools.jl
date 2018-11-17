@@ -15,7 +15,7 @@ function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
 end
 
 function recursivecopy(a::AbstractArray{T,N}) where {T<:AbstractArray,N}
-  [recursivecopy(x) for x in a]
+  map(recursivecopy,a)
 end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:StaticArray,T2<:StaticArray,N}
@@ -62,7 +62,7 @@ function vecvecapply(f,v::T) where T<:Number
   f(v)
 end
 
-@inline function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
+function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
     if T <: Number || T <: SArray || (T <: FieldVector && !is_mutable_type(T)) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
