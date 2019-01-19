@@ -76,6 +76,12 @@ function Base.fill!(VA::AbstractVectorOfArray, x)
     return VA
 end
 
+function Base._reshape(parent::VectorOfArray, dims::Base.Dims)
+    n = prod(size(parent))
+    prod(dims) == n || _throw_dmrs(n, "size", dims)
+    Base.__reshape((parent, IndexStyle(parent)), dims)
+end
+
 # Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
 @inline Base.any(f, VA::AbstractVectorOfArray) = any(any(f,VA[i]) for i in eachindex(VA))
 @inline Base.all(f, VA::AbstractVectorOfArray) = all(all(f,VA[i]) for i in eachindex(VA))
