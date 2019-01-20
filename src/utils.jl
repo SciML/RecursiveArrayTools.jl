@@ -10,6 +10,8 @@ function recursivecopy(a)
   deepcopy(a)
 end
 
+recursivecopy(a::Number) = copy(a)
+
 function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
   copy(a)
 end
