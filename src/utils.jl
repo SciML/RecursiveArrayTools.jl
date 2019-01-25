@@ -56,7 +56,7 @@ end
 
 function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
-    if !ismutable(T) || !perform_copy
+    if !ArrayInterface.ismutable(T) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
       #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
