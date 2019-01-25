@@ -28,7 +28,8 @@ DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size
 # unlike an true AbstractArray
 @inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) where {T, N} = VA.u[I]
 @inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon) where {T, N} = VA.u[I]
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VA.u[I]
+@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
+@inline Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
 @inline Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
 @inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int) where {T, N} = VA.u[I] = v
 @inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Colon) where {T, N} = VA.u[I] = v
