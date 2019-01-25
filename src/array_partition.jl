@@ -186,6 +186,7 @@ function recursivecopy!(A::ArrayPartition, B::ArrayPartition)
     recursivecopy!(a, b)
   end
 end
+recursivecopy(A::ArrayPartition) = ArrayPartition(copy.(A.x))
 
 recursive_mean(A::ArrayPartition) = mean((recursive_mean(x) for x in A.x))
 
@@ -227,7 +228,7 @@ combine_styles(args::Tuple{Any})      = Broadcast.result_style(Broadcast.Broadca
 combine_styles(args::Tuple{Any, Any}) = Broadcast.result_style(Broadcast.BroadcastStyle(args[1]), Broadcast.BroadcastStyle(args[2]))
 @inline combine_styles(args::Tuple)   = Broadcast.result_style(Broadcast.BroadcastStyle(args[1]), combine_styles(Base.tail(args)))
 
-function Broadcast.BroadcastStyle(::Type{ArrayPartition{T,S}}) where {T, S} 
+function Broadcast.BroadcastStyle(::Type{ArrayPartition{T,S}}) where {T, S}
     Style = combine_styles((S.parameters...,))
     ArrayPartitionStyle(Style)
 end
@@ -270,7 +271,7 @@ _npartitions(args::Tuple{}) = 0
 @inline unpack(bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 unpack(x,::Any) = x
 unpack(x::ArrayPartition, i) = x.x[i]
- 
+
 @inline unpack_args(i, args::Tuple) = (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
 unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
 unpack_args(::Any, args::Tuple{}) = ()

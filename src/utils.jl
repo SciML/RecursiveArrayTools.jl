@@ -1,17 +1,7 @@
-"""
-    is_mutable_type(x::DataType)
-
-Query whether a type is mutable or not, see
-https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19.
-"""
-Base.@pure is_mutable_type(x::DataType) = x.mutable
-
 function recursivecopy(a)
   deepcopy(a)
 end
-
-recursivecopy(a::Number) = copy(a)
-
+recursivecopy(a::Union{SVector,SMatrix,SArray,Number}) = copy(a)
 function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
   copy(a)
 end
@@ -66,7 +56,7 @@ end
 
 function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
-    if T <: Number || T <: SArray || (T <: FieldVector && !is_mutable_type(T)) || !perform_copy
+    if !ismutable(T) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
       #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
@@ -75,16 +65,7 @@ function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy
     end
   else
       if perform_copy
-        if typeof(x) <: Array && !(eltype(x) <: Number)
-          push!(a,recursivecopy(x))
-        elseif typeof(x) <: Array || typeof(x) <: ArrayPartition ||
-             typeof(x) <: AbstractVectorOfArray
-          push!(a,copy(x))
-        elseif typeof(x) <: Union{SVector,SMatrix,SArray,Number} # Only immutable
-          push!(a,x)
-        else
-          push!(a,deepcopy(x))
-        end
+        push!(a,recursivecopy(x))
       else
         push!(a,x)
       end

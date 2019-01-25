@@ -66,6 +66,7 @@ end
 
 # Tools for creating similar objects
 @inline Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T} = VectorOfArray([similar(VA[i], T) for i in eachindex(VA)])
+recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
