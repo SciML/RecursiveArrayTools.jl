@@ -20,7 +20,7 @@ testva = VectorOfArray(recs)
 @test testva[1] == testa[:, 1]
 @test testva[:] == recs
 @test testva[end] == testa[:, end]
-@test testva[2:end] == [recs[i] for i = 2:length(recs)]
+@test testva[2:end] == VectorOfArray([recs[i] for i = 2:length(recs)])
 
 # ## (Int, Int)
 @test testa[5, 4] == testva[5, 4]
