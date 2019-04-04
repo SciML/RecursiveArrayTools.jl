@@ -28,7 +28,7 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
 end
 
 function vecvec_to_mat(vecvec)
-  mat = Matrix{eltype(eltype(vecvec))}(length(vecvec),length(vecvec[1]))
+  mat = Matrix{eltype(eltype(vecvec))}(undef, length(vecvec),length(vecvec[1]))
   for i in 1:length(vecvec)
     mat[i,:] = vecvec[i]
   end
