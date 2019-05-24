@@ -1,7 +1,11 @@
+abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
+abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
+
 # Based on code from M. Bauman Stackexchange answer + Gitter discussion
 mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
 end
+
 # VectorOfArray with an added series for time
 mutable struct DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
@@ -115,25 +119,42 @@ end
 
 # Broadcast
 
-#add_idxs(x,expr) = expr
-#add_idxs{T<:AbstractVectorOfArray}(::Type{T},expr) = :($(expr)[i])
-#add_idxs{T<:AbstractArray}(::Type{Vector{T}},expr) = :($(expr)[i])
-#=
-@generated function Base.broadcast!(f,A::AbstractVectorOfArray,B...)
-  exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
-  :(for i in eachindex(A)
-    broadcast!(f,A[i],$(exs...))
-  end)
+Base.BroadcastStyle(::Type{<:AbstractVectorOfArray}) = Broadcast.ArrayStyle{AbstractVectorOfArray}()
+
+@inline function Base.copy(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{AbstractVectorOfArray}})
+    N = npartitions(bc)
+    @inline function f(i)
+        copy(col_unpack(bc, i))
+    end
+    @show col_unpack(bc, 1)
+    @show f(1)
+    VectorOfArray(map(f,1:N))
 end
 
-@generated function Base.broadcast(f,B::Union{Number,AbstractVectorOfArray}...)
-  arr_idx = 0
-  for (i,b) in enumerate(B)
-    if b <: ArrayPartition
-      arr_idx = i
-      break
+@inline function Base.copyto!(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted)
+    N = npartitions(dest, bc)
+    for i in 1:N
+        copyto!(dest.u[i], col_unpack(bc, i))
     end
-  end
-  :(A = similar(B[$arr_idx]); broadcast!(f,A,B...); A)
+    dest
 end
-=#
+
+"""
+    npartitions(A...)
+
+Retrieve number of partitions of `VectorOfArray` in `A...`, or throw an error if there are
+`VectorOfArray` with a different number of partitions.
+"""
+npartitions(A::AbstractVectorOfArray) = length(A.u)
+
+# drop axes because it is easier to recompute
+@inline col_unpack(bc::Broadcast.Broadcasted{Style}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, col_unpack_args(i, bc.args))
+@inline col_unpack(bc::Broadcast.ArrayStyle{AbstractVectorOfArray}, i) = Broadcast.ArrayStyle{AbstractVectorOfArray}(bc.f, col_unpack_args(i, bc.args))
+col_unpack(x::AbstractVectorOfArray, i) = x.u[i]
+col_unpack(x,i) = x
+col_unpack(x::Matrix,i) where {T,N} = @view x[:,i]
+col_unpack(x::Array{T,N},i) where {T,N} = view(x,ntuple(x->Colon(),N-1)...,i)
+
+@inline col_unpack_args(i, args::Tuple) = (col_unpack(args[1], i), col_unpack_args(i, Base.tail(args))...)
+col_unpack_args(i, args::Tuple{Any}) = (col_unpack(args[1], i),)
+col_unpack_args(::Any, args::Tuple{}) = ()

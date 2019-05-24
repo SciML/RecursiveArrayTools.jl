@@ -1,4 +1,4 @@
-using RecursiveArrayTools
+using RecursiveArrayTools, Test
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -72,4 +72,4 @@ testva[1:2, 1:2]
 
 # Test broadcast
 a = testva .+ rand(3,3)
-@test_broken a.= testva
+@test_broken a .= testva

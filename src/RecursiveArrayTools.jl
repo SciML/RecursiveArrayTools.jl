@@ -4,10 +4,8 @@ module RecursiveArrayTools
 
   using Requires, RecipesBase, StaticArrays, Statistics,
         ArrayInterface
-
-  abstract type AbstractVectorOfArray{T, N} <: AbstractArray{T, N} end
-  abstract type AbstractDiffEqArray{T, N} <: AbstractVectorOfArray{T, N} end
-
+        
+  include("broadcast_shared.jl")
   include("utils.jl")
   include("vector_of_array.jl")
   include("array_partition.jl")
