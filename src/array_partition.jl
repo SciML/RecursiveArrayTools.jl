@@ -110,6 +110,7 @@ function Base.copyto!(dest::Array,A::ArrayPartition)
         dest[cur:(cur+length(A.x[i])-1)] .= A.x[i]
         cur += length(A.x[i])
     end
+    dest
 end
 
 function Base.copyto!(A::ArrayPartition,src::ArrayPartition)
@@ -119,6 +120,7 @@ function Base.copyto!(A::ArrayPartition,src::ArrayPartition)
         A.x[i] .= @view(src[cur:(cur+length(A.x[i])-1)])
         cur += length(A.x[i])
     end
+    dest
 end
 
 ## indexing
