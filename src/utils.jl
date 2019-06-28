@@ -76,8 +76,7 @@ end
 recursive_one(a) = recursive_one(a[1])
 recursive_one(a::T) where {T<:Number} = one(a)
 
-recursive_bottom_eltype(a) = recursive_bottom_eltype(eltype(a))
-recursive_bottom_eltype(a::Type{T}) where {T<:Number} = eltype(a)
+recursive_bottom_eltype(a) = a == eltype(a) ? a : recursive_bottom_eltype(eltype(a))
 
 recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(typeof(a))
 recursive_unitless_bottom_eltype(a::Type{T}) where T = recursive_unitless_bottom_eltype(eltype(a))
