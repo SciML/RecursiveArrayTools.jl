@@ -88,6 +88,12 @@ recursive_unitless_eltype(a::Type{T}) where {T<:StaticArray} = similar_type(a,re
 recursive_unitless_eltype(a::Type{T}) where {T<:Array} = Array{recursive_unitless_eltype(eltype(a)),ndims(a)}
 recursive_unitless_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
 
+@require ApproxFun="28f2ccd6-bb30-5033-b560-165f7b14dc2f" begin
+    RecursiveArrayTools.recursive_unitless_eltype(a::ApproxFun.Fun) = typeof(a)
+    RecursiveArrayTools.recursive_unitless_bottom_eltype(a::ApproxFun.Fun) = recursive_unitless_bottom_eltype(ApproxFun.coefficients(a))
+    RecursiveArrayTools.recursive_bottom_eltype(a::ApproxFun.Fun) = recursive_bottom_eltype(ApproxFun.coefficients(a))
+end
+
 recursive_mean(x...) = mean(x...)
 function recursive_mean(vecvec::Vector{T}) where T<:AbstractArray
   out = zero(vecvec[1])
