@@ -11,7 +11,7 @@ module RecursiveArrayTools
   include("utils.jl")
   include("vector_of_array.jl")
   include("array_partition.jl")
-  include("juno_rendering.jl")
+  include("init.jl")
 
   export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
          vecarr_to_arr, vecarr_to_vectors, tuples
@@ -21,5 +21,6 @@ module RecursiveArrayTools
          recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
   export ArrayPartition
+
 
 end # module
