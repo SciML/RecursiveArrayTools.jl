@@ -1,0 +1,21 @@
+name = "RecursiveArrayTools"
+uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
+authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
+version = "0.21.0"
+
+[deps]
+ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+Requires = "ae029012-a4dd-5104-9daa-d747884805df"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[compat]
+ArrayInterface = ">= 0.1.0"
+RecipesBase = ">= 0.1.0"
+julia = "1"
+
+[extras]
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[targets]
+test = ["Test", "Unitful"]
