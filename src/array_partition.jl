@@ -107,18 +107,25 @@ function Base.copyto!(dest::Array,A::ArrayPartition)
     @assert length(dest) == length(A)
     cur = 1
     @inbounds for i in 1:length(A.x)
-        dest[cur:(cur+length(A.x[i])-1)] .= A.x[i]
-        cur += length(A.x[i])
+      dest[cur:(cur+length(A.x[i])-1)] .= vec(A.x[i])
+      cur += length(A.x[i])
     end
     dest
 end
 
 function Base.copyto!(A::ArrayPartition,src::ArrayPartition)
     @assert length(src) == length(A)
-    cur = 1
-    @inbounds for i in 1:length(A.x)
-        A.x[i] .= @view(src[cur:(cur+length(A.x[i])-1)])
-        cur += length(A.x[i])
+    if size.(A.x) == size.(src.x)
+      A .= src
+    else
+      cnt = 0
+      for i in eachindex(A.x)
+        x = A.x[i]
+        for k in eachindex(x)
+          cnt += 1
+          x[k] = src[cnt]
+        end
+      end
     end
     A
 end

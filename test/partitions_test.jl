@@ -85,3 +85,22 @@ _scalar_op(y) = y + 1
 _broadcast_wrapper(y) = _scalar_op.(y)
 # Issue #8
 # @inferred _broadcast_wrapper(x)
+
+#### testing copyto!
+S = [
+     ((1,),(2,)) => ((1,),(2,)),
+     ((3,2),(2,)) => ((3,2),(2,)),
+     ((3,2),(2,)) => ((3,),(3,),(2,))
+    ]
+
+for sizes in S
+  x = ArrayPartition( randn.(sizes[1]) ) 
+  y = ArrayPartition( zeros.(sizes[2]) )
+  y_array = zeros(length(x))
+  copyto!(y,x)           #testing Base.copyto!(dest::ArrayPartition,A::ArrayPartition)
+  copyto!(y_array,x)     #testing Base.copyto!(dest::Array,A::ArrayPartition)
+  @test all([x[i] == y[i] for i in eachindex(x)])
+  @test all([x[i] == y_array[i] for i in eachindex(x)])
+end
+  
+
