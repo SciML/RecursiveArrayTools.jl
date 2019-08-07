@@ -103,7 +103,7 @@ end
 Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
 Base.any(f,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
 Base.any(f::Function,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
-function Base.copyto!(dest::Array,A::ArrayPartition)
+function Base.copyto!(dest::AbstractArray,A::ArrayPartition)
     @assert length(dest) == length(A)
     cur = 1
     @inbounds for i in 1:length(A.x)
