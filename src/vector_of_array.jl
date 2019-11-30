@@ -94,6 +94,14 @@ end
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1])]
 Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array,VA)) # Allocates
 
+# statistics
+Statistics.mean(VA::AbstractVectorOfArray;kwargs...) = mean(Array(VA);kwargs...)
+Statistics.median(VA::AbstractVectorOfArray;kwargs...) = median(Array(VA);kwargs...)
+Statistics.std(VA::AbstractVectorOfArray;kwargs...) = std(Array(VA);kwargs...)
+Statistics.var(VA::AbstractVectorOfArray;kwargs...) = var(Array(VA);kwargs...)
+Statistics.cov(VA::AbstractVectorOfArray;kwargs...) = cov(Array(VA);kwargs...)
+Statistics.cor(VA::AbstractVectorOfArray;kwargs...) = cor(Array(VA);kwargs...)
+
 # make it show just like its data
 Base.show(io::IO, x::AbstractVectorOfArray) = show(io, x.u)
 Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray) = show(io, m, x.u)
