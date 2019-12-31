@@ -16,7 +16,6 @@ DiffEqArray(vec::AbstractVector{T}, ts, dims::NTuple{N}) where {T, N} = DiffEqAr
 # Assume that the first element is representative all all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)))
 
-
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
 @inline Base.lastindex(VA::AbstractVectorOfArray) = lastindex(VA.u)
@@ -95,12 +94,17 @@ vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i,:] for i in eachindex(VA[1]
 Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array,VA)) # Allocates
 
 # statistics
-Statistics.mean(VA::AbstractVectorOfArray;kwargs...) = mean(Array(VA);kwargs...)
-Statistics.median(VA::AbstractVectorOfArray;kwargs...) = median(Array(VA);kwargs...)
-Statistics.std(VA::AbstractVectorOfArray;kwargs...) = std(Array(VA);kwargs...)
-Statistics.var(VA::AbstractVectorOfArray;kwargs...) = var(Array(VA);kwargs...)
-Statistics.cov(VA::AbstractVectorOfArray;kwargs...) = cov(Array(VA);kwargs...)
-Statistics.cor(VA::AbstractVectorOfArray;kwargs...) = cor(Array(VA);kwargs...)
+@inline Base.sum(f, VA::AbstractVectorOfArray) = sum(f,Array(VA))
+@inline Base.sum(VA::AbstractVectorOfArray;kwargs...) = sum(Array(VA);kwargs...)
+@inline Base.prod(f, VA::AbstractVectorOfArray) = prod(f,Array(VA))
+@inline Base.prod(VA::AbstractVectorOfArray;kwargs...) = prod(Array(VA);kwargs...)
+
+@inline Statistics.mean(VA::AbstractVectorOfArray;kwargs...) = mean(Array(VA);kwargs...)
+@inline Statistics.median(VA::AbstractVectorOfArray;kwargs...) = median(Array(VA);kwargs...)
+@inline Statistics.std(VA::AbstractVectorOfArray;kwargs...) = std(Array(VA);kwargs...)
+@inline Statistics.var(VA::AbstractVectorOfArray;kwargs...) = var(Array(VA);kwargs...)
+@inline Statistics.cov(VA::AbstractVectorOfArray;kwargs...) = cov(Array(VA);kwargs...)
+@inline Statistics.cor(VA::AbstractVectorOfArray;kwargs...) = cor(Array(VA);kwargs...)
 
 # make it show just like its data
 Base.show(io::IO, x::AbstractVectorOfArray) = show(io, x.u)
