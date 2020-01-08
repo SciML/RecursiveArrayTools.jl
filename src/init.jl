@@ -16,5 +16,7 @@ function __init__()
       vecs = vec.(VA.u)
       return CuArrays.CuArray(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
     end
+
+    Base.convert(::Type{<:CuArrays.CuArray},VA::AbstractVectorOfArray) = CuArrays.CuArray(VA)
   end
 end
