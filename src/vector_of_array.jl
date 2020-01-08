@@ -1,11 +1,17 @@
 # Based on code from M. Bauman Stackexchange answer + Gitter discussion
-mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N}
+mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
 end
 # VectorOfArray with an added series for time
-mutable struct DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N}
+mutable struct DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N, A}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
   t::B
+end
+
+Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
+function Base.Array(VA::AbstractVectorOfArray)
+  vecs = vec.(VA.u)
+  Array(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
 end
 
 VectorOfArray(vec::AbstractVector{T}, dims::NTuple{N}) where {T, N} = VectorOfArray{eltype(T), N, typeof(vec)}(vec)

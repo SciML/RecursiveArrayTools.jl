@@ -39,9 +39,9 @@ testva = VectorOfArray(recs)
 testa = cat(recs...,dims=3)
 @test convert(Array,testva) == testa
 
-recs = [[1, 2, 3], [3 5; 6 7], [8, 9, 10, 11]]
+recs = [[1 2; 3 4], [3 5; 6 7], [8 9; 10 11]]
 testva = VectorOfArray(recs)
-@test size(convert(Array,testva)) == (3,3)
+@test size(convert(Array,testva)) == (2,2,3)
 
 # create similar VectorOfArray
 recs = [rand(6) for i = 1:4]

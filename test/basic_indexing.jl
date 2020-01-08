@@ -6,10 +6,13 @@ testa = cat(recs..., dims=2)
 testva = VectorOfArray(recs)
 t = [1,2,3]
 diffeq = DiffEqArray(recs,t)
+@test Array(testva) == [1 4 7
+                        2 5 8
+                        3 6 9]
 
-testa[1:2, 1:2] == [1 4; 2 5]
-testva[1:2, 1:2] == [1 4; 2 5]
-testa[1:2, 1:2] == [1 4; 2 5]
+@test testa[1:2, 1:2] == [1 4; 2 5]
+@test testva[1:2, 1:2] == [1 4; 2 5]
+@test testa[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2
 recs = [rand(8) for i in 1:10]
@@ -73,3 +76,7 @@ testva[1:2, 1:2]
 # Test broadcast
 a = testva .+ rand(3,3)
 @test_broken a.= testva
+
+recs = [rand(2,2) for i in 1:5]
+testva = VectorOfArray(recs)
+@test Array(testva) isa Array{Float64,3}
