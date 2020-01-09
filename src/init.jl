@@ -10,4 +10,13 @@ function __init__()
     RecursiveArrayTools.recursive_unitless_bottom_eltype(a::ApproxFun.Fun) = recursive_unitless_bottom_eltype(ApproxFun.coefficients(a))
     RecursiveArrayTools.recursive_bottom_eltype(a::ApproxFun.Fun) = recursive_bottom_eltype(ApproxFun.coefficients(a))
   end
+
+  @require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
+    function CuArrays.CuArray(VA::AbstractVectorOfArray)
+      vecs = vec.(VA.u)
+      return CuArrays.CuArray(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
+    end
+
+    Base.convert(::Type{<:CuArrays.CuArray},VA::AbstractVectorOfArray) = CuArrays.CuArray(VA)
+  end
 end
