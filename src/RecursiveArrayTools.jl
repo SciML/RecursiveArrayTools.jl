@@ -3,7 +3,7 @@ __precompile__()
 module RecursiveArrayTools
 
   using Requires, RecipesBase, StaticArrays, Statistics,
-        ArrayInterface
+        ArrayInterface, ZygoteRules
 
   abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
   abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
@@ -12,6 +12,7 @@ module RecursiveArrayTools
   include("vector_of_array.jl")
   include("array_partition.jl")
   include("init.jl")
+  include("zygote.jl")
 
   export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
          vecarr_to_arr, vecarr_to_vectors, tuples
