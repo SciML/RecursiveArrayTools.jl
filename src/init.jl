@@ -19,4 +19,12 @@ function __init__()
 
     Base.convert(::Type{<:CuArrays.CuArray},VA::AbstractVectorOfArray) = CuArrays.CuArray(VA)
   end
+
+  @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
+    function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:Tracker.TrackedArray,T2<:Tracker.TrackedArray,N}
+      @inbounds for i in eachindex(a)
+        b[i] = copy(a[i])
+      end
+    end
+  end
 end
