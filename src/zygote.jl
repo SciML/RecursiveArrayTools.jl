@@ -11,7 +11,7 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i, j...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[i,j...] = Δ
-    (Δ′, map(_ -> nothing, i)...)
+    (Δ′, i,map(_ -> nothing, j)...)
   end
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
