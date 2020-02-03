@@ -98,6 +98,8 @@ function Base.:\(A::Number, B::ArrayPartition)
     Base.broadcast(/, B, A)
 end
 
+Base.:(==)(A::ArrayPartition,B::ArrayPartition) = A.x == B.x
+
 ## Functional Constructs
 
 Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
