@@ -15,12 +15,14 @@ function Base.Array(VA::AbstractVectorOfArray)
 end
 
 VectorOfArray(vec::AbstractVector{T}, dims::NTuple{N}) where {T, N} = VectorOfArray{eltype(T), N, typeof(vec)}(vec)
-# Assume that the first element is representative all all other elements
+# Assume that the first element is representative of all other elements
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
+VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT<:AbstractArray{T, N}} = VectorOfArray{T, N+1, typeof(vec)}(vec)
 
 DiffEqArray(vec::AbstractVector{T}, ts, dims::NTuple{N}) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts)}(vec, ts)
-# Assume that the first element is representative all all other elements
+# Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)))
+DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts)}(vec, ts)
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
