@@ -68,3 +68,9 @@ testval1 = 4
 testval2 = 17
 @test any(x->(x==testval1), testva)
 @test !any(x->(x==testval2), testda)
+
+# check creation from empty arrays
+emptyva = VectorOfArray(Array{Vector{Float64}}([]))
+@test isempty(emptyva)
+emptyda = DiffEqArray(Array{Vector{Float64}}([]), Vector{Float64}())
+@test isempty(emptyda)
