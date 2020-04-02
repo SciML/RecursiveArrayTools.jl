@@ -1,7 +1,6 @@
 ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
-    Δ′ = Union{Nothing, eltype(VA.u)}[nothing for x in VA.u]
-    Δ′[i] = Δ
+    Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
     (Δ′,nothing)
   end
   VA[i],AbstractVectorOfArray_getindex_adjoint
