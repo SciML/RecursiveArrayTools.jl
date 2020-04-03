@@ -9,6 +9,7 @@ mutable struct DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N, A}
 end
 
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
+Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:Number}} = VA.u
 function Base.Array(VA::AbstractVectorOfArray)
   vecs = vec.(VA.u)
   Array(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
