@@ -8,11 +8,11 @@ A = randn(MersenneTwister(123), n+m, n+m)
 
 for T in (UpperTriangular,)
     B = T(A)
-    @test B*Array(FF \ b) ≈ b
+    @test B*Array(B \ b) ≈ b
     bbb = copy(b)
-    @test ldiv!(bbb, FF, b) === bbb
+    @test ldiv!(bbb, B, b) === bbb
     copyto!(bbb, b)
-    @test ldiv!(FF, bbb) === bbb
+    @test ldiv!(B, bbb) === bbb
     @test B*Array(bbb) ≈ b
 end
 
