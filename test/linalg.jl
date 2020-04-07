@@ -6,7 +6,7 @@ b = ArrayPartition(bb)
 @test Array(b) == collect(b) == vcat(bb...)
 A = randn(MersenneTwister(123), n+m, n+m)
 
-for T in (UpperTriangular,)
+for T in (UpperTriangular, UnitUpperTriangular)
     B = T(A)
     @test B*Array(B \ b) ≈ b
     bbb = copy(b)

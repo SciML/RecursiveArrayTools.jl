@@ -315,11 +315,12 @@ end
 # [U11  U12  U13]   [ b1 ]
 # [ 0   U22  U23] \ [ b2 ]
 # [ 0    0   U33]   [ b3 ]
-function LinearAlgebra.ldiv!(A::UpperTriangular, b::ArrayPartition)
+function LinearAlgebra.ldiv!(A::T, b::ArrayPartition) where T<:Union{UnitUpperTriangular,UpperTriangular}
+    A = A.data
     n = npartitions(b)
     lens = map(length, b.x)
     @inbounds for j in n:-1:1
-        Ajj = UpperTriangular(getblock(A, lens, j, j))
+        Ajj = T(getblock(A, lens, j, j))
         xj = ldiv!(Ajj, b.x[j])
         for i in j-1:-1:1
             Aij = getblock(A, lens, i, j)
