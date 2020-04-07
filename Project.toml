@@ -1,7 +1,7 @@
 name = "RecursiveArrayTools"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.3.0"
+version = "2.3.1"
 
 [deps]
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
@@ -25,6 +25,7 @@ NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [targets]
-test = ["NLsolve", "OrdinaryDiffEq", "Test", "Unitful"]
+test = ["NLsolve", "OrdinaryDiffEq", "Test", "Unitful", "Random"]
