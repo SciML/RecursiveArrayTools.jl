@@ -26,7 +26,21 @@ a = 5
 @. p = p*p2
 K = p.*p2
 
-@test_broken p.*rand(10)
+x = rand(10)
+y = p.*x
+@test y[1:5] == p.x[1] .* x[1:5]
+@test y[6:10] == p.x[2] .* x[6:10]
+y = p.*x'
+for i in 1:10
+  @test y[1:5,i] == p.x[1] .* x[i]
+  @test y[6:10,i] == p.x[2] .* x[i]
+end
+y = p .* p'
+@test y[1:5,1:5] == p.x[1] .* p.x[1]'
+@test y[6:10,6:10] == p.x[2] .* p.x[2]'
+@test y[1:5,6:10] == p.x[1] .* p.x[2]'
+@test y[6:10,1:5] == p.x[2] .* p.x[1]'
+
 b = rand(10)
 c = rand(10)
 copyto!(b,p)
@@ -94,7 +108,7 @@ S = [
     ]
 
 for sizes in S
-  x = ArrayPartition( randn.(sizes[1]) ) 
+  x = ArrayPartition( randn.(sizes[1]) )
   y = ArrayPartition( zeros.(sizes[2]) )
   y_array = zeros(length(x))
   copyto!(y,x)           #testing Base.copyto!(dest::ArrayPartition,A::ArrayPartition)
@@ -102,5 +116,3 @@ for sizes in S
   @test all([x[i] == y[i] for i in eachindex(x)])
   @test all([x[i] == y_array[i] for i in eachindex(x)])
 end
-  
-

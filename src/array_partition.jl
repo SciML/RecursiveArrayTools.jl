@@ -233,6 +233,8 @@ ArrayPartitionStyle(::Val{N}) where N = ArrayPartitionStyle{Broadcast.DefaultArr
 function Broadcast.BroadcastStyle(::ArrayPartitionStyle{AStyle}, ::ArrayPartitionStyle{BStyle}) where {AStyle, BStyle}
     ArrayPartitionStyle(Broadcast.BroadcastStyle(AStyle(), BStyle()))
 end
+Broadcast.BroadcastStyle(::ArrayPartitionStyle, ::Broadcast.DefaultArrayStyle{0}) = Broadcast.DefaultArrayStyle{1}()
+Broadcast.BroadcastStyle(::ArrayPartitionStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
 
 combine_styles(args::Tuple{})         = Broadcast.DefaultArrayStyle{0}()
 combine_styles(args::Tuple{Any})      = Broadcast.result_style(Broadcast.BroadcastStyle(args[1]))
@@ -252,7 +254,7 @@ end
     ArrayPartition(f, N)
 end
 
-@inline function Base.copyto!(dest::ArrayPartition, bc::Broadcast.Broadcasted)
+@inline function Base.copyto!(dest::ArrayPartition, bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where Style
     N = npartitions(dest, bc)
     for i in 1:N
         copyto!(dest.x[i], unpack(bc, i))
@@ -293,3 +295,10 @@ common_number(a, b) =
     (b == 0 ? a :
      (a == b ? a :
       throw(DimensionMismatch("number of partitions must be equal"))))
+
+## Linear Algebra
+
+ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(reduce(vcat,vec.(A.x)))
+LinearAlgebra.ldiv!(A::LinearAlgebra.LU,b::ArrayPartition) = ldiv!(A,Array(b))
+LinearAlgebra.ldiv!(A::LinearAlgebra.QR,b::ArrayPartition) = ldiv!(A,Array(b))
+LinearAlgebra.ldiv!(A::LinearAlgebra.SVD,b::ArrayPartition) = ldiv!(A,Array(b))
