@@ -41,6 +41,9 @@ y = p .* p'
 @test y[1:5,6:10] == p.x[1] .* p.x[2]'
 @test y[6:10,1:5] == p.x[2] .* p.x[1]'
 
+a = ArrayPartition([1], [2])
+a .= [10, 20]
+
 b = rand(10)
 c = rand(10)
 copyto!(b,p)
