@@ -233,7 +233,7 @@ ArrayPartitionStyle(::Val{N}) where N = ArrayPartitionStyle{Broadcast.DefaultArr
 @inline function Broadcast.BroadcastStyle(::ArrayPartitionStyle{AStyle}, ::ArrayPartitionStyle{BStyle}) where {AStyle, BStyle}
     ArrayPartitionStyle(Broadcast.BroadcastStyle(AStyle(), BStyle()))
 end
-Broadcast.BroadcastStyle(::ArrayPartitionStyle{Style}, ::Broadcast.DefaultArrayStyle{0}) where Style = ArrayPartitionStyle{Style}()
+Broadcast.BroadcastStyle(::ArrayPartitionStyle{Style}, ::Broadcast.DefaultArrayStyle{0}) where Style<:Broadcast.BroadcastStyle = ArrayPartitionStyle{Style}()
 Broadcast.BroadcastStyle(::ArrayPartitionStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
 
 combine_styles(args::Tuple{})         = Broadcast.DefaultArrayStyle{0}()
