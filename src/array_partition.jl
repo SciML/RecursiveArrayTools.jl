@@ -293,3 +293,9 @@ common_number(a, b) =
     (b == 0 ? a :
      (a == b ? a :
       throw(DimensionMismatch("number of partitions must be equal"))))
+
+## Linear Algebra
+
+LinearAlgebra.ldiv!(A::LinearAlgebra.LU,b::ArrayPartition) = ldiv!(A,Array(b))
+LinearAlgebra.ldiv!(A::LinearAlgebra.QR,b::ArrayPartition) = ldiv!(A,Array(b))
+LinearAlgebra.ldiv!(A::LinearAlgebra.SVD,b::ArrayPartition) = ldiv!(A,Array(b))

@@ -3,7 +3,7 @@ __precompile__()
 module RecursiveArrayTools
 
   using Requires, RecipesBase, StaticArrays, Statistics,
-        ArrayInterface, ZygoteRules
+        ArrayInterface, ZygoteRules, LinearAlgebra
 
   abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
   abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
