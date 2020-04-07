@@ -119,3 +119,17 @@ for sizes in S
   @test all([x[i] == y[i] for i in eachindex(x)])
   @test all([x[i] == y_array[i] for i in eachindex(x)])
 end
+
+# Non-allocating broadcast
+xce0 = ArrayPartition(zeros(2),[0.])
+xcde0 = copy(xce0)
+function foo(y, x)
+	y .= y .+ x
+end
+foo(xcde0, xce0)
+@test 0 == @allocated foo(xcde0, xce0)
+function foo(y, x)
+	y .= y .+ 2 .* x
+end
+foo(xcde0, xce0)
+@test 0 == @allocated foo(xcde0, xce0)
