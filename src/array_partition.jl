@@ -301,3 +301,31 @@ common_number(a, b) =
 ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(reduce(vcat,vec.(A.x)))
 
 LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition) = (x = ldiv!(A, Array(b)); copyto!(b, x))
+
+# block matrix indexing
+function getblock(A, lens, i, j)
+    ii1 = i == 1 ? 0 : sum(ii->lens[ii], 1:i-1)
+    jj1 = j == 1 ? 0 : sum(ii->lens[ii], 1:j-1)
+    ij1 = CartesianIndex(ii1, jj1)
+    cc1 = CartesianIndex((1, 1))
+    inc = CartesianIndex(lens[i], lens[j])
+    return @view A[(ij1+cc1):(ij1+inc)]
+end
+# fast ldiv for UpperTriangular and UnitLowerTriangular
+# [U11  U12  U13]   [ b1 ]
+# [ 0   U22  U23] \ [ b2 ]
+# [ 0    0   U33]   [ b3 ]
+function LinearAlgebra.ldiv!(A::UpperTriangular, b::ArrayPartition)
+    n = npartitions(b)
+    lens = map(length, b.x)
+    @inbounds for j in n:-1:1
+        Ajj = UpperTriangular(getblock(A, lens, j, j))
+        xj = ldiv!(Ajj, b.x[j])
+        for i in j-1:-1:1
+            Aij = getblock(A, lens, i, j)
+            # bi = -Aij * xj + b[i]
+            mul!(b.x[i], Aij, xj, -1, true)
+        end
+    end
+    return b
+end
