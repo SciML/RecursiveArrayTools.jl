@@ -299,6 +299,70 @@ common_number(a, b) =
 ## Linear Algebra
 
 ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(reduce(vcat,vec.(A.x)))
-LinearAlgebra.ldiv!(A::LinearAlgebra.LU,b::ArrayPartition) = ldiv!(A,Array(b))
-LinearAlgebra.ldiv!(A::LinearAlgebra.QR,b::ArrayPartition) = ldiv!(A,Array(b))
-LinearAlgebra.ldiv!(A::LinearAlgebra.SVD,b::ArrayPartition) = ldiv!(A,Array(b))
+
+LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition) = (x = ldiv!(A, Array(b)); copyto!(b, x))
+function LinearAlgebra.ldiv!(A::LU, b::ArrayPartition)
+    LinearAlgebra._ipiv_rows!(A, 1 : length(A.ipiv), b)
+    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), b))
+    return b
+end
+
+# block matrix indexing
+@inbounds function getblock(A, lens, i, j)
+    ii1 = i == 1 ? 0 : sum(ii->lens[ii], 1:i-1)
+    jj1 = j == 1 ? 0 : sum(ii->lens[ii], 1:j-1)
+    ij1 = CartesianIndex(ii1, jj1)
+    cc1 = CartesianIndex((1, 1))
+    inc = CartesianIndex(lens[i], lens[j])
+    return @view A[(ij1+cc1):(ij1+inc)]
+end
+# fast ldiv for UpperTriangular and UnitLowerTriangular
+# [U11  U12  U13]   [ b1 ]
+# [ 0   U22  U23] \ [ b2 ]
+# [ 0    0   U33]   [ b3 ]
+function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitUpperTriangular,UpperTriangular}
+    A = A.data
+    n = npartitions(bb)
+    b = bb.x
+    lens = map(length, b)
+    @inbounds for j in n:-1:1
+        Ajj = T(getblock(A, lens, j, j))
+        xj = ldiv!(Ajj, b[j])
+        for i in j-1:-1:1
+            Aij = getblock(A, lens, i, j)
+            # bi = -Aij * xj + bi
+            mul!(b[i], Aij, xj, -1, true)
+        end
+    end
+    return bb
+end
+
+function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitLowerTriangular,LowerTriangular}
+    A = A.data
+    n = npartitions(bb)
+    b = bb.x
+    lens = map(length, b)
+    @inbounds for j in 1:n
+        Ajj = T(getblock(A, lens, j, j))
+        xj = ldiv!(Ajj, b[j])
+        for i in j+1:n
+            Aij = getblock(A, lens, i, j)
+            # bi = -Aij * xj + b[i]
+            mul!(b[i], Aij, xj, -1, true)
+        end
+    end
+    return bb
+end
+# TODO: optimize
+function LinearAlgebra._ipiv_rows!(A::LU, order::OrdinalRange, B::ArrayPartition)
+    for i = order
+        if i != A.ipiv[i]
+            LinearAlgebra._swap_rows!(B, i, A.ipiv[i])
+        end
+    end
+    return B
+end
+function LinearAlgebra._swap_rows!(B::ArrayPartition, i::Integer, j::Integer)
+    B[i], B[j] = B[j], B[i]
+    return B
+end
