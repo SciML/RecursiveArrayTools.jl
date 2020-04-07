@@ -10,8 +10,9 @@ tspan = (0.0,100.0)
 prob = ODEProblem(lorenz,u0,tspan)
 sol = solve(prob,Tsit5());
 sol = solve(prob,AutoTsit5(Rosenbrock23(autodiff=false)));
+@test_broken sol = solve(prob,AutoTsit5(Rosenbrock23()));
 
-function mymodel(F, vars)
+function f!(F, vars)
     x = vars.x[1]
     F.x[1][1] = (x[1]+3)*(x[2]^3-7)+18
     F.x[1][2] = sin(x[2]*exp(x[1])-1)
