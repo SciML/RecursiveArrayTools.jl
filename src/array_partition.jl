@@ -256,7 +256,7 @@ end
 
 @inline function Base.copyto!(dest::ArrayPartition, bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where Style
     N = npartitions(dest, bc)
-    for i in 1:N
+    @inbounds for i in 1:N
         copyto!(dest.x[i], unpack(bc, i))
     end
     dest

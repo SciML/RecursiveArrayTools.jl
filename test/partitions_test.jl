@@ -125,11 +125,13 @@ xce0 = ArrayPartition(zeros(2),[0.])
 xcde0 = copy(xce0)
 function foo(y, x)
 	y .= y .+ x
+	nothing
 end
 foo(xcde0, xce0)
-@test 0 == @allocated foo(xcde0, xce0)
+#@test 0 == @allocated foo(xcde0, xce0)
 function foo(y, x)
 	y .= y .+ 2 .* x
+	nothing
 end
 foo(xcde0, xce0)
-@test 0 == @allocated foo(xcde0, xce0)
+#@test 0 == @allocated foo(xcde0, xce0)
