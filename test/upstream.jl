@@ -8,9 +8,9 @@ u0 = ArrayPartition([1.0,0.0],[0.0])
 @test ArrayInterface.zeromatrix(u0) isa Matrix
 tspan = (0.0,100.0)
 prob = ODEProblem(lorenz,u0,tspan)
-sol = solve(prob,Tsit5());
-sol = solve(prob,AutoTsit5(Rosenbrock23(autodiff=false)));
-@test_broken sol = solve(prob,AutoTsit5(Rosenbrock23()));
+sol = solve(prob,Tsit5())
+sol = solve(prob,AutoTsit5(Rosenbrock23(autodiff=false)))
+sol = solve(prob,AutoTsit5(Rosenbrock23()))
 
 function f!(F, vars)
     x = vars.x[1]
@@ -24,7 +24,7 @@ end
 # To show that the function works
 F = ArrayPartition([0.0 0.0],[0.0, 0.0])
 u0= ArrayPartition([0.1; 1.2], [0.1; 1.2])
-result = mymodel(F, u0)
+result = f!(F, u0)
 
 # To show the NLsolve error that results with ArrayPartitions:
 nlsolve(f!, ArrayPartition([0.1; 1.2], [0.1; 1.2]))
