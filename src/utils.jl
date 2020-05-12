@@ -17,6 +17,10 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
   end
 end
 
+function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:Enum,T2<:Enum,N}
+  copyto!(b,a)
+end
+
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:Number,T2<:Number,N}
   copyto!(b,a)
 end
@@ -82,11 +86,13 @@ recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(typeof(a)
 recursive_unitless_bottom_eltype(a::Type{T}) where T = recursive_unitless_bottom_eltype(eltype(a))
 recursive_unitless_bottom_eltype(a::Type{T}) where {T<:AbstractArray} = recursive_unitless_bottom_eltype(eltype(a))
 recursive_unitless_bottom_eltype(a::Type{T}) where {T<:Number} = eltype(a) == Number ? Float64 : typeof(one(eltype(a)))
+recursive_unitless_bottom_eltype(::Type{Enum{T}}) where T = T
 
 recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
 recursive_unitless_eltype(a::Type{T}) where {T<:StaticArray} = similar_type(a,recursive_unitless_eltype(eltype(a)))
 recursive_unitless_eltype(a::Type{T}) where {T<:Array} = Array{recursive_unitless_eltype(eltype(a)),ndims(a)}
 recursive_unitless_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
+recursive_unitless_eltype(::Type{<:Enum{T}}) where T = T
 
 recursive_mean(x...) = mean(x...)
 function recursive_mean(vecvec::Vector{T}) where T<:AbstractArray
