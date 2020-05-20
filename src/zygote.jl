@@ -14,3 +14,12 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i, j...)
   end
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
+
+ZygoteRules.@adjoint function ArrayPartition(x...)
+  function ArrayPartition_adjoint(_y)
+      y = Array(_y)
+      starts = vcat(0,cumsum(reduce(vcat,length.(x))))
+      ntuple(i -> reshape(y[starts[i]+1:starts[i+1]],size(x[i])),length(x))
+  end
+  ArrayPartition(x...),ArrayPartition_adjoint
+end
