@@ -51,6 +51,10 @@ Base.zero(A::ArrayPartition{T,S}) where {T,S} = ArrayPartition{T,S}(zero.(A.x))
 # ignore dims since array partitions are vectors
 Base.zero(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = zero(A)
 
+## Array
+
+Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:ArrayPartition}} = reduce(hcat,Array.(VA.u))
+
 ## ones
 
 # special to work with units
