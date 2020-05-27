@@ -39,6 +39,12 @@ DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:Abstrac
 @inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
 @inline Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
 @inline Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
+Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T,N}, ii::CartesianIndex) where {T, N}
+    ti = Tuple(ii)
+    i = first(ti)
+    jj = CartesianIndex(Base.tail(ti))
+    return VA.u[i][jj]
+end
 @inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int) where {T, N} = VA.u[I] = v
 @inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Colon) where {T, N} = VA.u[I] = v
 @inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::AbstractArray{Int}) where {T, N} = VA.u[I] = v
@@ -46,6 +52,13 @@ DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:Abstrac
   for j in 1:length(VA)
     VA.u[j][i] = v[j]
   end
+  return v
+end
+Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T,N}, x, ii::CartesianIndex) where {T, N}
+    ti = Tuple(ii)
+    i = first(ti)
+    jj = CartesianIndex(Base.tail(ti))
+    return VA.u[i][jj] = x
 end
 
 # Interface for the two dimensional indexing, a more standard AbstractArray interface
