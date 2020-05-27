@@ -12,6 +12,8 @@ sol = solve(prob,Tsit5())
 sol = solve(prob,AutoTsit5(Rosenbrock23(autodiff=false)))
 sol = solve(prob,AutoTsit5(Rosenbrock23()))
 
+@test all(Array(sol) .== sol)
+
 function f!(F, vars)
     x = vars.x[1]
     F.x[1][1] = (x[1]+3)*(x[2]^3-7)+18
