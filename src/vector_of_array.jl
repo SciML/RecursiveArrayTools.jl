@@ -34,21 +34,21 @@ DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:Abstrac
 @inline Base.IteratorSize(VA::AbstractVectorOfArray) = Base.HasLength()
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) where {T, N} = VA.u[I]
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon) where {T, N} = VA.u[I]
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
-@inline Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
+Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) where {T, N} = VA.u[I]
+Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon) where {T, N} = VA.u[I]
+Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
+Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
+Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T,N}, ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
     i = first(ti)
     jj = CartesianIndex(Base.tail(ti))
     return VA.u[i][jj]
 end
-@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int) where {T, N} = VA.u[I] = v
-@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Colon) where {T, N} = VA.u[I] = v
-@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::AbstractArray{Int}) where {T, N} = VA.u[I] = v
-@inline function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, i::Int,::Colon) where {T, N}
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int) where {T, N} = VA.u[I] = v
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Colon) where {T, N} = VA.u[I] = v
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::AbstractArray{Int}) where {T, N} = VA.u[I] = v
+Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, i::Int,::Colon) where {T, N}
   for j in 1:length(VA)
     VA.u[j][i] = v[j]
   end
@@ -63,9 +63,9 @@ end
 
 # Interface for the two dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...]
-@inline Base.getindex(VA::AbstractVectorOfArray{T, N}, ::Colon, I::Int) where {T, N} = VA.u[I]
-@inline Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...] = v
+Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...]
+Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, ::Colon, I::Int) where {T, N} = VA.u[I]
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...] = v
 
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray

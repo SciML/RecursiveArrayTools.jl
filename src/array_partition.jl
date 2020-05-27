@@ -142,7 +142,7 @@ end
 @inline Base.firstindex(A::ArrayPartition) = 1
 @inline Base.lastindex(A::ArrayPartition) = length(A)
 
-@inline function Base.getindex(A::ArrayPartition, i::Int)
+Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int)
   @boundscheck checkbounds(A, i)
   @inbounds for j in 1:length(A.x)
     i -= length(A.x[j])
@@ -157,7 +157,7 @@ end
 
 Return the entry at index `j...` of the `i`th partition of `A`.
 """
-@inline function Base.getindex(A::ArrayPartition, i::Int, j...)
+Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int, j...)
   @boundscheck 0 < i <= length(A.x) || throw(BoundsError(A.x, i))
   @inbounds b = A.x[i]
   @boundscheck checkbounds(b, j...)
@@ -171,7 +171,7 @@ Return vector with all elements of array partition `A`.
 """
 Base.getindex(A::ArrayPartition{T,S}, ::Colon) where {T,S} = T[a for a in Chain(A.x)]
 
-@inline function Base.setindex!(A::ArrayPartition, v, i::Int)
+Base.@propagate_inbounds function Base.setindex!(A::ArrayPartition, v, i::Int)
   @boundscheck checkbounds(A, i)
   @inbounds for j in 1:length(A.x)
     i -= length(A.x[j])
@@ -187,7 +187,7 @@ end
 
 Set the entry at index `j...` of the `i`th partition of `A` to `v`.
 """
-@inline function Base.setindex!(A::ArrayPartition, v, i::Int, j...)
+Base.@propagate_inbounds function Base.setindex!(A::ArrayPartition, v, i::Int, j...)
   @boundscheck 0 < i <= length(A.x) || throw(BoundsError(A.x, i))
   @inbounds b = A.x[i]
   @boundscheck checkbounds(b, j...)
