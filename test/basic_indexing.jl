@@ -75,13 +75,14 @@ testva[1:2, 1:2]
 
 # Test broadcast
 a = testva .+ rand(3,3)
-@test_broken a.= testva
+a.= testva
+@test all(a .== testva)
 
 recs = [rand(2,2) for i in 1:5]
 testva = VectorOfArray(recs)
 @test Array(testva) isa Array{Float64,3}
 
 v = VectorOfArray([zeros(20), zeros(10,10), zeros(3,3,3)])
-v[CartesianIndex((3, 2, 3, 2))] = 1
-@test v[CartesianIndex((3, 2, 3, 2))] == 1
+v[CartesianIndex((2, 3, 2, 3))] = 1
+@test v[CartesianIndex((2, 3, 2, 3))] == 1
 @test v.u[3][2, 3, 2] == 1

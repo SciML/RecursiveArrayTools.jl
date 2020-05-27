@@ -41,8 +41,8 @@ Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::Abstrac
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T,N}, ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
-    i = first(ti)
-    jj = CartesianIndex(Base.tail(ti))
+    i = last(ti)
+    jj = CartesianIndex(Base.front(ti))
     return VA.u[i][jj]
 end
 Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, I::Int) where {T, N} = VA.u[I] = v
@@ -56,8 +56,8 @@ Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T,N}, x, ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
-    i = first(ti)
-    jj = CartesianIndex(Base.tail(ti))
+    i = last(ti)
+    jj = CartesianIndex(Base.front(ti))
     return VA.u[i][jj] = x
 end
 
