@@ -147,27 +147,68 @@ end
   VA.t,VA.u
 end
 
-# Broadcast
+## broadcasting
 
-#add_idxs(x,expr) = expr
-#add_idxs{T<:AbstractVectorOfArray}(::Type{T},expr) = :($(expr)[i])
-#add_idxs{T<:AbstractArray}(::Type{Vector{T}},expr) = :($(expr)[i])
-#=
-@generated function Base.broadcast!(f,A::AbstractVectorOfArray,B...)
-  exs = ((add_idxs(B[i],:(B[$i])) for i in eachindex(B))...)
-  :(for i in eachindex(A)
-    broadcast!(f,A[i],$(exs...))
-  end)
+struct VectorOfArrayStyle{Style <: Broadcast.BroadcastStyle} <: Broadcast.AbstractArrayStyle{Any} end
+VectorOfArrayStyle(::S) where {S} = VectorOfArrayStyle{S}()
+VectorOfArrayStyle(::S, ::Val{N}) where {S,N} = VectorOfArrayStyle(S(Val(N)))
+VectorOfArrayStyle(::Val{N}) where N = VectorOfArrayStyle{Broadcast.DefaultArrayStyle{N}}()
+
+# promotion rules
+@inline function Broadcast.BroadcastStyle(::VectorOfArrayStyle{AStyle}, ::VectorOfArrayStyle{BStyle}) where {AStyle, BStyle}
+    VectorOfArrayStyle(Broadcast.BroadcastStyle(AStyle(), BStyle()))
+end
+Broadcast.BroadcastStyle(::VectorOfArrayStyle{Style}, ::Broadcast.DefaultArrayStyle{0}) where Style<:Broadcast.BroadcastStyle = VectorOfArrayStyle{Style}()
+Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
+
+function Broadcast.BroadcastStyle(::Type{AbstractVectorOfArray{T,S}}) where {T, N}
+    VectorOfArrayStyle(Broadcast.result_style(Broadcast.BroadcastStyle(T)))
 end
 
-@generated function Base.broadcast(f,B::Union{Number,AbstractVectorOfArray}...)
-  arr_idx = 0
-  for (i,b) in enumerate(B)
-    if b <: ArrayPartition
-      arr_idx = i
-      break
+@inline function Base.copy(bc::Broadcast.Broadcasted{VectorOfArrayStyle{Style}}) where Style
+    N = narrays(bc)
+    VectorOfArray(map(1:N) do i
+        copy(unpack_voa(bc, i))
+    end)
+end
+
+@inline function Base.copyto!(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted{VectorOfArrayStyle{Style}}) where Style
+    N = narrays(bc)
+    @inbounds for i in 1:N
+        copyto!(dest[i], unpack_voa(bc, i))
     end
-  end
-  :(A = similar(B[$arr_idx]); broadcast!(f,A,B...); A)
+    dest
 end
-=#
+
+## broadcasting utils
+
+"""
+    narrays(A...)
+
+Retrieve number of arrays in the AbstractVectorOfArrays of a broadcast
+"""
+narrays(A) = 0
+narrays(A::AbstractVectorOfArray) = length(A)
+narrays(bc::Broadcast.Broadcasted) = _narrays(bc.args)
+narrays(A, Bs...) = common_length(narrays(A), _narrays(Bs))
+
+common_length(a, b) =
+    a == 0 ? b :
+    (b == 0 ? a :
+     (a == b ? a :
+      throw(DimensionMismatch("number of arrays must be equal"))))
+
+@inline _narrays(args::Tuple) = common_length(narrays(args[1]), _narrays(Base.tail(args)))
+_narrays(args::Tuple{Any}) = _narrays(args[1])
+_narrays(args::Tuple{}) = 0
+
+# drop axes because it is easier to recompute
+@inline unpack_voa(bc::Broadcast.Broadcasted{Style}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
+@inline unpack_voa(bc::Broadcast.Broadcasted{VectorOfArrayStyle{Style}}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
+unpack_voa(x,::Any) = x
+unpack_voa(x::AbstractVectorOfArray, i) = x[i]
+unpack_voa(x::AbstractArray{T,N}, i) where {T,N} = @view x[ntuple(x->Colon(),N-1)...,i]
+
+@inline unpack_args_voa(i, args::Tuple) = (unpack_voa(args[1], i), unpack_args_voa(i, Base.tail(args))...)
+unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
+unpack_args_voa(::Any, args::Tuple{}) = ()
