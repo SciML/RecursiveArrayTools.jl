@@ -161,12 +161,16 @@ end
 Broadcast.BroadcastStyle(::VectorOfArrayStyle{Style}, ::Broadcast.DefaultArrayStyle{0}) where Style<:Broadcast.BroadcastStyle = VectorOfArrayStyle{Style}()
 Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
 
-function Broadcast.BroadcastStyle(::Type{AbstractVectorOfArray{T,S}}) where {T, S}
+function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T,S}}) where {T, S}
     VectorOfArrayStyle(Broadcast.result_style(Broadcast.BroadcastStyle(T)))
 end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{VectorOfArrayStyle{Style}}) where Style
     N = narrays(bc)
+    @show "here"
+    x = unpack_voa(bc, 1)
+    @show x
+    @show copy(x)
     VectorOfArray(map(1:N) do i
         copy(unpack_voa(bc, i))
     end)
@@ -198,6 +202,7 @@ common_length(a, b) =
      (a == b ? a :
       throw(DimensionMismatch("number of arrays must be equal"))))
 
+_narrays(args::AbstractVectorOfArray) = length(args)
 @inline _narrays(args::Tuple) = common_length(narrays(args[1]), _narrays(Base.tail(args)))
 _narrays(args::Tuple{Any}) = _narrays(args[1])
 _narrays(args::Tuple{}) = 0
@@ -206,7 +211,7 @@ _narrays(args::Tuple{}) = 0
 @inline unpack_voa(bc::Broadcast.Broadcasted{Style}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
 @inline unpack_voa(bc::Broadcast.Broadcasted{VectorOfArrayStyle{Style}}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
 unpack_voa(x,::Any) = x
-unpack_voa(x::AbstractVectorOfArray, i) = x[i]
+unpack_voa(x::AbstractVectorOfArray, i) = x.u[i]
 unpack_voa(x::AbstractArray{T,N}, i) where {T,N} = @view x[ntuple(x->Colon(),N-1)...,i]
 
 @inline unpack_args_voa(i, args::Tuple) = (unpack_voa(args[1], i), unpack_args_voa(i, Base.tail(args))...)
