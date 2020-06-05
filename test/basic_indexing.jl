@@ -87,4 +87,13 @@ v[CartesianIndex((2, 3, 2, 3))] = 1
 @test v[CartesianIndex((2, 3, 2, 3))] == 1
 @test v.u[3][2, 3, 2] == 1
 
-v .* v
+v = VectorOfArray([rand(20), rand(10,10), rand(3,3,3)])
+w = v .* v
+@test w isa VectorOfArray
+@test w[1] isa Vector
+@test w[1] == v[1] .* v[1]
+@test w[2] == v[2] .* v[2]
+@test w[3] == v[3] .* v[3]
+x = copy(v)
+x .= v .* v
+@test all(x .== w)

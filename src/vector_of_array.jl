@@ -167,10 +167,7 @@ end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{VectorOfArrayStyle{Style}}) where Style
     N = narrays(bc)
-    @show "here"
     x = unpack_voa(bc, 1)
-    @show x
-    @show copy(x)
     VectorOfArray(map(1:N) do i
         copy(unpack_voa(bc, i))
     end)
