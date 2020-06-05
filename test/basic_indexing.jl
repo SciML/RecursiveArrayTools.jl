@@ -96,4 +96,4 @@ w = v .* v
 @test w[3] == v[3] .* v[3]
 x = copy(v)
 x .= v .* v
-@test all(x .== w)
+@test x.u == w.u
