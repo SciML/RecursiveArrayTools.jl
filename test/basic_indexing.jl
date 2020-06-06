@@ -1,4 +1,4 @@
-using RecursiveArrayTools
+using RecursiveArrayTools, Test
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -86,3 +86,14 @@ v = VectorOfArray([zeros(20), zeros(10,10), zeros(3,3,3)])
 v[CartesianIndex((2, 3, 2, 3))] = 1
 @test v[CartesianIndex((2, 3, 2, 3))] == 1
 @test v.u[3][2, 3, 2] == 1
+
+v = VectorOfArray([rand(20), rand(10,10), rand(3,3,3)])
+w = v .* v
+@test w isa VectorOfArray
+@test w[1] isa Vector
+@test w[1] == v[1] .* v[1]
+@test w[2] == v[2] .* v[2]
+@test w[3] == v[3] .* v[3]
+x = copy(v)
+x .= v .* v
+@test x.u == w.u
