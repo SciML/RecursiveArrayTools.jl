@@ -158,7 +158,7 @@ VectorOfArrayStyle(::Any, ::Any) = VectorOfArrayStyle()
 #    VectorOfArrayStyle(Broadcast.BroadcastStyle(AStyle(), BStyle()))
 #end
 Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.BroadcastStyle) = VectorOfArrayStyle()
-#Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
+Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
 
 function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T,S}}) where {T, S}
     VectorOfArrayStyle()
