@@ -149,30 +149,24 @@ end
 
 ## broadcasting
 
-struct VectorOfArrayStyle <: Broadcast.AbstractArrayStyle{Any} end
-VectorOfArrayStyle(::Any) = VectorOfArrayStyle()
-VectorOfArrayStyle(::Any, ::Any) = VectorOfArrayStyle()
+struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
+VectorOfArrayStyle(::Val{N}) where N = VectorOfArrayStyle{N}()
 
-# promotion rules
-#@inline function Broadcast.BroadcastStyle(::VectorOfArrayStyle{AStyle}, ::VectorOfArrayStyle{BStyle}) where {AStyle, BStyle}
-#    VectorOfArrayStyle(Broadcast.BroadcastStyle(AStyle(), BStyle()))
-#end
-Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.BroadcastStyle) = VectorOfArrayStyle()
-Broadcast.BroadcastStyle(::VectorOfArrayStyle, ::Broadcast.DefaultArrayStyle{N}) where N = Broadcast.DefaultArrayStyle{N}()
+# The order is important here. We want to override Base.Broadcast.DefaultArrayStyle to return another Base.Broadcast.DefaultArrayStyle.
+Broadcast.BroadcastStyle(::VectorOfArrayStyle{N}, a::Base.Broadcast.DefaultArrayStyle{M}) where {M,N} = Base.Broadcast.DefaultArrayStyle(Val(max(M, N)))
+Broadcast.BroadcastStyle(::VectorOfArrayStyle{N}, a::Base.Broadcast.AbstractArrayStyle{M}) where {M,N} = typeof(a)(Val(max(M, N)))
+Broadcast.BroadcastStyle(::VectorOfArrayStyle{M}, ::VectorOfArrayStyle{N}) where {M,N} = VectorOfArrayStyle(Val(max(M, N)))
+Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T,N}}) where {T,N} = VectorOfArrayStyle{N}()
 
-function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T,S}}) where {T, S}
-    VectorOfArrayStyle()
-end
-
-@inline function Base.copy(bc::Broadcast.Broadcasted{VectorOfArrayStyle})
+@inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     N = narrays(bc)
     x = unpack_voa(bc, 1)
-    VectorOfArray(map(1:N) do i
+    return VectorOfArray(map(1:N) do i
         copy(unpack_voa(bc, i))
     end)
 end
 
-@inline function Base.copyto!(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted{VectorOfArrayStyle})
+@inline function Base.copyto!(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     N = narrays(bc)
     @inbounds for i in 1:N
         copyto!(dest[i], unpack_voa(bc, i))
@@ -205,7 +199,7 @@ _narrays(args::Tuple{}) = 0
 
 # drop axes because it is easier to recompute
 @inline unpack_voa(bc::Broadcast.Broadcasted{Style}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
-@inline unpack_voa(bc::Broadcast.Broadcasted{VectorOfArrayStyle}, i) = Broadcast.Broadcasted(bc.f, unpack_args_voa(i, bc.args))
+@inline unpack_voa(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle}, i) = Broadcast.Broadcasted(bc.f, unpack_args_voa(i, bc.args))
 unpack_voa(x,::Any) = x
 unpack_voa(x::AbstractVectorOfArray, i) = x.u[i]
 unpack_voa(x::AbstractArray{T,N}, i) where {T,N} = @view x[ntuple(x->Colon(),N-1)...,i]
