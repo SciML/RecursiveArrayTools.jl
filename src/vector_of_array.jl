@@ -153,6 +153,7 @@ struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only 
 VectorOfArrayStyle(::Val{N}) where N = VectorOfArrayStyle{N}()
 
 # The order is important here. We want to override Base.Broadcast.DefaultArrayStyle to return another Base.Broadcast.DefaultArrayStyle.
+Broadcast.BroadcastStyle(a::VectorOfArrayStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = a
 Broadcast.BroadcastStyle(::VectorOfArrayStyle{N}, a::Base.Broadcast.DefaultArrayStyle{M}) where {M,N} = Base.Broadcast.DefaultArrayStyle(Val(max(M, N)))
 Broadcast.BroadcastStyle(::VectorOfArrayStyle{N}, a::Base.Broadcast.AbstractArrayStyle{M}) where {M,N} = typeof(a)(Val(max(M, N)))
 Broadcast.BroadcastStyle(::VectorOfArrayStyle{M}, ::VectorOfArrayStyle{N}) where {M,N} = VectorOfArrayStyle(Val(max(M, N)))
@@ -161,7 +162,7 @@ Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T,N}}) where {T,N} = Vec
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     N = narrays(bc)
     x = unpack_voa(bc, 1)
-    return VectorOfArray(map(1:N) do i
+    VectorOfArray(map(1:N) do i
         copy(unpack_voa(bc, i))
     end)
 end
@@ -195,7 +196,7 @@ common_length(a, b) =
 _narrays(args::AbstractVectorOfArray) = length(args)
 @inline _narrays(args::Tuple) = common_length(narrays(args[1]), _narrays(Base.tail(args)))
 _narrays(args::Tuple{Any}) = _narrays(args[1])
-_narrays(args::Tuple{}) = 0
+_narrays(::Any) = 0
 
 # drop axes because it is easier to recompute
 @inline unpack_voa(bc::Broadcast.Broadcasted{Style}, i) where Style = Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
