@@ -4,6 +4,16 @@ using RecursiveArrayTools, Test
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testa = cat(recs..., dims=2)
 testva = VectorOfArray(recs)
+
+# broadcast with array
+X = rand(3, 3)
+mulX = testva .* X
+ref = mapreduce((x,y)->x.*y, hcat, testva, eachcol(X))
+@test mulX == ref
+fill!(mulX, 0)
+mulX .= testva .* X
+@test mulX == ref
+
 t = [1,2,3]
 diffeq = DiffEqArray(recs,t)
 @test Array(testva) == [1 4 7
@@ -73,11 +83,6 @@ testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
 @test testva[:, 1] == recs[1]
 testva[1:2, 1:2]
 
-# Test broadcast
-a = testva .+ rand(3,3)
-a.= testva
-@test all(a .== testva)
-
 recs = [rand(2,2) for i in 1:5]
 testva = VectorOfArray(recs)
 @test Array(testva) isa Array{Float64,3}
@@ -97,3 +102,8 @@ w = v .* v
 x = copy(v)
 x .= v .* v
 @test x.u == w.u
+
+# broadcast with number
+w = v .+ 1
+@test w isa VectorOfArray
+@test w.u == map(x -> x .+ 1, v.u)
