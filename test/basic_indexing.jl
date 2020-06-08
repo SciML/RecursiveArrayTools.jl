@@ -7,11 +7,11 @@ testva = VectorOfArray(recs)
 
 # broadcast with array
 X = rand(3, 3)
-mulX = testva .* X
-ref = mapreduce((x,y)->x.*y, hcat, testva, eachcol(X))
+mulX = sqrt.(abs.(testva .* X))
+ref = mapreduce((x,y)->sqrt.(abs.(x.*y)), hcat, testva, eachcol(X))
 @test mulX == ref
 fill!(mulX, 0)
-mulX .= testva .* X
+mulX .= sqrt.(abs.(testva .* X))
 @test mulX == ref
 
 t = [1,2,3]
@@ -107,3 +107,14 @@ x .= v .* v
 w = v .+ 1
 @test w isa VectorOfArray
 @test w.u == map(x -> x .+ 1, v.u)
+
+# edges cases
+x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+testva = DiffEqArray(x, x)
+testvb = DiffEqArray(x, x)
+mulX = sqrt.(abs.(testva .* testvb))
+ref = sqrt.(abs.(x .* x))
+@test mulX == ref
+fill!(mulX, 0)
+mulX .= sqrt.(abs.(testva .* testvb))
+@test mulX == ref

@@ -15,12 +15,12 @@ function Base.Array(VA::AbstractVectorOfArray)
   Array(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
 end
 
-VectorOfArray(vec::AbstractVector{T}, dims::NTuple{N}) where {T, N} = VectorOfArray{eltype(T), N, typeof(vec)}(vec)
+VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N} = VectorOfArray{eltype(T), N, typeof(vec)}(vec)
 # Assume that the first element is representative of all other elements
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT<:AbstractArray{T, N}} = VectorOfArray{T, N+1, typeof(vec)}(vec)
 
-DiffEqArray(vec::AbstractVector{T}, ts, dims::NTuple{N}) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts)}(vec, ts)
+DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts)}(vec, ts)
 # Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)))
 DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts)}(vec, ts)
@@ -94,7 +94,11 @@ recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
 # For DiffEqArray it ignores ts and fills only u
 function Base.fill!(VA::AbstractVectorOfArray, x)
     for i in eachindex(VA)
-        fill!(VA[i], x)
+        if VA[i] isa AbstractArray
+            fill!(VA[i], x)
+        else
+            VA[i] = x
+        end
     end
     return VA
 end
@@ -160,17 +164,22 @@ Broadcast.BroadcastStyle(::VectorOfArrayStyle{M}, ::VectorOfArrayStyle{N}) where
 Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T,N}}) where {T,N} = VectorOfArrayStyle{N}()
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
+    bc = Broadcast.flatten(bc)
     N = narrays(bc)
-    x = unpack_voa(bc, 1)
     VectorOfArray(map(1:N) do i
         copy(unpack_voa(bc, i))
     end)
 end
 
 @inline function Base.copyto!(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
+    bc = Broadcast.flatten(bc)
     N = narrays(bc)
     @inbounds for i in 1:N
-        copyto!(dest[i], unpack_voa(bc, i))
+        if dest[i] isa AbstractArray
+            copyto!(dest[i], unpack_voa(bc, i))
+        else
+            dest[i] = copy(unpack_voa(bc, i))
+        end
     end
     dest
 end
