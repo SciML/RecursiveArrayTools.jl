@@ -94,7 +94,11 @@ recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
 # For DiffEqArray it ignores ts and fills only u
 function Base.fill!(VA::AbstractVectorOfArray, x)
     for i in eachindex(VA)
-        fill!(VA[i], x)
+        if VA[i] isa AbstractArray
+            fill!(VA[i], x)
+        else
+            VA[i] = x
+        end
     end
     return VA
 end
@@ -171,7 +175,11 @@ end
     bc = Broadcast.flatten(bc)
     N = narrays(bc)
     @inbounds for i in 1:N
-        copyto!(dest[i], unpack_voa(bc, i))
+        if dest[i] isa AbstractArray
+            copyto!(dest[i], unpack_voa(bc, i))
+        else
+            dest[i] = copy(unpack_voa(bc, i))
+        end
     end
     dest
 end
