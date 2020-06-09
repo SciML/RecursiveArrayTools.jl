@@ -14,19 +14,17 @@ sol = solve(prob,AutoTsit5(Rosenbrock23()))
 
 @test all(Array(sol) .== sol)
 
-function f!(F, vars)
-    x = vars.x[1]
-    F.x[1][1] = (x[1]+3)*(x[2]^3-7)+18
-    F.x[1][2] = sin(x[2]*exp(x[1])-1)
-    y=vars.x[2]
-    F.x[2][1] = (y[1]+3)*(y[2]^3-7)+18
-    F.x[2][2] = sin(y[2]*exp(y[1])-1)
+function mymodel(F, vars)
+    for i in 1:2
+        x = vars.x[i]
+        F.x[i][1,1] = (x[1,1]+3)*(x[1,2]^3-7)+18.0
+        F.x[i][1,2] = sin(x[1,2]*exp(x[1,1])-1)
+        F.x[i][2,1] = (x[2,1]+3)*(x[2,2]^3-7)+19.0
+        F.x[i][2,2] = sin(x[2,2]*exp(x[2,1])-3)
+    end
 end
-
 # To show that the function works
-F = ArrayPartition([0.0 0.0],[0.0, 0.0])
-u0= ArrayPartition([0.1; 1.2], [0.1; 1.2])
-result = f!(F, u0)
-
-# To show the NLsolve error that results with ArrayPartitions:
-nlsolve(f!, ArrayPartition([0.1; 1.2], [0.1; 1.2]))
+F = ArrayPartition([0.0 0.0; 0.0 0.0],[0.0 0.0; 0.0 0.0])
+u0= ArrayPartition([0.1 1.2; 0.1 1.2], [0.1 1.2; 0.1 1.2])
+result = mymodel(F, u0)
+nlsolve(mymodel, u0)

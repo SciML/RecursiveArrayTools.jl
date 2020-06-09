@@ -331,11 +331,11 @@ function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitUpperT
     lens = map(length, b)
     @inbounds for j in n:-1:1
         Ajj = T(getblock(A, lens, j, j))
-        xj = ldiv!(Ajj, b[j])
+        xj = ldiv!(Ajj, vec(b[j]))
         for i in j-1:-1:1
             Aij = getblock(A, lens, i, j)
             # bi = -Aij * xj + bi
-            mul!(b[i], Aij, xj, -1, true)
+            mul!(vec(b[i]), Aij, xj, -1, true)
         end
     end
     return bb
@@ -348,11 +348,11 @@ function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitLowerT
     lens = map(length, b)
     @inbounds for j in 1:n
         Ajj = T(getblock(A, lens, j, j))
-        xj = ldiv!(Ajj, b[j])
+        xj = ldiv!(Ajj, vec(b[j]))
         for i in j+1:n
             Aij = getblock(A, lens, i, j)
             # bi = -Aij * xj + b[i]
-            mul!(b[i], Aij, xj, -1, true)
+            mul!(vec(b[i]), Aij, xj, -1, true)
         end
     end
     return bb
