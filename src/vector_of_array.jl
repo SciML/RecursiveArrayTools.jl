@@ -151,6 +151,8 @@ end
   VA.t,VA.u
 end
 
+Base.mapreduce(f,op,A::AbstractVectorOfArray) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.u))
+
 ## broadcasting
 
 struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
