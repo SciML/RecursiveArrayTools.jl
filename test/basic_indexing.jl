@@ -4,6 +4,7 @@ using RecursiveArrayTools, Test
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testa = cat(recs..., dims=2)
 testva = VectorOfArray(recs)
+@test maximum(testva) == maximum(maximum.(recs))
 
 # broadcast with array
 X = rand(3, 3)
