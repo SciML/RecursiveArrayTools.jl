@@ -27,7 +27,7 @@ AofuSA = [@SVector [2.0u"kg",3.0u"kg"] for i in 1:5]
 @test recursive_unitless_eltype(AofuSA) == SVector{2,Float64}
 
 A = [ArrayPartition(ones(1),ones(1)),]
-@test repr("text/plain", A) == "1-element Array{ArrayPartition{Float64,Tuple{Array{Float64,1},Array{Float64,1}}},1}:\n [1.0][1.0]"
+@test repr("text/plain", A) == "1-element Array{ArrayPartition{Float64,Tuple{Array{Float64,1},Array{Float64,1}}},1}:\n ([1.0], [1.0])"
 
 function test_recursive_bottom_eltype()
   function test_value(val::Any, expected_type::Type)
