@@ -23,3 +23,11 @@ ZygoteRules.@adjoint function ArrayPartition(x...)
   end
   ArrayPartition(x...),ArrayPartition_adjoint
 end
+
+ZygoteRules.@adjoint function VectorOfArray(u)
+  VectorOfArray(u),y -> ([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],)
+end
+
+ZygoteRules.@adjoint function DiffEqArray(u,t)
+  DiffEqArray(u,t),y -> ([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],nothing)
+end
