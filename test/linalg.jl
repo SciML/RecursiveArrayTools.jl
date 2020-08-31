@@ -37,7 +37,7 @@ c = ArrayPartition(cc)
 d = ArrayPartition(dd)
 A = rand(n)
 for T in (Array{Float64}, Array{ComplexF64},)
-    B = T(A)
+    local B = T(A)
     mul!(d, b, A)
     for i = 1:length(c.x)
         @test d.x[i] == b.x[i] * A
