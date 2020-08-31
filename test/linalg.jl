@@ -1,5 +1,5 @@
 using RecursiveArrayTools, Test, Random
-using LinearAlgebra, SparseArrays
+using LinearAlgebra
 
 n, m = 5, 6
 bb = rand(n), rand(m)
@@ -36,7 +36,7 @@ b = ArrayPartition(bb)
 c = ArrayPartition(cc)
 d = ArrayPartition(dd)
 A = rand(n)
-for T in (Array{Float64}, Array{ComplexF64}, sparse, )
+for T in (Array{Float64}, Array{ComplexF64},)
     B = T(A)
     mul!(d, b, A)
     for i = 1:length(c.x)
