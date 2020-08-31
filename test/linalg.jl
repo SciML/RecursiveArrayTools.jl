@@ -8,7 +8,7 @@ b = ArrayPartition(bb)
 A = randn(MersenneTwister(123), n+m, n+m)
 
 for T in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular)
-    B = T(A)
+    local B = T(A)
     @test B*Array(B \ b) ≈ b
     bbb = copy(b)
     @test ldiv!(bbb, B, b) === bbb
