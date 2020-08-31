@@ -1,5 +1,5 @@
 using RecursiveArrayTools, Test, Random
-using LinearAlgebra
+using LinearAlgebra, SparseArrays
 
 n, m = 5, 6
 bb = rand(n), rand(m)
@@ -25,4 +25,25 @@ for ff in (lu, svd, qr)
     copyto!(bbb, b)
     @test ldiv!(FF, bbb) === bbb
     @test A*bbb ≈ b
+end
+
+# linalg mul! overloads
+n, m, l = 5, 6, 7
+bb = rand(n, n), rand(m, n), rand(l, n)
+cc = rand(n), rand(n), rand(n)
+dd = rand(n), rand(m), rand(l)
+b = ArrayPartition(bb)
+c = ArrayPartition(cc)
+d = ArrayPartition(dd)
+A = rand(n)
+for T in (Array{Float64}, Array{ComplexF64}, sparse, )
+    B = T(A)
+    mul!(d, b, A)
+    for i = 1:length(c.x)
+        @test d.x[i] == b.x[i] * A
+    end
+    mul!(d, b, c)
+    for i = 1:length(d.x)
+        @test d.x[i] == b.x[i] * c.x[i]
+    end
 end
