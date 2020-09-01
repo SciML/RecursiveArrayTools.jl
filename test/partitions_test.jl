@@ -111,8 +111,8 @@ S = [
     ]
 
 for sizes in S
-  x = ArrayPartition( randn.(sizes[1]) )
-  y = ArrayPartition( zeros.(sizes[2]) )
+  local x = ArrayPartition( randn.(sizes[1]) )
+  local y = ArrayPartition( zeros.(sizes[2]) )
   y_array = zeros(length(x))
   copyto!(y,x)           #testing Base.copyto!(dest::ArrayPartition,A::ArrayPartition)
   copyto!(y_array,x)     #testing Base.copyto!(dest::Array,A::ArrayPartition)

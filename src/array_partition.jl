@@ -370,3 +370,29 @@ function LinearAlgebra._swap_rows!(B::ArrayPartition, i::Integer, j::Integer)
     B[i], B[j] = B[j], B[i]
     return B
 end
+
+# linalg mul! overloads for ArrayPartition
+function LinearAlgebra.mul!(C::ArrayPartition, A::ArrayPartition, B::AbstractArray)
+    if length(C.x) != length(A.x)
+        throw(DimensionMismatch("Length of C, $(length(C.x)), does not match length of A, $(length(A.x))"))
+    end
+
+    for index = 1:length(C.x)
+        mul!(C.x[index], A.x[index], B)
+    end
+    return C
+end
+
+function LinearAlgebra.mul!(C::ArrayPartition, A::ArrayPartition, B::ArrayPartition)
+    if length(C.x) != length(A.x)
+        throw(DimensionMismatch("Length of C, $(length(C.x)), does not match length of A, $(length(B.x))"))
+    end
+    if length(A.x) != length(B.x)
+        throw(DimensionMismatch("Length of A, $(length(A.x)), does not match length of B, $(length(B.x))"))
+    end
+
+    for index = 1:length(C.x)
+        mul!(C.x[index], A.x[index], B.x[index])
+    end
+    return C
+end
