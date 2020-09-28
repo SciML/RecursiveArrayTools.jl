@@ -31,3 +31,10 @@ end
 ZygoteRules.@adjoint function DiffEqArray(u,t)
   DiffEqArray(u,t),y -> ([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],nothing)
 end
+
+ZygoteRules.@adjoint function ZygoteRules.literal_getproperty(A::ArrayPartition, ::Val{:x})
+  function literal_ArrayPartition_x_adjoint(d)
+      (ArrayPartition((isnothing(d[i]) ? zero(A.x[i]) : d[i] for i in 1:length(d))...),)
+  end
+  A.x,literal_ArrayPartition_x_adjoint
+end
