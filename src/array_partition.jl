@@ -302,7 +302,7 @@ common_number(a, b) =
 
 ## Linear Algebra
 
-ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(reduce(vcat,vec.(A.x)))
+ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
 
 LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition) = (x = ldiv!(A, Array(b)); copyto!(b, x))
 function LinearAlgebra.ldiv!(A::LU, b::ArrayPartition)

@@ -28,3 +28,32 @@ F = ArrayPartition([0.0 0.0; 0.0 0.0],[0.0 0.0; 0.0 0.0])
 u0= ArrayPartition([0.1 1.2; 0.1 1.2], [0.1 1.2; 0.1 1.2])
 result = mymodel(F, u0)
 nlsolve(mymodel, u0)
+
+# Nested ArrayPartition solves
+
+dyn(u, p, t) = ArrayPartition(
+    ArrayPartition(zeros(1), [0.0]),
+    ArrayPartition(zeros(1), [0.0])
+)
+
+solve(
+    ODEProblem(
+        dyn,
+        ArrayPartition(
+            ArrayPartition(zeros(1), [-1.0]),
+            ArrayPartition(zeros(1), [0.75])
+        ),
+        (0.0, 1.0)
+    ),AutoTsit5(Rodas5())
+)
+
+@test_broken solve(
+    ODEProblem(
+        dyn,
+        ArrayPartition(
+            ArrayPartition(zeros(1), [-1.0]),
+            ArrayPartition(zeros(1), [0.75])
+        ),
+        (0.0, 1.0)
+    ),Rodas5()
+).retcode == :Success
