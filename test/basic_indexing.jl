@@ -119,3 +119,8 @@ ref = sqrt.(abs.(x .* x))
 fill!(mulX, 0)
 mulX .= sqrt.(abs.(testva .* testvb))
 @test mulX == ref
+
+# https://github.com/SciML/RecursiveArrayTools.jl/issues/49
+a = ArrayPartition(1:5, 1:6)
+a[1:8]
+a[[1,3,8]]
