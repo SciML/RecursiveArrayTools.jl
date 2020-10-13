@@ -182,6 +182,15 @@ Base.@propagate_inbounds function Base.setindex!(A::ArrayPartition, v, i::Int)
   end
 end
 
+# workaround for https://github.com/SciML/RecursiveArrayTools.jl/issues/49
+function Base._unsafe_getindex(::IndexStyle, A::ArrayPartition, I::Vararg{Union{Real, AbstractArray}, N}) where N
+    # This is specifically not inlined to prevent excessive allocations in type unstable code
+    shape = Base.index_shape(I...)
+    dest = similar(A.x[1], shape)
+    Base._unsafe_getindex!(dest, A, I...) # usually a generated function, don't allow it to impact inference result
+    return dest
+end
+
 """
     setindex!(A::ArrayPartition, v, i::Int, j...)
 
