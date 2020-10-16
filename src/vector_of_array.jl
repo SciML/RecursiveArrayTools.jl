@@ -61,7 +61,7 @@ Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T,N},
     return VA.u[i][jj] = x
 end
 
-# Interface for the two dimensional indexing, a more standard AbstractArray interface
+# Interface for the two-dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int...) where {T, N} = VA.u[I[end]][Base.front(I)...]
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, ::Colon, I::Int) where {T, N} = VA.u[I]
@@ -191,7 +191,7 @@ end
 """
     narrays(A...)
 
-Retrieve number of arrays in the AbstractVectorOfArrays of a broadcast
+Retrieve number of arrays in the AbstractVectorOfArrays of a broadcast.
 """
 narrays(A) = 0
 narrays(A::AbstractVectorOfArray) = length(A)
