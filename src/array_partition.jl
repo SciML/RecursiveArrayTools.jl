@@ -155,7 +155,7 @@ end
 """
     getindex(A::ArrayPartition, i::Int, j...)
 
-Return the entry at index `j...` of the `i`th partition of `A`.
+Returns the entry at index `j...` of the `i`th partition of `A`.
 """
 Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int, j...)
   @boundscheck 0 < i <= length(A.x) || throw(BoundsError(A.x, i))
@@ -167,7 +167,7 @@ end
 """
     getindex(A::ArrayPartition, ::Colon)
 
-Return vector with all elements of array partition `A`.
+Returns a vector with all elements of array partition `A`.
 """
 Base.getindex(A::ArrayPartition{T,S}, ::Colon) where {T,S} = T[a for a in Chain(A.x)]
 
