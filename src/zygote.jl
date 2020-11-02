@@ -15,13 +15,14 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i, j...)
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
 
-ZygoteRules.@adjoint function ArrayPartition(x...)
+ZygoteRules.@adjoint function ArrayPartition(x::S, ::Type{Val{copy_x}} = Val{false}) where {S<:Tuple,copy_x}
   function ArrayPartition_adjoint(_y)
       y = Array(_y)
       starts = vcat(0,cumsum(reduce(vcat,length.(x))))
-      ntuple(i -> reshape(y[starts[i]+1:starts[i+1]],size(x[i])),length(x))
+      ntuple(i -> reshape(y[starts[i]+1:starts[i+1]], size(x[i])), length(x)), nothing
   end
-  ArrayPartition(x...),ArrayPartition_adjoint
+
+  ArrayPartition(x, Val{copy_x}), ArrayPartition_adjoint
 end
 
 ZygoteRules.@adjoint function VectorOfArray(u)
