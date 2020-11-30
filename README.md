@@ -1,7 +1,6 @@
 # RecursiveArrayTools.jl
 
-[![Build Status](https://travis-ci.org/SciML/RecursiveArrayTools.jl.svg?branch=master)](https://travis-ci.org/SciML/RecursiveArrayTools.jl)
-[![Build status](https://ci.appveyor.com/api/projects/status/i1lp4skr4n6o76b5?svg=true)](https://ci.appveyor.com/project/ChrisRackauckas/recursivearraytools-jl-r8tdv)
+[![Build Status](https://github.com/SciML/RecursiveArrayTools.jl/workflows/CI/badge.svg)](https://github.com/SciML/RecursiveArrayTools.jl/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/ChrisRackauckas/RecursiveArrayTools.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/ChrisRackauckas/RecursiveArrayTools.jl?branch=master)
 [![codecov.io](http://codecov.io/github/ChrisRackauckas/RecursiveArrayTools.jl/coverage.svg?branch=master)](http://codecov.io/github/ChrisRackauckas/RecursiveArrayTools.jl?branch=master)
 
