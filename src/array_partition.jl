@@ -7,7 +7,7 @@ end
 ArrayPartition(x...) = ArrayPartition((x...,))
 
 function ArrayPartition(x::S, ::Type{Val{copy_x}}=Val{false}) where {S<:Tuple,copy_x}
-  T = promote_type(eltype.(x)...)
+  T = promote_type(recursive_bottom_eltype.(x)...)
   if copy_x
     return ArrayPartition{T,S}(copy.(x))
   else
