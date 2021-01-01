@@ -74,3 +74,6 @@ emptyva = VectorOfArray(Array{Vector{Float64}}([]))
 @test isempty(emptyva)
 emptyda = DiffEqArray(Array{Vector{Float64}}([]), Vector{Float64}())
 @test isempty(emptyda)
+
+A = VectorOfArray(map(i->rand(2,4),1:7))
+@test map(x->maximum(x),A) isa Vector
