@@ -151,6 +151,7 @@ end
   VA.t,VA.u
 end
 
+Base.map(f,A::RecursiveArrayTools.AbstractVectorOfArray) = map(f,A.u)
 Base.mapreduce(f,op,A::AbstractVectorOfArray) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.u))
 
 ## broadcasting
