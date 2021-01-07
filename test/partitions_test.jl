@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test, Statistics
+using RecursiveArrayTools, Test, Statistics, ArrayInterface
 A = (rand(5),rand(5))
 p = ArrayPartition(A)
 @test (p.x[1][1],p.x[2][1]) == (p[1],p[6])
@@ -135,3 +135,7 @@ function foo(y, x)
 end
 foo(xcde0, xce0)
 #@test 0 == @allocated foo(xcde0, xce0)
+
+@testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,2, false), ([1], 2, false), ([1], [2], true))
+    @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
+end
