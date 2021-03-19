@@ -1,7 +1,10 @@
 __precompile__()
-
+"""
+$(DocStringExtensions.README)
+"""
 module RecursiveArrayTools
 
+using DocStringExtensions
   using Requires, RecipesBase, StaticArrays, Statistics,
         ArrayInterface, ZygoteRules, LinearAlgebra
 
