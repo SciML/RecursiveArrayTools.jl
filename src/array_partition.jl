@@ -110,11 +110,16 @@ end
 
 Base.:(==)(A::ArrayPartition,B::ArrayPartition) = A.x == B.x
 
-## Functional Constructs
+## Iterable Collection Constructs
 
 Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
 Base.any(f,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
 Base.any(f::Function,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
+Base.any(A::ArrayPartition) = any(identity, A)
+Base.all(f,A::ArrayPartition) = all(f,(all(f,x) for x in A.x))
+Base.all(f::Function,A::ArrayPartition) = all(f,(all(f,x) for x in A.x))
+Base.all(A::ArrayPartition) = all(identity, A)
+
 function Base.copyto!(dest::AbstractArray,A::ArrayPartition)
     @assert length(dest) == length(A)
     cur = 1
