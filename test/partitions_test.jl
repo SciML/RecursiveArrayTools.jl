@@ -172,6 +172,13 @@ up = ap .+ 1
 up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
+# Test that `zeros()` does not get screwed up
+ap = ArrayPartition(zeros(),[1.0])
+up = ap .+ 1
+@test typeof(ap) == typeof(up)
+
+up = 2 .* ap .+ 1
+@test typeof(ap) == typeof(up)
 
 @testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,2, false), ([1], 2, false), ([1], [2], true))
     @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r

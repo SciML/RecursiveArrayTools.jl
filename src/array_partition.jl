@@ -306,6 +306,8 @@ _npartitions(args::Tuple{}) = 0
 # drop axes because it is easier to recompute
 @inline unpack(bc::Broadcast.Broadcasted{Style}, i) where Style = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
 @inline unpack(bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}, i) where Style = Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
+@inline unpack(bc::Broadcast.Broadcasted{Style}, i) where Style <: Broadcast.DefaultArrayStyle = Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
+@inline unpack(bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}, i) where Style <: Broadcast.DefaultArrayStyle = Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 unpack(x,::Any) = x
 unpack(x::ArrayPartition, i) = x.x[i]
 
