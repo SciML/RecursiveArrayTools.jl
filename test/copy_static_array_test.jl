@@ -1,4 +1,4 @@
-using Test, RecursiveArrayTools, StaticArrays
+using Test, RecursiveArrayTools, StaticArrays, StructArrays
 
 struct ImmutableFV <: FieldVector{2,Float64}
     a::Float64
@@ -64,3 +64,19 @@ a[2][1] *= 5
 b[1] = 2*b[1]
 copyat_or_push!(a, 2, b[1])
 @test a[2] == b[1]
+
+# StructArray of Immutable FieldVector
+a = StructArray([ImmutableFV(1., 2.)])
+b = recursivecopy(a)
+@test typeof(a) == typeof(b)
+@test a[1] == b[1]
+a[1] *= 2
+@test a[1] != b[1]
+
+# StructArray of Mutable FieldVector
+a = StructArray([MutableFV(1., 2.)])
+b = recursivecopy(a)
+@test typeof(a) == typeof(b)
+@test a[1] == b[1]
+a[1] *= 2
+@test a[1] != b[1]

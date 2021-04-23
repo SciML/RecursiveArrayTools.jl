@@ -7,7 +7,12 @@ function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
 end
 
 function recursivecopy(a::AbstractArray{T,N}) where {T<:AbstractArray,N}
-  map(recursivecopy,a)
+  if ArrayInterface.ismutable(a)
+    b = similar(a)
+    map!(recursivecopy, b, a)
+  else
+    ArrayInterface.restructure(a, map(recursivecopy, a))
+  end
 end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:StaticArray,T2<:StaticArray,N}
