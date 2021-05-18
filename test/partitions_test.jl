@@ -103,6 +103,9 @@ _broadcast_wrapper(y) = _scalar_op.(y)
 # Issue #8
 # @inferred _broadcast_wrapper(x)
 
+# Testing map
+@test map(x->x^2, x) == ArrayPartition(x.x[1].^2, x.x[2].^2)
+
 #### testing copyto!
 S = [
      ((1,),(2,)) => ((1,),(2,)),
