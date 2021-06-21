@@ -6,8 +6,10 @@ module RecursiveArrayTools
 
 using DocStringExtensions
   using Requires, RecipesBase, StaticArrays, Statistics,
-        ArrayInterface, ZygoteRules, LinearAlgebra
+        ArrayInterface, LinearAlgebra
 
+  import ChainRulesCore
+  import ChainRulesCore: NoTangent
   abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
   abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
