@@ -33,9 +33,12 @@ function ChainRulesCore.rrule(::Type{<:DiffEqArray},u,t)
   DiffEqArray(u,t),y -> (NoTangent(),[y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],NoTangent())
 end
 
-ZygoteRules.@adjoint function ZygoteRules.literal_getproperty(A::ArrayPartition, ::Val{:x})
-  function literal_ArrayPartition_x_adjoint(d)
-      (NoTangent(),ArrayPartition((isnothing(d[i]) ? zero(A.x[i]) : d[i] for i in 1:length(d))...))
-  end
-  A.x,literal_ArrayPartition_x_adjoint
+function ChainRulesCore.rrule(::typeof(getproperty),A::ArrayPartition, s::Symbol)
+    if s !== :x
+        error("$s is not a field of ArrayPartition")
+    end
+    function literal_ArrayPartition_x_adjoint(d)
+        (NoTangent(),ArrayPartition((isnothing(d[i]) ? zero(A.x[i]) : d[i] for i in 1:length(d))...))
+    end
+    A.x,literal_ArrayPartition_x_adjoint
 end
