@@ -17,7 +17,7 @@ function __init__()
       return CuArrays.CuArray(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
     end
     Base.convert(::Type{<:CuArrays.CuArray},VA::AbstractVectorOfArray) = CuArrays.CuArray(VA)
-    ChainRules.rrule(::Type{<:CuArrays.CuArray},xs::AbstractVectorOfArray) = CuArrays.CuArray(xs), ȳ -> (NoTangent(),ȳ)
+    ChainRulesCore.rrule(::Type{<:CuArrays.CuArray},xs::AbstractVectorOfArray) = CuArrays.CuArray(xs), ȳ -> (NoTangent(),ȳ)
   end
 
   @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" begin
@@ -26,7 +26,7 @@ function __init__()
       return CUDA.CuArray(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
     end
     Base.convert(::Type{<:CUDA.CuArray},VA::AbstractVectorOfArray) = CUDA.CuArray(VA)
-    ChainRules.rrule(::Type{<:CUDA.CuArray},xs::AbstractVectorOfArray) = CUDA.CuArray(xs), ȳ -> (NoTangent(),ȳ)
+    ChainRulesCore.rrule(::Type{<:CUDA.CuArray},xs::AbstractVectorOfArray) = CUDA.CuArray(xs), ȳ -> (NoTangent(),ȳ)
   end
 
   @require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin
