@@ -1,8 +1,8 @@
 using RecursiveArrayTools, ModelingToolkit, OrdinaryDiffEq, Test
 
-@variables t x(t)  # independent and dependent variables
-@parameters τ       # parameters
-D = Differential(t) # define an operator for the differentiation w.r.t. time
+@variables t x(t)
+@parameters τ
+D = Differential(t)
 @variables RHS(t)
 @named fol_separate = ODESystem([ RHS  ~ (1 - x)/τ,
                                   D(x) ~ RHS ])
