@@ -15,7 +15,7 @@ function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i, j
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
 
-function ChainRulesCore.rrule(::ArrayPartition, x::S, ::Type{Val{copy_x}} = Val{false}) where {S<:Tuple,copy_x}
+function ChainRulesCore.rrule(::Type{<:ArrayPartition}, x::S, ::Type{Val{copy_x}} = Val{false}) where {S<:Tuple,copy_x}
   function ArrayPartition_adjoint(_y)
       y = Array(_y)
       starts = vcat(0,cumsum(reduce(vcat,length.(x))))
@@ -25,11 +25,11 @@ function ChainRulesCore.rrule(::ArrayPartition, x::S, ::Type{Val{copy_x}} = Val{
   ArrayPartition(x, Val{copy_x}), ArrayPartition_adjoint
 end
 
-function ChainRulesCore.rrule(::VectorOfArray,u)
+function ChainRulesCore.rrule(::Type{<:VectorOfArray},u)
   VectorOfArray(u),y -> (NoTangent(),[y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]])
 end
 
-function ChainRulesCore.rrule(::DiffEqArray,u,t)
+function ChainRulesCore.rrule(::Type{<:DiffEqArray},u,t)
   DiffEqArray(u,t),y -> (NoTangent(),[y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],NoTangent())
 end
 
