@@ -22,7 +22,7 @@ RecipesBase = "0.7, 0.8, 1.0"
 Requires = "0.5, 1.0"
 StaticArrays = "0.12, 1.0"
 ZygoteRules = "0.2"
-julia = "1.6"
+julia = "1.5"
 
 [extras]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
