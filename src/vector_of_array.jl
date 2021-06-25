@@ -59,15 +59,14 @@ Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
 Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym) where {T, N}
-  if issymbollike(sym)
+  if issymbollike(sym) && A.syms !== nothing
     i = findfirst(isequal(Symbol(sym)),A.syms)
   else
     i = sym
   end
 
   if i === nothing
-    # TODO: Check if system actually has a indepsym
-    if issymbollike(i) && Symbol(i) == A.indepsym
+    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
       A.t
     else
       observed(A,sym,:)
@@ -77,15 +76,14 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
   end
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym,args...) where {T, N}
-  if issymbollike(sym)
+  if issymbollike(sym) && A.syms !== nothing
     i = findfirst(isequal(Symbol(sym)),A.syms)
   else
     i = sym
   end
 
   if i === nothing
-    # TODO: Check if system actually has a indepsym
-    if issymbollike(i) && Symbol(i) == A.indepsym
+    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
       A.t[args...]
     else
       observed(A,sym,args...)
