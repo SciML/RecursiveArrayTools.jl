@@ -213,6 +213,8 @@ Base.show(io::IO, m::MIME"text/plain", x::AbstractDiffEqArray) = (print(io,"t: "
   convert(Array,VA)
 end
 @recipe function f(VA::AbstractDiffEqArray)
+  xguide --> ((VA.indepsym !== nothing) ? string(VA.indepsym) : "")
+  label --> ((VA.syms !== nothing) ? reshape(string.(VA.syms), 1, :) : "")
   VA.t,VA'
 end
 @recipe function f(VA::DiffEqArray{T,1}) where {T}
