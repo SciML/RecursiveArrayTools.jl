@@ -22,8 +22,7 @@ using DocStringExtensions
 
   export recursivecopy, recursivecopy!, vecvecapply, copyat_or_push!,
          vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
-         recursive_unitless_bottom_eltype, recursive_unitless_eltype, parameterless_type,
-         issymbollike
+         recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
 
   export ArrayPartition
