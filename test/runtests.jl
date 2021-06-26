@@ -1,5 +1,15 @@
+using Pkg
 using RecursiveArrayTools
 using Test
+
+const GROUP = get(ENV, "GROUP", "All")
+const is_APPVEYOR = ( Sys.iswindows() && haskey(ENV,"APPVEYOR") )
+
+function activate_downstream_env()
+  Pkg.activate("downstream")
+  Pkg.develop(PackageSpec(path=dirname(@__DIR__)))
+  Pkg.instantiate()
+end
 
 @time begin
   @time @testset "Utils Tests" begin include("utils_test.jl") end
@@ -10,4 +20,9 @@ using Test
   @time @testset "Linear Algebra Tests" begin include("linalg.jl") end
   @time @testset "Upstream Tests" begin include("upstream.jl") end
   @time @testset "Adjoint Tests" begin include("adjoints.jl") end
+
+  if !is_APPVEYOR && GROUP == "Downstream"
+    activate_downstream_env()
+    @time @testset "DiffEqArray Indexing Tests" begin include("downstream/symbol_indexing.jl") end
+  end
 end

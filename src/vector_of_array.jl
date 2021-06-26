@@ -3,10 +3,29 @@ mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
 end
 # VectorOfArray with an added series for time
-mutable struct DiffEqArray{T, N, A, B} <: AbstractDiffEqArray{T, N, A}
+mutable struct DiffEqArray{T, N, A, B, C, D, E, F} <: AbstractDiffEqArray{T, N, A}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
   t::B
+  syms::C
+  indepsym::D
+  observed::E
+  p::F
 end
+
+Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
+parameterless_type(x) = parameterless_type(typeof(x))
+parameterless_type(x::Type) = __parameterless_type(x)
+
+### Abstract Interface
+struct AllObserved
+end
+issymbollike(x) = x isa Symbol ||
+                  x isa AllObserved ||
+                  Symbol(parameterless_type(typeof(x))) == :Operation ||
+                  Symbol(parameterless_type(typeof(x))) == :Variable ||
+                  Symbol(parameterless_type(typeof(x))) == :Sym ||
+                  Symbol(parameterless_type(typeof(x))) == :Num ||
+                  Symbol(parameterless_type(typeof(x))) == :Term
 
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:Number}} = VA.u
@@ -20,10 +39,11 @@ VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N} = VectorOfArray{
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT<:AbstractArray{T, N}} = VectorOfArray{T, N+1, typeof(vec)}(vec)
 
-DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts)}(vec, ts)
+DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), Nothing, Nothing, Nothing, Nothing}(vec, ts, nothing, nothing, nothing, nothing)
 # Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)))
-DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts)}(vec, ts)
+DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts), Nothing, Nothing, Nothing, Nothing}(vec, ts, nothing, nothing, nothing, nothing)
+DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms::Vector{Symbol}, indepsym::Symbol, observed::Function, p) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
@@ -38,6 +58,52 @@ Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) 
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon) where {T, N} = VA.u[I]
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
 Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym) where {T, N}
+  if issymbollike(sym) && A.syms !== nothing
+    i = findfirst(isequal(Symbol(sym)),A.syms)
+  else
+    i = sym
+  end
+
+  if i === nothing
+    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
+      A.t
+    else
+      observed(A,sym,:)
+    end
+  else
+    Base.getindex.(A.u, i)
+  end
+end
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym,args...) where {T, N}
+  if issymbollike(sym) && A.syms !== nothing
+    i = findfirst(isequal(Symbol(sym)),A.syms)
+  else
+    i = sym
+  end
+
+  if i === nothing
+    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
+      A.t[args...]
+    else
+      observed(A,sym,args...)
+    end
+  else
+    Base.getindex.(A.u, args...)
+  end
+end
+Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, I::Int...) where {T, N} = A.u[I[end]][Base.front(I)...]
+Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int) where {T, N} = A.u[i]
+function observed(A::AbstractDiffEqArray{T, N},sym,i::Int) where {T, N}
+    A.observed(sym,A.u[i],A.p,A.t[i])
+end
+function observed(A::AbstractDiffEqArray{T, N},sym,i::AbstractArray{Int}) where {T, N}
+    A.observed.((sym,),A.u[i],(A.p,),A.t[i])
+end
+function observed(A::AbstractDiffEqArray{T, N},sym,::Colon) where {T, N}
+    A.observed.((sym,),A.u,(A.p,),A.t)
+end
+
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,::Colon) where {T, N} = [VA.u[j][i] for j in 1:length(VA)]
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T,N}, ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
@@ -145,6 +211,8 @@ Base.show(io::IO, m::MIME"text/plain", x::AbstractDiffEqArray) = (print(io,"t: "
   convert(Array,VA)
 end
 @recipe function f(VA::AbstractDiffEqArray)
+  xguide --> ((VA.indepsym !== nothing) ? string(VA.indepsym) : "")
+  label --> ((VA.syms !== nothing) ? reshape(string.(VA.syms), 1, :) : "")
   VA.t,VA'
 end
 @recipe function f(VA::DiffEqArray{T,1}) where {T}
