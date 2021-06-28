@@ -59,6 +59,13 @@ Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon
 Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::Colon) where {T, N} = VA.u[I]
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
 Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
+  I::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...) where {T, N}
+  RecursiveArrayTools.VectorOfArray(A.u)[I...]
+end
+Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,::Colon) where {T, N} = [A.u[j][i] for j in 1:length(A)]
+Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, ::Colon,i::Int) where {T, N} = A.u[i]
+Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,II::AbstractArray{Int}) where {T, N} = [A.u[j][i] for j in II]
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym) where {T, N}
   if issymbollike(sym) && A.syms !== nothing
     i = findfirst(isequal(Symbol(sym)),A.syms)
@@ -90,7 +97,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
       observed(A,sym,args...)
     end
   else
-    Base.getindex.(A.u, args...)
+    Base.getindex.(A.u, i, args...)
   end
 end
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, I::Int...) where {T, N} = A.u[I[end]][Base.front(I)...]
