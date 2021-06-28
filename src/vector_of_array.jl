@@ -76,23 +76,6 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
     Base.getindex.(A.u, i)
   end
 end
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym,args...) where {T, N}
-  if issymbollike(sym) && A.syms !== nothing
-    i = findfirst(isequal(Symbol(sym)),A.syms)
-  else
-    i = sym
-  end
-
-  if i === nothing
-    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
-      A.t[args...]
-    else
-      observed(A,sym,args...)
-    end
-  else
-    Base.getindex.(A.u, args...)
-  end
-end
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, I::Int...) where {T, N} = A.u[I[end]][Base.front(I)...]
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int) where {T, N} = A.u[i]
 function observed(A::AbstractDiffEqArray{T, N},sym,i::Int) where {T, N}
