@@ -56,6 +56,7 @@ DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms::Vector{Symbol}, in
 # unlike an true AbstractArray
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Int) where {T, N} = VA.u[I]
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::Colon) where {T, N} = VA.u[I]
+Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::Colon) where {T, N} = VA.u[I]
 Base.@propagate_inbounds Base.getindex(VA::AbstractVectorOfArray{T, N}, I::AbstractArray{Int}) where {T, N} = VectorOfArray(VA.u[I])
 Base.@propagate_inbounds Base.getindex(VA::AbstractDiffEqArray{T, N}, I::AbstractArray{Int}) where {T, N} = DiffEqArray(VA.u[I],VA.t[I])
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym) where {T, N}
