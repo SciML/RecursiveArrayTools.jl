@@ -43,7 +43,9 @@ DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}) where {T, N} = DiffEqArray{
 # Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)))
 DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts), Nothing, Nothing, Nothing, Nothing}(vec, ts, nothing, nothing, nothing, nothing)
-DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms::Vector{Symbol}, indepsym::Symbol, observed::Function, p) where {T, N, VT<:AbstractArray{T, N}} = DiffEqArray{T, N+1, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
+function DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms::Vector{Symbol}, indepsym, observed::Function, p) where {T, N, VT<:AbstractArray{T, N}}
+  DiffEqArray{T, N+1, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
+end
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
