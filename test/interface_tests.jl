@@ -74,8 +74,7 @@ testda = DiffEqArray(recs,t)
 @test size(convert(Array,testva)) == (2,2,3)
 @test size(convert(Array,testda)) == (2,2,3)
 
-# create similar VectorOfArray/DiffEqArray
-t = 1:4
+# create similar VectorOfArray
 recs = [rand(6) for i = 1:4]
 testva = VectorOfArray(recs)
 
