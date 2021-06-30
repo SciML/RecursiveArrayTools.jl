@@ -39,7 +39,7 @@ VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N} = VectorOfArray{
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT<:AbstractArray{T, N}} = VectorOfArray{T, N+1, typeof(vec)}(vec)
 
-DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms, indepsym, observed, p) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
+DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
 # Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)), syms, indepsym, observed, p)
 function DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N, VT<:AbstractArray{T, N}}
@@ -103,6 +103,13 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
 end
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, I::Int...) where {T, N} = A.u[I[end]][Base.front(I)...]
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int) where {T, N} = A.u[i]
+Base.@propagate_inbounds function Base.getindex(VA::AbstractDiffEqArray{T,N}, ii::CartesianIndex) where {T, N}
+  ti = Tuple(ii)
+  i = last(ti)
+  jj = CartesianIndex(Base.front(ti))
+  return VA.u[i][jj]
+end
+
 function observed(A::AbstractDiffEqArray{T, N},sym,i::Int) where {T, N}
     A.observed(sym,A.u[i],A.p,A.t[i])
 end
@@ -150,6 +157,14 @@ end
 tuples(VA::DiffEqArray) = tuple.(VA.t,VA.u)
 
 # Growing the array simply adds to the container vector
+Base.copy(VA::AbstractDiffEqArray) = typeof(VA)(
+    copy(VA.u),
+    copy(VA.t),
+    (VA.syms===nothing) ? nothing : copy(VA.syms),
+    (VA.indepsym===nothing) ? nothing : copy(VA.indepsym),
+    (VA.observed===nothing) ? nothing : copy(VA.observed),
+    (VA.p===nothing) ? nothing : copy(VA.p)
+  )
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
 Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVector) where {T, N} = push!(VA.u, new_item)

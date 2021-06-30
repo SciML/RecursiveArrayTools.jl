@@ -15,8 +15,6 @@ fill!(mulX, 0)
 mulX .= sqrt.(abs.(testva .* X))
 @test mulX == ref
 
-t = [1,2,3]
-diffeq = DiffEqArray(recs,t)
 @test Array(testva) == [1 4 7
                         2 5 8
                         3 6 9]
@@ -25,7 +23,15 @@ diffeq = DiffEqArray(recs,t)
 @test testva[1:2, 1:2] == [1 4; 2 5]
 @test testa[1:2, 1:2] == [1 4; 2 5]
 
+t = [1,2,3]
+diffeq = DiffEqArray(recs,t)
+@test Array(diffeq) == [1 4 7
+                        2 5 8
+                        3 6 9]
+@test diffeq[1:2, 1:2] == [1 4; 2 5]
+
 # # ndims == 2
+t = 1:10
 recs = [rand(8) for i in 1:10]
 testa = cat(recs...,dims=2)
 testva = VectorOfArray(recs)
@@ -36,8 +42,15 @@ testva = VectorOfArray(recs)
 @test testva[end] == testa[:, end]
 @test testva[2:end] == VectorOfArray([recs[i] for i = 2:length(recs)])
 
+diffeq = DiffEqArray(recs,t)
+@test diffeq[1] == testa[:, 1]
+@test diffeq[:] == recs
+@test diffeq[end] == testa[:, end]
+@test diffeq[2:end] == DiffEqArray([recs[i] for i = 2:length(recs)], t)
+
 # ## (Int, Int)
 @test testa[5, 4] == testva[5, 4]
+@test testa[5, 4] == diffeq[5, 4]
 
 # ## (Int, Range) or (Range, Int)
 @test testa[1, 2:3] == testva[1, 2:3]
@@ -45,50 +58,80 @@ testva = VectorOfArray(recs)
 @test testa[:, 1] == testva[:, 1]
 @test testa[3, :] == testva[3, :]
 
+@test testa[1, 2:3] == diffeq[1, 2:3]
+@test testa[5:end, 1] == diffeq[5:end, 1]
+@test testa[:, 1] == diffeq[:, 1]
+@test testa[3, :] == diffeq[3, :]
+
 # ## (Range, Range)
 @test testa[5:end, 1:2] == testva[5:end, 1:2]
+@test testa[5:end, 1:2] == diffeq[5:end, 1:2]
 
 # # ndims == 3
+t = 1:15
 recs = recs = [rand(10, 8) for i in 1:15]
 testa = cat(recs...,dims=3)
 testva = VectorOfArray(recs)
+diffeq = DiffEqArray(recs,t)
 
 # ## (Int, Int, Int)
 @test testa[1, 7, 14] == testva[1, 7, 14]
+@test testa[1, 7, 14] == diffeq[1, 7, 14]
 
 # ## (Int, Int, Range)
 @test testa[2, 3, 1:2] == testva[2, 3, 1:2]
+@test testa[2, 3, 1:2] == diffeq[2, 3, 1:2]
 
 # ## (Int, Range, Int)
 @test testa[2, 3:4, 1] == testva[2, 3:4, 1]
+@test testa[2, 3:4, 1] == diffeq[2, 3:4, 1]
 
 # ## (Int, Range, Range)
 @test testa[2, 3:4, 1:2] == testva[2, 3:4, 1:2]
+@test testa[2, 3:4, 1:2] == diffeq[2, 3:4, 1:2]
 
 # ## (Range, Int, Range)
 @test testa[2:3, 1, 1:2] == testva[2:3, 1, 1:2]
+@test testa[2:3, 1, 1:2] == diffeq[2:3, 1, 1:2]
 
 # ## (Range, Range, Int)
 @test testa[1:2, 2:3, 1] == testva[1:2, 2:3, 1]
+@test testa[1:2, 2:3, 1] == diffeq[1:2, 2:3, 1]
 
 # ## (Range, Range, Range)
 @test testa[2:3, 2:3, 1:2] == testva[2:3, 2:3, 1:2]
+@test testa[2:3, 2:3, 1:2] == diffeq[2:3, 2:3, 1:2]
 
 # ## Make sure that 1:1 like ranges are not collapsed
 @test testa[1:1, 2:3, 1:2] == testva[1:1, 2:3, 1:2]
+@test testa[1:1, 2:3, 1:2] == diffeq[1:1, 2:3, 1:2]
 
 # ## Test ragged arrays work, or give errors as needed
 #TODO: I am not really sure what the behavior of this is, what does Mathematica do?
+t = 1:3
 recs = [[1, 2, 3], [3, 5, 6, 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
-@test testva[:, 1] == recs[1]
-testva[1:2, 1:2]
+diffeq = DiffEqArray(recs,t)
 
+@test testva[:, 1] == recs[1]
+@test testva[1:2, 1:2] == [1 3; 2 5]
+@test diffeq[:, 1] == recs[1]
+@test diffeq[1:2, 1:2] == [1 3; 2 5]
+
+t = 1:5
 recs = [rand(2,2) for i in 1:5]
 testva = VectorOfArray(recs)
+diffeq = DiffEqArray(recs,t)
+
 @test Array(testva) isa Array{Float64,3}
+@test Array(diffeq) isa Array{Float64,3}
 
 v = VectorOfArray([zeros(20), zeros(10,10), zeros(3,3,3)])
+v[CartesianIndex((2, 3, 2, 3))] = 1
+@test v[CartesianIndex((2, 3, 2, 3))] == 1
+@test v.u[3][2, 3, 2] == 1
+
+v = DiffEqArray([zeros(20), zeros(10,10), zeros(3,3,3)], 1:3)
 v[CartesianIndex((2, 3, 2, 3))] = 1
 @test v[CartesianIndex((2, 3, 2, 3))] == 1
 @test v.u[3][2, 3, 2] == 1
@@ -103,10 +146,23 @@ w = v .* v
 x = copy(v)
 x .= v .* v
 @test x.u == w.u
-
-# broadcast with number
 w = v .+ 1
 @test w isa VectorOfArray
+@test w.u == map(x -> x .+ 1, v.u)
+
+
+v = DiffEqArray([rand(20), rand(10,10), rand(3,3,3)], 1:3)
+w = v .* v
+@test_broken w isa DiffEqArray # FIXME
+@test w[1] isa Vector
+@test w[1] == v[1] .* v[1]
+@test w[2] == v[2] .* v[2]
+@test w[3] == v[3] .* v[3]
+x = copy(v)
+x .= v .* v
+@test x.u == w.u
+w = v .+ 1
+@test_broken w isa DiffEqArray # FIXME
 @test w.u == map(x -> x .+ 1, v.u)
 
 # edges cases
