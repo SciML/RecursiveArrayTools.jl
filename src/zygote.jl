@@ -1,4 +1,4 @@
-function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i)
+function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::Int)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
     (NoTangent(),Δ′,NoTangent())
@@ -6,7 +6,7 @@ function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i)
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
-function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i, j...)
+function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::Int, j...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[i,j...] = Δ
