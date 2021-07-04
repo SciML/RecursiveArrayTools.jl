@@ -6,13 +6,13 @@ function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::I
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
-function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::Int, j...)
+function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, indices::Vararg{Int,N}) where {N}
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
-    Δ′[i,j...] = Δ
-    (NoTangent(), Δ′, i,map(_ -> NoTangent(), j)...)
+    Δ′[indices...] = Δ
+    (NoTangent(), Δ′, indices[1],map(_ -> NoTangent(), indices[2:end])...)
   end
-  VA[i,j...],AbstractVectorOfArray_getindex_adjoint
+  VA[indices...],AbstractVectorOfArray_getindex_adjoint
 end
 
 function ChainRulesCore.rrule(::Type{<:ArrayPartition}, x::S, ::Type{Val{copy_x}} = Val{false}) where {S<:Tuple,copy_x}
