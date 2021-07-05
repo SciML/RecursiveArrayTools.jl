@@ -19,13 +19,15 @@ parameterless_type(x::Type) = __parameterless_type(x)
 ### Abstract Interface
 struct AllObserved
 end
-issymbollike(x) = x isa Symbol ||
-                  x isa AllObserved ||
-                  Symbol(parameterless_type(typeof(x))) == :Operation ||
-                  Symbol(parameterless_type(typeof(x))) == :Variable ||
-                  Symbol(parameterless_type(typeof(x))) == :Sym ||
-                  Symbol(parameterless_type(typeof(x))) == :Num ||
-                  Symbol(parameterless_type(typeof(x))) == :Term
+function issymbollike(x)
+  x isa Symbol ||
+  x isa AllObserved ||
+  Symbol(parameterless_type(typeof(x))) == :Operation || Symbol(parameterless_type(typeof(x))) == Symbol("SymbolicUtils.Operation") ||
+  Symbol(parameterless_type(typeof(x))) == :Variable || Symbol(parameterless_type(typeof(x))) == Symbol("Symbolics.Variable") ||
+  Symbol(parameterless_type(typeof(x))) == :Sym || Symbol(parameterless_type(typeof(x))) == Symbol("SymbolicUtils.Sym") ||
+  Symbol(parameterless_type(typeof(x))) == :Num || Symbol(parameterless_type(typeof(x))) == Symbol("Symbolics.Num") ||
+  Symbol(parameterless_type(typeof(x))) == :Term || Symbol(parameterless_type(typeof(x))) == Symbol("SymbolicUtils.Term")
+end
 
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:Number}} = VA.u
