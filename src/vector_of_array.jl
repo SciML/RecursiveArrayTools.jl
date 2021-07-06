@@ -169,7 +169,7 @@ Base.copy(VA::AbstractDiffEqArray) = typeof(VA)(
   )
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
-Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVector) where {T, N} = push!(VA.u, new_item)
+Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractArray) where {T, N} = push!(VA.u, new_item)
 
 function Base.append!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractVectorOfArray{T, N}) where {T, N}
     for item in copy(new_item)
