@@ -11,22 +11,25 @@ mutable struct DiffEqArray{T, N, A, B, C, D, E, F} <: AbstractDiffEqArray{T, N, 
   observed::E
   p::F
 end
-
-Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
-parameterless_type(x) = parameterless_type(typeof(x))
-parameterless_type(x::Type) = __parameterless_type(x)
-
 ### Abstract Interface
 struct AllObserved
 end
+
+Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
+const _Symbolics_Operation = Symbol("Symbolics.Operation")
+const _Symbolics_Variable = Symbol("Symbolics.Variable")
+const _Symbolics_Sym = Symbol("Symbolics.Sym")
+const _Symbolics_Num = Symbol("Symbolics.Num")
+const _Symbolics_Term = Symbol("Symbolics.Term")
+issymbollike(x::Symbol) = true
+issymbollike(x::AllObserved) = true
 function issymbollike(x)
-  x isa Symbol ||
-  x isa AllObserved ||
-  Symbol(parameterless_type(typeof(x))) == :Operation || Symbol(parameterless_type(typeof(x))) == Symbol("SymbolicUtils.Operation") ||
-  Symbol(parameterless_type(typeof(x))) == :Variable || Symbol(parameterless_type(typeof(x))) == Symbol("Symbolics.Variable") ||
-  Symbol(parameterless_type(typeof(x))) == :Sym || Symbol(parameterless_type(typeof(x))) == Symbol("SymbolicUtils.Sym") ||
-  Symbol(parameterless_type(typeof(x))) == :Num || Symbol(parameterless_type(typeof(x))) == Symbol("Symbolics.Num") ||
-  Symbol(parameterless_type(typeof(x))) == :Term || Symbol(parameterless_type(typeof(x))) == Symbol("SymbolicUtils.Term")
+  s = Symbol(__parameterless_type(typeof(x)))
+  s === :Operation || s === _Symbolics_Operation  ||
+  s === :Variable || s === _Symbolics_Variable  ||
+  s === :Sym || s === _Symbolics_Sym  ||
+  s === :Num || s === _Symbolics_Num  ||
+  s === :Term || s === _Symbolics_Term   
 end
 
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
