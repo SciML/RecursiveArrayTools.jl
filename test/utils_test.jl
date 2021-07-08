@@ -66,3 +66,7 @@ function test_recursive_bottom_eltype()
   test_value(1.0u"kg", eltype(1.0u"kg"))
 end
 test_recursive_bottom_eltype()
+
+using RecursiveArrayTools: issymbollike
+@test !issymbollike(1)
+@test issymbollike(:a)
