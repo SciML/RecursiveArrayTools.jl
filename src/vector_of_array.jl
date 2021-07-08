@@ -16,20 +16,12 @@ struct AllObserved
 end
 
 Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
-const _Symbolics_Operation = Symbol("Symbolics.Operation")
-const _Symbolics_Variable = Symbol("Symbolics.Variable")
-const _Symbolics_Sym = Symbol("Symbolics.Sym")
-const _Symbolics_Num = Symbol("Symbolics.Num")
-const _Symbolics_Term = Symbol("Symbolics.Term")
-issymbollike(x::Symbol) = true
-issymbollike(x::AllObserved) = true
-function issymbollike(x)
-  s = Symbol(__parameterless_type(typeof(x)))
-  s === :Operation || s === _Symbolics_Operation  ||
-  s === :Variable || s === _Symbolics_Variable  ||
-  s === :Sym || s === _Symbolics_Sym  ||
-  s === :Num || s === _Symbolics_Num  ||
-  s === :Term || s === _Symbolics_Term   
+
+@generated function issymbollike(x)
+    x <: Union{Symbol,AllObserved} && return true
+    ss = ["Operation", "Variable", "Sym", "Num", "Term"]
+    s = string(Symbol(__parameterless_type(x)))
+    any(x->occursin(x, s), ss)
 end
 
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
