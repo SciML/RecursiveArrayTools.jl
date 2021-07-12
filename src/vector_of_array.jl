@@ -72,11 +72,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
   end
 
   if i === nothing
-    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
-      A.t
-    else
-      observed(A,sym,:)
-    end
+    observed(A,sym,:)
   else
     Base.getindex.(A.u, i)
   end
@@ -89,11 +85,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
   end
 
   if i === nothing
-    if issymbollike(i) && A.indepsym !== nothing && Symbol(i) == A.indepsym
-      A.t[args...]
-    else
-      observed(A,sym,args...)
-    end
+    observed(A,sym,args...)
   else
     Base.getindex.(A.u, i, args...)
   end
