@@ -71,7 +71,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
     i = sym
   end
 
-  if i === nothing
+  if i == nothing
     if issymbollike(sym) && A.indepsym !== nothing && Symbol(sym) == A.indepsym
       A.t
     else
@@ -88,7 +88,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym
     i = sym
   end
 
-  if i === nothing
+  if i == nothing
     if issymbollike(sym) && A.indepsym !== nothing && Symbol(sym) == A.indepsym
       A.t[args...]
     else
