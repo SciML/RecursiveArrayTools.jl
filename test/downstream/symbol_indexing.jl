@@ -21,3 +21,5 @@ sol_new = DiffEqArray(
 )
 
 @test sol_new[RHS] ≈ (1 .- sol_new[x])./3.0
+@test sol_new[t] ≈ sol_new.t
+@test sol_new[t, 1:5] ≈ sol_new.t[1:5]
