@@ -244,7 +244,6 @@ Base.last(A::ArrayPartition) = last(last(A.x))
 
 ## display
 Base.summary(A::ArrayPartition) = string(typeof(A), " with arrays:")
-Base.show(io::IO,A::ArrayPartition) = map(x->Base.show(io,x),A.x)
 Base.show(io::IO, m::MIME"text/plain", A::ArrayPartition) = show(io, m, A.x)
 
 ## broadcasting
