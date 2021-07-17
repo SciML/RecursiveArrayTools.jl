@@ -220,11 +220,9 @@ Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array,VA)) # Allocates
 @inline Statistics.cor(VA::AbstractVectorOfArray;kwargs...) = cor(Array(VA);kwargs...)
 
 # make it show just like its data
-Base.show(io::IO, x::AbstractVectorOfArray) = Base.print_array(io, x.u)
 Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray) = (println(io, summary(x), ':'); show(io, m, x.u))
 Base.summary(A::AbstractVectorOfArray) = string("VectorOfArray{",eltype(A),",",ndims(A),"}")
 
-Base.show(io::IO, x::AbstractDiffEqArray) = (print(io,"t: ");show(io, x.t);println(io);print(io,"u: ");show(io, x.u))
 Base.show(io::IO, m::MIME"text/plain", x::AbstractDiffEqArray) = (print(io,"t: ");show(io,m,x.t);println(io);print(io,"u: ");show(io,m,x.u))
 
 # plot recipes
