@@ -101,7 +101,7 @@ _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
 _broadcast_wrapper(y) = _scalar_op.(y)
 # Issue #8
-# @inferred _broadcast_wrapper(x)
+@inferred _broadcast_wrapper(x)
 
 # Testing map
 @test map(x->x^2, x) == ArrayPartition(x.x[1].^2, x.x[2].^2)
