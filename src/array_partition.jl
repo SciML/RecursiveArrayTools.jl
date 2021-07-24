@@ -281,7 +281,10 @@ end
 
 @inline function Base.copyto!(dest::ArrayPartition, bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where Style
     N = npartitions(dest, bc)
-    ntuple(i->copyto!(dest.x[i], unpack(bc, i)), Val(N))
+    @inline function f(i)
+        copyto!(dest.x[i], unpack(bc, i))
+    end
+    ntuple(f, Val(N))
     dest
 end
 
