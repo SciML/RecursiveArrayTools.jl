@@ -20,6 +20,7 @@ jobs:
           - {user: SciML, repo: SciMLBase.jl, group: Core}
           - {user: SciML, repo: DiffEqBase.jl, group: Core}
           - {user: SciML, repo: DiffEqBase.jl, group: Downstream}
+          - {user: SciML, repo: DiffEqBase.jl, group: Downstream2}
           - {user: SciML, repo: DiffEqSensitivity.jl, group: Core}
           - {user: SciML, repo: OrdinaryDiffEq.jl, group: Core}
           - {user: SciML, repo: OrdinaryDiffEq.jl, group: Interface}
