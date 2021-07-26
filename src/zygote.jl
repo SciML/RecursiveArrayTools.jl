@@ -1,4 +1,4 @@
-function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::Int)
+function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}})
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
     (NoTangent(),Δ′,NoTangent())
@@ -6,7 +6,7 @@ function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::I
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
-function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, indices::Vararg{Int,N}) where {N}
+function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, indices::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[indices...] = Δ
@@ -43,15 +43,16 @@ function ChainRulesCore.rrule(::typeof(getproperty),A::ArrayPartition, s::Symbol
     A.x,literal_ArrayPartition_x_adjoint
 end
 
-ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}})
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
     (Δ′,nothing)
   end
+  @show VA[i]
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
-ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Int, j::Int...)
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}, j::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[i,j...] = Δ
