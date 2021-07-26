@@ -48,7 +48,6 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,A
     Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
     (Δ′,nothing)
   end
-  @show VA[i]
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
