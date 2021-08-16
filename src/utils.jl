@@ -32,7 +32,7 @@ end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:AbstractArray,T2<:AbstractArray,N}
   if ArrayInterface.ismutable(T)
-    @inbounds for i in eachindex(a)
+    @inbounds for i in eachindex(b, a)
       recursivecopy!(b[i], a[i])
     end
   else
