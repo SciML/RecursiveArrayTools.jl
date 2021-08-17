@@ -31,9 +31,14 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
 end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:AbstractArray,T2<:AbstractArray,N}
-  @inbounds for i in eachindex(a)
-    recursivecopy!(b[i],a[i])
+  if ArrayInterface.ismutable(T)
+    @inbounds for i in eachindex(b, a)
+      recursivecopy!(b[i], a[i])
+    end
+  else
+    copyto!(b, a)
   end
+  return b
 end
 
 function vecvec_to_mat(vecvec)
