@@ -30,6 +30,10 @@ function Base.Array(VA::AbstractVectorOfArray)
   vecs = vec.(VA.u)
   Array(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
 end
+function Base.Array{U}(VA::AbstractVectorOfArray) where U
+  vecs = vec.(VA.u)
+  Array(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
+end
 
 VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N} = VectorOfArray{eltype(T), N, typeof(vec)}(vec)
 # Assume that the first element is representative of all other elements
