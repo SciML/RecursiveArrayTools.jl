@@ -44,12 +44,12 @@ function ChainRulesCore.rrule(::typeof(getproperty),A::ArrayPartition, s::Symbol
 end
 
 # Define a new species of projection operator for this type:
-ChainRulesCore.ProjectTo(x::VectorOfArray) = ProjectTo{VectorOfArray}()
+ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
 # Gradient from iteration will be e.g. Vector{Vector}, this makes it another AbstractMatrix
-(::ProjectTo{VectorOfArray})(dx::AbstractVector{<:AbstractArray}) = VectorOfArray(dx)
+(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractVector{<:AbstractArray}) = VectorOfArray(dx)
 # Gradient from broadcasting will be another AbstractArray
-(::ProjectTo{VectorOfArray})(dx::AbstractArray) = dx
+(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractArray) = dx
 
 # These rules duplicate the `rrule` methods above, because Zygote looks for an `@adjoint`
 # definition first, and finds its own before finding those.
