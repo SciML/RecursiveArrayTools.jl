@@ -1,7 +1,7 @@
 function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}})
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
-    (NoTangent(),Δ′,NoTangent())
+    (NoTangent(),VectorOfArray(Δ′),NoTangent())
   end
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
@@ -10,7 +10,7 @@ function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, indi
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[indices...] = Δ
-    (NoTangent(), Δ′, indices[1],map(_ -> NoTangent(), indices[2:end])...)
+    (NoTangent(), VectorOfArray(Δ′), indices[1],map(_ -> NoTangent(), indices[2:end])...)
   end
   VA[indices...],AbstractVectorOfArray_getindex_adjoint
 end
@@ -19,7 +19,7 @@ function ChainRulesCore.rrule(::Type{<:ArrayPartition}, x::S, ::Type{Val{copy_x}
   function ArrayPartition_adjoint(_y)
       y = Array(_y)
       starts = vcat(0,cumsum(reduce(vcat,length.(x))))
-      NoTangent(), ntuple(i -> reshape(y[starts[i]+1:starts[i+1]], size(x[i])), length(x)), NoTangent()
+      NoTangent(), ArrayPartition(ntuple(i -> reshape(y[starts[i]+1:starts[i+1]], size(x[i]))), length(x)), NoTangent()
   end
 
   ArrayPartition(x, Val{copy_x}), ArrayPartition_adjoint
@@ -43,8 +43,6 @@ function ChainRulesCore.rrule(::typeof(getproperty),A::ArrayPartition, s::Symbol
     A.x,literal_ArrayPartition_x_adjoint
 end
 
-#=
-
 # Define a new species of projection operator for this type:
 ChainRulesCore.ProjectTo(x::VectorOfArray) = ProjectTo{VectorOfArray}()
 
@@ -52,11 +50,6 @@ ChainRulesCore.ProjectTo(x::VectorOfArray) = ProjectTo{VectorOfArray}()
 (::ProjectTo{VectorOfArray})(dx::AbstractVector{<:AbstractArray}) = VectorOfArray(dx)
 # Gradient from broadcasting will be another AbstractArray
 (::ProjectTo{VectorOfArray})(dx::AbstractArray) = dx
-
-But this may not be necessary?
-
-=#
-
 
 # These rules duplicate the `rrule` methods above, because Zygote looks for an `@adjoint`
 # definition first, and finds its own before finding those.
@@ -73,10 +66,7 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,A
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[i,j...] = Δ
-    @show Δ′
-    # (Δ′, i,map(_ -> nothing, j)...)  # surely that i is a bug?
-    (Δ′, nothing, map(_ -> nothing, j)...)
-    # (VectorOfArray(Δ′), nothing, map(_ -> nothing, j)...)
+    (VectorOfArray(Δ′), nothing, map(_ -> nothing, j)...)
   end
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
@@ -91,11 +81,11 @@ ZygoteRules.@adjoint function ArrayPartition(x::S, ::Type{Val{copy_x}} = Val{fal
 end
 
 ZygoteRules.@adjoint function VectorOfArray(u)
-  VectorOfArray(u),y -> ([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],)
+  VectorOfArray(u),y -> (VectorOfArray([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]]),)
 end
 
 ZygoteRules.@adjoint function DiffEqArray(u,t)
-  DiffEqArray(u,t),y -> ([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],nothing)
+  DiffEqArray(u,t),y -> (DiffEqArray([y[ntuple(x->Colon(),ndims(y)-1)...,i] for i in 1:size(y)[end]],t),nothing)
 end
 
 ZygoteRules.@adjoint function ZygoteRules.literal_getproperty(A::ArrayPartition, ::Val{:x})
