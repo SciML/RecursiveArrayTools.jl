@@ -47,7 +47,7 @@ end
 ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
 # Gradient from iteration will be e.g. Vector{Vector}, this makes it another AbstractMatrix
-(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractVector{<:AbstractArray}) = VectorOfArray(dx)
+#(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractVector{<:AbstractArray}) = VectorOfArray(dx)
 # Gradient from broadcasting will be another AbstractArray
 #(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractArray) = dx
 
@@ -56,7 +56,7 @@ ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfAr
 
 ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}})
   function AbstractVectorOfArray_getindex_adjoint(Δ)
-    Δ′ = [ (i == j ? Δ : zero(x)) for (x,j) in zip(VA.u, 1:length(VA))]
+    Δ′ = [(i == j ? Δ : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
     (VectorOfArray(Δ′),nothing)
   end
   VA[i],AbstractVectorOfArray_getindex_adjoint
@@ -64,8 +64,8 @@ end
 
 ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}, j::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
-    Δ′ = zero(VA)
-    Δ′[i,j...] = Δ
+    Δ′ = [(i == j ? zero(x) : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
+    Δ′[i][j...] = Δ
     (VectorOfArray(Δ′), nothing, map(_ -> nothing, j)...)
   end
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
