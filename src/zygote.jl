@@ -49,7 +49,7 @@ ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfAr
 # Gradient from iteration will be e.g. Vector{Vector}, this makes it another AbstractMatrix
 (::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractVector{<:AbstractArray}) = VectorOfArray(dx)
 # Gradient from broadcasting will be another AbstractArray
-(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractArray) = dx
+#(::ChainRulesCore.ProjectTo{VectorOfArray})(dx::AbstractArray) = dx
 
 # These rules duplicate the `rrule` methods above, because Zygote looks for an `@adjoint`
 # definition first, and finds its own before finding those.
