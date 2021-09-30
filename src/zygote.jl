@@ -10,7 +10,7 @@ function ChainRulesCore.rrule(::typeof(getindex),VA::AbstractVectorOfArray, indi
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = zero(VA)
     Δ′[indices...] = Δ
-    (NoTangent(), VectorOfArray(Δ′), indices[1],map(_ -> NoTangent(), indices[2:end])...)
+    (NoTangent(), VectorOfArray(Δ′), map(_ -> NoTangent(), indices)...)
   end
   VA[indices...],AbstractVectorOfArray_getindex_adjoint
 end
