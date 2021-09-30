@@ -11,6 +11,9 @@ using Requires, RecipesBase, StaticArrays, Statistics,
 import ChainRulesCore
 import ChainRulesCore: NoTangent
 import ZygoteRules
+
+using FillArrays
+
 abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
 abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
