@@ -87,11 +87,18 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,A
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Colon)
+  function AbstractVectorOfArray_getindex_adjoint(Δ)
+    (VectorOfArray(Δ),nothing)
+  end
+  VA[i],AbstractVectorOfArray_getindex_adjoint
+end
+
 ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Int, j::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
-    Δ′ = [(i == j ? zero(x) : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
-    Δ′[i][j...] = Δ
-    (VectorOfArray(Δ′), nothing, map(_ -> nothing, j)...)
+    Δ′ = VectorOfArray([zero(x) for (x,j) in zip(VA.u, 1:length(VA))])
+    Δ′[i,j...] = Δ
+    (Δ′, nothing, map(_ -> nothing, j)...)
   end
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
