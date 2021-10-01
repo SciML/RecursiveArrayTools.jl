@@ -54,7 +54,7 @@ ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfAr
 # These rules duplicate the `rrule` methods above, because Zygote looks for an `@adjoint`
 # definition first, and finds its own before finding those.
 
-ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}})
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = [(i == j ? Δ : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
     (VectorOfArray(Δ′),nothing)
@@ -62,7 +62,32 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,A
   VA[i],AbstractVectorOfArray_getindex_adjoint
 end
 
-ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}, j::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...)
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{BitArray,AbstractArray{Bool}})
+  function AbstractVectorOfArray_getindex_adjoint(Δ)
+    Δ′ = [(i[j] ? Δ[j] : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
+    (VectorOfArray(Δ′),nothing)
+  end
+  VA[i],AbstractVectorOfArray_getindex_adjoint
+end
+
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::AbstractArray{Int})
+  function AbstractVectorOfArray_getindex_adjoint(Δ)
+    iter = 0
+    Δ′ = [(j ∈ i ? Δ[iter+=1] : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
+    (VectorOfArray(Δ′),nothing)
+  end
+  VA[i],AbstractVectorOfArray_getindex_adjoint
+end
+
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,AbstractArray{Int}})
+  function AbstractVectorOfArray_getindex_adjoint(Δ)
+    Δ′ = [(i[j] ? Δ[j] : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
+    (VectorOfArray(Δ′),nothing)
+  end
+  VA[i],AbstractVectorOfArray_getindex_adjoint
+end
+
+ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Int, j::Union{Int,AbstractArray{Int},CartesianIndex,Colon,BitArray,AbstractArray{Bool}}...)
   function AbstractVectorOfArray_getindex_adjoint(Δ)
     Δ′ = [(i == j ? zero(x) : Fill(zero(eltype(x)),size(x))) for (x,j) in zip(VA.u, 1:length(VA))]
     Δ′[i][j...] = Δ
@@ -70,6 +95,7 @@ ZygoteRules.@adjoint function getindex(VA::AbstractVectorOfArray, i::Union{Int,A
   end
   VA[i,j...],AbstractVectorOfArray_getindex_adjoint
 end
+
 ZygoteRules.@adjoint function ArrayPartition(x::S, ::Type{Val{copy_x}} = Val{false}) where {S<:Tuple,copy_x}
   function ArrayPartition_adjoint(_y)
       y = Array(_y)
