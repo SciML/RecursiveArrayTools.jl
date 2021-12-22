@@ -106,6 +106,9 @@ _broadcast_wrapper(y) = _scalar_op.(y)
 # Testing map
 @test map(x->x^2, x) == ArrayPartition(x.x[1].^2, x.x[2].^2)
 
+# Testing filter
+@test filter(x->iseven(round(Int, x)), x) == ArrayPartition([2], [4.0])
+
 #### testing copyto!
 S = [
      ((1,),(2,)) => ((1,),(2,)),

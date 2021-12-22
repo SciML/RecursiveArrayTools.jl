@@ -114,6 +114,7 @@ Base.:(==)(A::ArrayPartition,B::ArrayPartition) = A.x == B.x
 
 Base.map(f,A::ArrayPartition) = ArrayPartition(map(x->map(f,x), A.x))
 Base.mapreduce(f,op,A::ArrayPartition) = mapreduce(f,op,(mapreduce(f,op,x) for x in A.x))
+Base.filter(f,A::ArrayPartition) = ArrayPartition(map(x->filter(f,x), A.x))
 Base.any(f,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
 Base.any(f::Function,A::ArrayPartition) = any(f,(any(f,x) for x in A.x))
 Base.any(A::ArrayPartition) = any(identity, A)
