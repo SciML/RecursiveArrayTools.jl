@@ -10,7 +10,7 @@ using Requires, RecipesBase, StaticArrays, Statistics,
 
 import ChainRulesCore
 import ChainRulesCore: NoTangent
-import ZygoteRules
+import ZygoteRules, Adapt
 
 using FillArrays
 
