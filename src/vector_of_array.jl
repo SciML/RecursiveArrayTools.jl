@@ -68,7 +68,7 @@ end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
   I::Colon...) where {T, N}
-  @assert length(I) == size(A.u[1])-1
+  @assert length(I) == ndims(A.u[1])-1
   vecs = vec.(A.u)
   return Adapt.adapt(__parameterless_type(T),reshape(reduce(hcat,vecs),size(A.u[1])...,length(A.u)))
 end
