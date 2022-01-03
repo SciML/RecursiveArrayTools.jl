@@ -1,4 +1,5 @@
 using RecursiveArrayTools, CUDA
+CUDA.allowscalar(false)
 
 x = zeros(5)
 y = VectorOfArray([x,x,x])
