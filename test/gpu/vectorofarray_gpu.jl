@@ -18,9 +18,7 @@ x[m, :]
 
 va = VectorOfArray([slice for slice in eachslice(x, dims=3)])
 @test va[m, :] ≈ x[m, :]
-va[m, :]
 
 xc = Array(x)
 mc = Array(m)
-xc[mc, :]
-
+@test xc[mc, :] ≈ Array(va[m, :])
