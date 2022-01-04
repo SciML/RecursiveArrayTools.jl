@@ -73,6 +73,14 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
   return Adapt.adapt(__parameterless_type(T),reshape(reduce(hcat,vecs),size(A.u[1])...,length(A.u)))
 end
 
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
+  I::AbstractArray{Bool},J::Colon...) where {T, N}
+  @assert length(J) == ndims(A.u[1])+1-ndims(I)
+  @assert size(I) == size(A)[1:ndims(A)-length(J)]
+  vecs = vec.(A.u)
+  return Adapt.adapt(__parameterless_type(T),reshape(reduce(hcat,vecs[I]),size(A.u[1])...,length(A.u)))
+end
+
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,::Colon) where {T, N} = [A.u[j][i] for j in 1:length(A)]
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, ::Colon,i::Int) where {T, N} = A.u[i]
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,II::AbstractArray{Int}) where {T, N} = [A.u[j][i] for j in II]
