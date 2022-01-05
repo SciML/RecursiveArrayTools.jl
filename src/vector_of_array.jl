@@ -77,7 +77,6 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
   I::AbstractArray{Bool},J::Colon...) where {T, N}
   @assert length(J) == ndims(A.u[1])+1-ndims(I)
   @assert size(I) == size(A)[1:ndims(A)-length(J)]
-  vecs = vec.(A.u)
   return A[repeat([:], length(size(A)))...][I,J...]
 end
 
