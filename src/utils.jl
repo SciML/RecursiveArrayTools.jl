@@ -75,7 +75,11 @@ function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy
       #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
     else
-      recursivecopy!(a[i],x)
+      if length(a[i]) == length(x)
+        recursivecopy!(a[i],x)
+      else
+        a[i] = recursivecopy(x)
+      end
     end
   else
       if perform_copy
