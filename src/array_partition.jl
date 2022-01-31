@@ -78,7 +78,7 @@ end
 
 ## vector space operations
 
-for op in (:+, :-)
+for op in (:+, :-) # @inferred x::ArrayPartition .± 2 # == true
     @eval begin
         function Base.$op(A::ArrayPartition, B::Number)
             ArrayPartition(map(y->Base.broadcast($op, y, B), A.x))
