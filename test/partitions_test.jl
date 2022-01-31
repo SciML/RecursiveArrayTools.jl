@@ -76,16 +76,18 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @inferred ones(x, (2,2))
 
 # vector space calculations
-@inferred x+5
-@inferred 5+x
-@inferred x-5
-@inferred 5-x
+@inferred x .+ 5
+@inferred 5 .+ x
+@inferred x .- 5
+@inferred 5 .- x
 @inferred x*5
 @inferred 5*x
 @inferred x/5
 @inferred 5\x
 @inferred x+x
 @inferred x-x
+@inferred -x
+@inferred +x
 
 # indexing
 @inferred first(x)

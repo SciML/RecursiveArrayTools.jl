@@ -73,20 +73,6 @@ Base.ones(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = ones(A)
     return :( $res )
 end
 
-## vector space operations
-
-for op in (:+, :-)
-    @eval begin
-        function Base.$op(A::ArrayPartition, B::Number)
-            ArrayPartition(map(y->Base.broadcast($op, y, B), A.x))
-        end
-
-        function Base.$op(A::Number, B::ArrayPartition)
-            ArrayPartition(map(y->Base.broadcast($op, A, y), B.x))
-        end
-    end
-end
-
 Base.:(==)(A::ArrayPartition,B::ArrayPartition) = A.x == B.x
 
 ## Iterable Collection Constructs
