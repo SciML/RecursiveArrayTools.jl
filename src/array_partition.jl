@@ -80,10 +80,6 @@ end
 
 for op in (:+, :-)
     @eval begin
-        function Base.$op(A::ArrayPartition, B::ArrayPartition)
-            ArrayPartition(map((x, y)->Base.broadcast($op, x, y), A.x, B.x))
-        end
-
         function Base.$op(A::ArrayPartition, B::Number)
             ArrayPartition(map(y->Base.broadcast($op, y, B), A.x))
         end
@@ -92,20 +88,6 @@ for op in (:+, :-)
             ArrayPartition(map(y->Base.broadcast($op, A, y), B.x))
         end
     end
-end
-
-for op in (:*, :/)
-    @eval function Base.$op(A::ArrayPartition, B::Number)
-        ArrayPartition(map(y->Base.broadcast($op, y, B), A.x))
-    end
-end
-
-function Base.:*(A::Number, B::ArrayPartition)
-    ArrayPartition(map(y->Base.broadcast(*, A, y), B.x))
-end
-
-function Base.:\(A::Number, B::ArrayPartition)
-    ArrayPartition(map(y->Base.broadcast(/, y, A), B.x))
 end
 
 Base.:(==)(A::ArrayPartition,B::ArrayPartition) = A.x == B.x
