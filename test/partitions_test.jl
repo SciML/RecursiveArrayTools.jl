@@ -61,9 +61,11 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 
 # similar partitions
 @inferred similar(x)
-@inferred similar(x, (2, 2))
+@test similar(x, (4,)) isa ArrayPartition{Float64}
+@test (@inferred similar(x, (2, 2))) isa AbstractMatrix{Float64}
 @inferred similar(x, Int)
-@inferred similar(x, Int, (2, 2))
+@test similar(x, Int, (4,)) isa ArrayPartition{Int}
+@test (@inferred similar(x, Int, (2, 2))) isa AbstractMatrix{Int}
 # @inferred similar(x, Int, Float64)
 
 # zero
