@@ -19,8 +19,14 @@ end
 
 Base.similar(A::ArrayPartition{T,S}) where {T,S} = ArrayPartition{T,S}(similar.(A.x))
 
-# ignore dims since array partitions are vectors
-Base.similar(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = similar(A)
+# return ArrayPartition when possible, otherwise next best thing of the correct size
+function Base.similar(A::ArrayPartition, dims::NTuple{N,Int}) where {N}
+    if dims == size(A)
+        return similar(A)
+    else
+        return similar(A.x[1], eltype(A), dims)
+    end
+end
 
 # similar array partition of common type
 @inline function Base.similar(A::ArrayPartition, ::Type{T}) where {T}
@@ -28,8 +34,14 @@ Base.similar(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = similar(A)
     ArrayPartition(i->similar(A.x[i], T), N)
 end
 
-# ignore dims since array partitions are vectors
-Base.similar(A::ArrayPartition, ::Type{T}, dims::NTuple{N,Int}) where {T,N} = similar(A, T)
+# return ArrayPartition when possible, otherwise next best thing of the correct size
+function Base.similar(A::ArrayPartition, ::Type{T}, dims::NTuple{N,Int}) where {T,N}
+    if dims == size(A)
+        return similar(A, T)
+    else
+        return similar(A.x[1], T, dims)
+    end
+end
 
 # similar array partition with different types
 function Base.similar(A::ArrayPartition, ::Type{T}, ::Type{S}, R::DataType...) where {T, S}
