@@ -106,6 +106,10 @@ for op in (:+, :-)
     end
 end
 
+function Base.:-(A::ArrayPartition)
+    return ArrayPartition(map(-, A.x))
+end
+
 for op in (:*, :/)
     @eval function Base.$op(A::ArrayPartition, B::Number)
         ArrayPartition(map(y->Base.broadcast($op, y, B), A.x))
