@@ -47,6 +47,12 @@ function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:StaticArray,T2<:S
   end
 end
 
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:SArray,T2<:Union{Number,Bool},N}
+  @inbounds for i in eachindex(b)
+    b[i] = fill(a, typeof(b[i]))
+  end
+end
+
 function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Enum,T2<:Enum,N}
   fill!(b,a)
 end
