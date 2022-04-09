@@ -51,7 +51,7 @@ function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Enum,T2<:Enum,N}
   fill!(b,a)
 end
 
-function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Number,T2<:Number,N}
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Union{Number,Bool},T2<:Union{Number,Bool},N}
   fill!(b, a)
 end
 

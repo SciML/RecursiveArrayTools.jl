@@ -89,3 +89,8 @@ x = [MVector{10}(zeros(10)), MVector{10}(zeros(10))]
 recursivefill!(x, 1.0)
 @test x[1] == MVector{10}(ones(10))
 @test x[2] == MVector{10}(ones(10))
+
+x = [similar(x[1]), similar(x[1])]
+recursivefill!(x, true)
+@test x[1] == MVector{10}(ones(10))
+@test x[2] == MVector{10}(ones(10))
