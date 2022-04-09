@@ -41,6 +41,27 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
   return b
 end
 
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:StaticArray,T2<:StaticArray,N}
+  @inbounds for i in eachindex(b)
+    b[i] = copy(a)
+  end
+end
+
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Enum,T2<:Enum,N}
+  fill!(b,a)
+end
+
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Number,T2<:Number,N}
+  fill!(b, a)
+end
+
+function recursivefill!(b::AbstractArray{T,N},a) where {T<:AbstractArray,N}
+  @inbounds for i in eachindex(b)
+    recursivefill!(b[i], a)
+  end
+  return b
+end
+
 function vecvec_to_mat(vecvec)
   mat = Matrix{eltype(eltype(vecvec))}(undef, length(vecvec),length(vecvec[1]))
   for i in 1:length(vecvec)
