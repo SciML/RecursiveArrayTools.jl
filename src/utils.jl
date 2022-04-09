@@ -55,6 +55,17 @@ function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Union{Number,Bool
   fill!(b, a)
 end
 
+function recursivefill!(b::AbstractArray{T,N},a) where {T<:MArray,N}
+  @inbounds for i in eachindex(b)
+    if isassigned(b,i)
+      recursivefill!(b[i],a)
+    else
+      b[i] = zero(eltype(b))
+      recursivefill!(b[i], a)
+    end
+  end
+end
+
 function recursivefill!(b::AbstractArray{T,N},a) where {T<:AbstractArray,N}
   @inbounds for i in eachindex(b)
     recursivefill!(b[i], a)
