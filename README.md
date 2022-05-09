@@ -96,7 +96,7 @@ A recursive `copy!` function. Acts like a `deepcopy!` on arrays of arrays, but
 like `copy!` on arrays of scalars.
 
 ```julia
-convert(Array,vecvec)
+convert(Array,vecvec) 
 ```
 
 Technically, just a Base fallback that works well. Takes in a vector of arrays,
