@@ -5,15 +5,6 @@ function __init__()
     RecursiveArrayTools.recursive_bottom_eltype(a::ApproxFun.Fun) = recursive_bottom_eltype(ApproxFun.coefficients(a))
   end
 
-  @require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
-    function CuArrays.CuArray(VA::AbstractVectorOfArray)
-      vecs = vec.(VA.u)
-      return CuArrays.CuArray(reshape(reduce(hcat,vecs),size(VA.u[1])...,length(VA.u)))
-    end
-    Base.convert(::Type{<:CuArrays.CuArray},VA::AbstractVectorOfArray) = CuArrays.CuArray(VA)
-    ChainRulesCore.rrule(::Type{<:CuArrays.CuArray},xs::AbstractVectorOfArray) = CuArrays.CuArray(xs), ȳ -> (NoTangent(),ȳ)
-  end
-
   @require CUDA="052768ef-5323-5732-b1bb-66c8b64840ba" begin
     function CUDA.CuArray(VA::AbstractVectorOfArray)
       vecs = vec.(VA.u)
