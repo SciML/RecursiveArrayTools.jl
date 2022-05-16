@@ -20,7 +20,6 @@ abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 include("utils.jl")
 include("vector_of_array.jl")
 include("array_partition.jl")
-include("init.jl")
 include("zygote.jl")
 
 Base.show(io::IO, x::Union{ArrayPartition,AbstractVectorOfArray}) = invoke(show, Tuple{typeof(io), Any}, io, x)
