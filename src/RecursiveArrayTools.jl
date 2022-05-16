@@ -5,7 +5,7 @@ $(DocStringExtensions.README)
 module RecursiveArrayTools
 
 using DocStringExtensions
-using Requires, RecipesBase, StaticArrays, Statistics,
+using RecipesBase, StaticArrays, Statistics,
       ArrayInterface, LinearAlgebra
 
 import ChainRulesCore
