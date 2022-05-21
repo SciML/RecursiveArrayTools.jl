@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test, Statistics, ArrayInterface
+using RecursiveArrayTools, Test, Statistics, ArrayInterfaceCore
 A = (rand(5),rand(5))
 p = ArrayPartition(A)
 @test (p.x[1][1],p.x[2][1]) == (p[1],p[6])
@@ -188,8 +188,8 @@ up = ap .+ 1
 up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
-@testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,2, false), ([1], 2, false), ([1], [2], true))
-    @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
+@testset "ArrayInterfaceCore.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,2, false), ([1], 2, false), ([1], [2], true))
+    @test ArrayInterfaceCore.ismutable(ArrayPartition(a, b)) == r
 end
 
 # Test unary minus

@@ -83,8 +83,8 @@ end
 Base.ones(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = ones(A)
 
 # mutable iff all components of ArrayPartition are mutable
-@generated function ArrayInterface.ismutable(::Type{<:ArrayPartition{T,S}}) where {T,S}
-    res = all(ArrayInterface.ismutable, S.parameters)
+@generated function ArrayInterfaceCore.ismutable(::Type{<:ArrayPartition{T,S}}) where {T,S}
+    res = all(ArrayInterfaceCore.ismutable, S.parameters)
     return :( $res )
 end
 
@@ -342,7 +342,7 @@ common_number(a, b) =
 
 ## Linear Algebra
 
-ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
+ArrayInterfaceCore.zeromatrix(A::ArrayPartition) = ArrayInterfaceCore.zeromatrix(Vector(A))
 
 LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition) = (x = ldiv!(A, Array(b)); copyto!(b, x))
 function LinearAlgebra.ldiv!(A::LU, b::ArrayPartition)

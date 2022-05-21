@@ -7,11 +7,11 @@ function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
 end
 
 function recursivecopy(a::AbstractArray{T,N}) where {T<:AbstractArray,N}
-  if ArrayInterface.ismutable(a)
+  if ArrayInterfaceCore.ismutable(a)
     b = similar(a)
     map!(recursivecopy, b, a)
   else
-    ArrayInterface.restructure(a, map(recursivecopy, a))
+    ArrayInterfaceCore.restructure(a, map(recursivecopy, a))
   end
 end
 
@@ -31,7 +31,7 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
 end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:AbstractArray,T2<:AbstractArray,N}
-  if ArrayInterface.ismutable(T)
+  if ArrayInterfaceCore.ismutable(T)
     @inbounds for i in eachindex(b, a)
       recursivecopy!(b[i], a[i])
     end
@@ -108,7 +108,7 @@ end
 
 function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
-    if !ArrayInterface.ismutable(T) || !perform_copy
+    if !ArrayInterfaceCore.ismutable(T) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
       #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
