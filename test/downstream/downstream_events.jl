@@ -8,6 +8,10 @@ end
 
 prob = ODEProblem(f,u0,tspan)
 
+function condition(u,t,integrator) # Event when event_f(u,t,k) == 0
+    u[1]
+end
+    
 affect! = nothingf =
 affect_neg! = function (integrator)
   integrator.u = ArrayPartition(SVector{1}(integrator.u[1]), SVector{1}(-integrator.u[2]))
