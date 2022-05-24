@@ -12,6 +12,11 @@ import ChainRulesCore
 import ChainRulesCore: NoTangent
 import ZygoteRules, Adapt
 
+# Required for the downstream_events.jl test
+# Since `ismutable` on an ArrayPartition needs
+# to know static arrays are not mutable
+import ArrayInterfaceStaticArrays
+
 using FillArrays
 
 abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end

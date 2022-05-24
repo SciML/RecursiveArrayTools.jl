@@ -33,6 +33,7 @@ end
 if !is_APPVEYOR && GROUP == "Downstream"
   activate_downstream_env()
   @time @testset "DiffEqArray Indexing Tests" begin include("downstream/symbol_indexing.jl") end
+  @time @testset "Event Tests with ArrayPartition" begin include("downstream/downstream_events.jl") end
 end
 
 if !is_APPVEYOR && GROUP == "GPU"
