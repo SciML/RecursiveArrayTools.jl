@@ -1,3 +1,11 @@
+"""
+```julia
+recursivecopy(b::AbstractArray{T,N},a::AbstractArray{T,N})
+```
+
+A recursive `copy` function. Acts like a `deepcopy` on arrays of arrays, but
+like `copy` on arrays of scalars.
+"""
 function recursivecopy(a)
   deepcopy(a)
 end
@@ -14,6 +22,16 @@ function recursivecopy(a::AbstractArray{T,N}) where {T<:AbstractArray,N}
     ArrayInterfaceCore.restructure(a, map(recursivecopy, a))
   end
 end
+
+"""
+```julia
+recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T,N})
+```
+
+A recursive `copy!` function. Acts like a `deepcopy!` on arrays of arrays, but
+like `copy!` on arrays of scalars.
+"""
+function recursivecopy! end
 
 function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:StaticArray,T2<:StaticArray,N}
   @inbounds for i in eachindex(a)
@@ -40,6 +58,15 @@ function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:
   end
   return b
 end
+
+"""
+```julia
+recursivefill!(b::AbstractArray{T,N},a)
+```
+
+A recursive `fill!` function.
+"""
+function recursivefill! end
 
 function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:StaticArray,T2<:StaticArray,N}
   @inbounds for i in eachindex(b)
@@ -79,6 +106,7 @@ function recursivefill!(b::AbstractArray{T,N},a) where {T<:AbstractArray,N}
   return b
 end
 
+# Deprecated
 function vecvec_to_mat(vecvec)
   mat = Matrix{eltype(eltype(vecvec))}(undef, length(vecvec),length(vecvec[1]))
   for i in 1:length(vecvec)
@@ -87,7 +115,13 @@ function vecvec_to_mat(vecvec)
   mat
 end
 
+"""
+```julia
+vecvecapply(f::Base.Callable,v)
+```
 
+Calls `f` on each element of a vecvec `v`.
+"""
 function vecvecapply(f,v)
   sol = Vector{eltype(eltype(v))}()
   for i in eachindex(v)
@@ -106,6 +140,14 @@ function vecvecapply(f,v::T) where T<:Number
   f(v)
 end
 
+"""
+```julia
+copyat_or_push!{T}(a::AbstractVector{T},i::Int,x)
+```
+
+If `i<length(x)`, it's simply a `recursivecopy!` to the `i`th element. Otherwise, it will
+`push!` a `deepcopy`.
+"""
 function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
     if !ArrayInterfaceCore.ismutable(T) || !perform_copy
@@ -129,11 +171,26 @@ function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy
   nothing
 end
 
+"""
+```julia
+recursive_one(a)
+```
+
+Calls `one` on the bottom container to get the "true element one type".
+"""
 recursive_one(a) = recursive_one(a[1])
 recursive_one(a::T) where {T<:Number} = one(a)
 
 recursive_bottom_eltype(a) = a == eltype(a) ? a : recursive_bottom_eltype(eltype(a))
 
+"""
+```julia
+recursive_unitless_bottom_eltype(a)
+```
+
+Grabs the unitless element type at the bottom of the chain. For example, if
+ones has a `Array{Array{Float64,N},N}`, this will return `Float64`.
+"""
 recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(typeof(a))
 recursive_unitless_bottom_eltype(a::Type{Any}) = Any
 recursive_unitless_bottom_eltype(a::Type{T}) where T = recursive_unitless_bottom_eltype(eltype(a))
@@ -141,6 +198,14 @@ recursive_unitless_bottom_eltype(a::Type{T}) where {T<:AbstractArray} = recursiv
 recursive_unitless_bottom_eltype(a::Type{T}) where {T<:Number} = eltype(a) == Number ? Float64 : typeof(one(eltype(a)))
 recursive_unitless_bottom_eltype(::Type{<:Enum{T}}) where T = T
 
+"""
+```julia
+recursive_unitless_eltype(a)
+```
+
+Grabs the unitless element type. For example, if
+ones has a `Array{Array{Float64,N},N}`, this will return `Array{Float64,N}`.
+"""
 recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
 recursive_unitless_eltype(a::Type{Any}) = Any
 recursive_unitless_eltype(a::Type{T}) where {T<:StaticArray} = similar_type(a,recursive_unitless_eltype(eltype(a)))
