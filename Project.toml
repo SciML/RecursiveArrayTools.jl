@@ -1,7 +1,7 @@
 name = "RecursiveArrayTools"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "2.29.1"
+version = "2.29.2"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
