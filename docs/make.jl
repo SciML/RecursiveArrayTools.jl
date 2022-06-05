@@ -1,4 +1,4 @@
-using Documenter, NonlinearSolve
+using Documenter, RecursiveArrayTools
 
 include("pages.jl")
 
