@@ -6,3 +6,29 @@
 
 RecursiveArrayTools.jl is a set of tools for dealing with recursive arrays like
 arrays of arrays.
+
+## Tutorials and Documentation
+
+For information on using the package,
+[see the stable documentation](https://recursivearraytools.sciml.ai/stable/). Use the
+[in-development documentation](https://recursivearraytools.sciml.ai/dev/) for the version of
+the documentation, which contains the unreleased features.
+
+## Example
+
+```julia
+using RecursiveArrayTools
+a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+b = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+vA = VectorOfArray(a)
+vB = VectorOfArray(b)
+
+vA .+ vB # Now all standard array stuff works!
+
+a = (rand(5),rand(5))
+b = (rand(5),rand(5))
+pA = ArrayPartition(a)
+pB = ArrayPartition(b)
+
+pA .+ pB # Now all standard array stuff works!
+```
