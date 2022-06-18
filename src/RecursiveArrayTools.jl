@@ -10,7 +10,7 @@ using RecipesBase, StaticArrays, Statistics,
 
 import ChainRulesCore
 import ChainRulesCore: NoTangent
-import Adapt
+import ZygoteRules, Adapt
 
 # Required for the downstream_events.jl test
 # Since `ismutable` on an ArrayPartition needs
