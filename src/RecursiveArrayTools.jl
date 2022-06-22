@@ -29,9 +29,9 @@ include("zygote.jl")
 
 Base.show(io::IO, x::Union{ArrayPartition,AbstractVectorOfArray}) = invoke(show, Tuple{typeof(io), Any}, io, x)
 
-import GPUArrays
-Base.convert(T::Type{<:GPUArrays.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
-ChainRulesCore.rrule(T::Type{<:GPUArrays.AbstractGPUArray}, xs::AbstractVectorOfArray) = T(xs), ȳ -> (NoTangent(),ȳ)
+import GPUArraysCore
+Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
+ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray}, xs::AbstractVectorOfArray) = T(xs), ȳ -> (NoTangent(),ȳ)
 
 export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
        AllObserved, vecarr_to_arr, vecarr_to_vectors, tuples
