@@ -2,7 +2,7 @@ using RecursiveArrayTools, Test
 
 t = 1:3
 testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]],t)
+testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], t)
 
 for (i, elem) in enumerate(testva)
     @test elem == testva[i]
@@ -58,24 +58,24 @@ push!(testda, [-1, -2, -3, -4])
 
 # convert array from VectorOfArray/DiffEqArray
 t = 1:8
-recs = [rand(10, 7) for i = 1:8]
+recs = [rand(10, 7) for i in 1:8]
 testva = VectorOfArray(recs)
-testda = DiffEqArray(recs,t)
-testa = cat(recs...,dims=3)
+testda = DiffEqArray(recs, t)
+testa = cat(recs..., dims = 3)
 
-@test convert(Array,testva) == testa
-@test convert(Array,testda) == testa
+@test convert(Array, testva) == testa
+@test convert(Array, testda) == testa
 
 t = 1:3
-recs = [[1 2; 3 4], [3 5; 6 7], [8 9; 10 11]]
+recs = [[1 2; 3 4], [3 5 6 7], [8 9 10 11]]
 testva = VectorOfArray(recs)
-testda = DiffEqArray(recs,t)
+testda = DiffEqArray(recs, t)
 
-@test size(convert(Array,testva)) == (2,2,3)
-@test size(convert(Array,testda)) == (2,2,3)
+@test size(convert(Array, testva)) == (2, 2, 3)
+@test size(convert(Array, testda)) == (2, 2, 3)
 
 # create similar VectorOfArray
-recs = [rand(6) for i = 1:4]
+recs = [rand(6) for i in 1:4]
 testva = VectorOfArray(recs)
 
 testva2 = similar(testva)
@@ -85,11 +85,11 @@ testva2 = similar(testva)
 # Fill AbstractVectorOfArray and check all
 testval = 3.0
 fill!(testva2, testval)
-@test all(x->(x==testval), testva2)
+@test all(x -> (x == testval), testva2)
 testts = rand(Float64, size(testva.u))
 testda = DiffEqArray(recursivecopy(testva.u), testts)
 fill!(testda, testval)
-@test all(x->(x==testval), testda)
+@test all(x -> (x == testval), testda)
 
 # check any
 recs = [collect(1:5), collect(6:10), collect(11:15)]
@@ -98,8 +98,8 @@ testva = VectorOfArray(recs)
 testda = DiffEqArray(recs, testts)
 testval1 = 4
 testval2 = 17
-@test any(x->(x==testval1), testva)
-@test !any(x->(x==testval2), testda)
+@test any(x -> (x == testval1), testva)
+@test !any(x -> (x == testval2), testda)
 
 # check creation from empty arrays
 emptyva = VectorOfArray(Array{Vector{Float64}}([]))
@@ -107,8 +107,8 @@ emptyva = VectorOfArray(Array{Vector{Float64}}([]))
 emptyda = DiffEqArray(Array{Vector{Float64}}([]), Vector{Float64}())
 @test isempty(emptyda)
 
-A = VectorOfArray(map(i->rand(2,4),1:7))
-@test map(x->maximum(x),A) isa Vector
+A = VectorOfArray(map(i -> rand(2, 4), 1:7))
+@test map(x -> maximum(x), A) isa Vector
 
-DA = DiffEqArray(map(i->rand(2,4),1:7), 1:7)
-@test map(x->maximum(x),DA) isa Vector
+DA = DiffEqArray(map(i -> rand(2, 4), 1:7), 1:7)
+@test map(x -> maximum(x), DA) isa Vector
