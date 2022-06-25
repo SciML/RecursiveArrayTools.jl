@@ -47,7 +47,7 @@ dyn(u, p, t) = ArrayPartition(
     ),AutoTsit5(Rodas5())
 ).retcode == :Success
 
-if VERSION <= v"1.6"
+if VERSION < v"1.7"
     @test solve(
         ODEProblem(
             dyn,
