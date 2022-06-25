@@ -215,8 +215,8 @@ recursive_unitless_eltype(a::Type{Any}) = Any
 # But missing from StaticArraysCore
 recursive_unitless_eltype(a::Type{StaticArraysCore.SArray{S, T, N, L}}) where {S, T, N, L} = SArray{S, typeof(one(T)), N, L}
 recursive_unitless_eltype(a::Type{StaticArraysCore.MArray{S, T, N, L}}) where {S, T, N, L} = MArray{S, typeof(one(T)), N, L}
-recursive_unitless_eltype(a::Type{SizedArray{S, T, N, M, TData}}) where {
-                          S, T, N, M, TData} = SizedArray{S, typeof(one(T)), N, M, TData}
+recursive_unitless_eltype(a::Type{StaticArraysCore.SizedArray{S, T, N, M, TData}}) where {
+                          S, T, N, M, TData} = StaticArraysCore.SizedArray{S, typeof(one(T)), N, M, TData}
 
 recursive_unitless_eltype(a::Type{T}) where {T<:Array} = Array{recursive_unitless_eltype(eltype(a)),ndims(a)}
 recursive_unitless_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
