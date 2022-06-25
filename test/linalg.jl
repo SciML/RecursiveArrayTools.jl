@@ -4,6 +4,7 @@ using LinearAlgebra
 n, m = 5, 6
 bb = rand(n), rand(m)
 b = ArrayPartition(bb)
+@test Array(b) isa Array
 @test Array(b) == collect(b) == vcat(bb...)
 A = randn(MersenneTwister(123), n+m, n+m)
 

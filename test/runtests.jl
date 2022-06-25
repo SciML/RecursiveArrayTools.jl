@@ -19,7 +19,7 @@ end
 
 @time begin
 
-if !is_APPVEYOR && GROUP == "Core"
+if GROUP == "Core" || GROUP == "All" 
   @time @testset "Utils Tests" begin include("utils_test.jl") end
   @time @testset "Partitions Tests" begin include("partitions_test.jl") end
   @time @testset "VecOfArr Indexing Tests" begin include("basic_indexing.jl") end
