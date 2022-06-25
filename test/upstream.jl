@@ -36,7 +36,7 @@ dyn(u, p, t) = ArrayPartition(
     ArrayPartition(zeros(1), [0.0])
 )
 
-solve(
+@test solve(
     ODEProblem(
         dyn,
         ArrayPartition(
@@ -45,15 +45,28 @@ solve(
         ),
         (0.0, 1.0)
     ),AutoTsit5(Rodas5())
-)
-
-@test_broken solve(
-    ODEProblem(
-        dyn,
-        ArrayPartition(
-            ArrayPartition(zeros(1), [-1.0]),
-            ArrayPartition(zeros(1), [0.75])
-        ),
-        (0.0, 1.0)
-    ),Rodas5()
 ).retcode == :Success
+
+if VERSION < v"1.7"
+    @test solve(
+        ODEProblem(
+            dyn,
+            ArrayPartition(
+                ArrayPartition(zeros(1), [-1.0]),
+                ArrayPartition(zeros(1), [0.75])
+            ),
+            (0.0, 1.0)
+        ),Rodas5()
+    ).retcode == :Success
+else
+    @test_broken solve(
+        ODEProblem(
+            dyn,
+            ArrayPartition(
+                ArrayPartition(zeros(1), [-1.0]),
+                ArrayPartition(zeros(1), [0.75])
+            ),
+            (0.0, 1.0)
+        ),Rodas5()
+    ).retcode == :Success
+end

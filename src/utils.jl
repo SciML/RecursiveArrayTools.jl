@@ -9,7 +9,8 @@ like `copy` on arrays of scalars.
 function recursivecopy(a)
   deepcopy(a)
 end
-recursivecopy(a::Union{SVector,SMatrix,SArray,Number}) = copy(a)
+recursivecopy(a::Union{StaticArraysCore.SVector,StaticArraysCore.SMatrix,
+                       StaticArraysCore.SArray,Number}) = copy(a)
 function recursivecopy(a::AbstractArray{T,N}) where {T<:Number,N}
   copy(a)
 end
@@ -33,7 +34,7 @@ like `copy!` on arrays of scalars.
 """
 function recursivecopy! end
 
-function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:StaticArray,T2<:StaticArray,N}
+function recursivecopy!(b::AbstractArray{T,N},a::AbstractArray{T2,N}) where {T<:StaticArraysCore.StaticArray,T2<:StaticArraysCore.StaticArray,N}
   @inbounds for i in eachindex(a)
     # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
     b[i] = copy(a[i])
@@ -68,13 +69,13 @@ A recursive `fill!` function.
 """
 function recursivefill! end
 
-function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:StaticArray,T2<:StaticArray,N}
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:StaticArraysCore.StaticArray,T2<:StaticArraysCore.StaticArray,N}
   @inbounds for i in eachindex(b)
     b[i] = copy(a)
   end
 end
 
-function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:SArray,T2<:Union{Number,Bool},N}
+function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:StaticArraysCore.SArray,T2<:Union{Number,Bool},N}
   @inbounds for i in eachindex(b)
     b[i] = fill(a, typeof(b[i]))
   end
@@ -88,7 +89,7 @@ function recursivefill!(b::AbstractArray{T,N},a::T2) where {T<:Union{Number,Bool
   fill!(b, a)
 end
 
-function recursivefill!(b::AbstractArray{T,N},a) where {T<:MArray,N}
+function recursivefill!(b::AbstractArray{T,N},a) where {T<:StaticArraysCore.MArray,N}
   @inbounds for i in eachindex(b)
     if isassigned(b,i)
       recursivefill!(b[i],a)
@@ -151,7 +152,7 @@ If `i<length(x)`, it's simply a `recursivecopy!` to the `i`th element. Otherwise
 function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
   @inbounds if length(a) >= i
     if !ArrayInterfaceCore.ismutable(T) || !perform_copy
-      # TODO: Check for `setindex!`` if T <: StaticArray and use `copy!(b[i],a[i])`
+      # TODO: Check for `setindex!`` if T <: StaticArraysCore.StaticArray and use `copy!(b[i],a[i])`
       #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
       a[i] = x
     else
@@ -208,7 +209,15 @@ ones has a `Array{Array{Float64,N},N}`, this will return `Array{Float64,N}`.
 """
 recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
 recursive_unitless_eltype(a::Type{Any}) = Any
-recursive_unitless_eltype(a::Type{T}) where {T<:StaticArray} = similar_type(a,recursive_unitless_eltype(eltype(a)))
+
+# Should be:
+# recursive_unitless_eltype(a::Type{T}) where {T<:StaticArray} = similar_type(a,recursive_unitless_eltype(eltype(a)))
+# But missing from StaticArraysCore
+recursive_unitless_eltype(a::Type{StaticArraysCore.SArray{S, T, N, L}}) where {S, T, N, L} = StaticArraysCore.SArray{S, typeof(one(T)), N, L}
+recursive_unitless_eltype(a::Type{StaticArraysCore.MArray{S, T, N, L}}) where {S, T, N, L} = StaticArraysCore.MArray{S, typeof(one(T)), N, L}
+recursive_unitless_eltype(a::Type{StaticArraysCore.SizedArray{S, T, N, M, TData}}) where {
+                          S, T, N, M, TData} = StaticArraysCore.SizedArray{S, typeof(one(T)), N, M, TData}
+
 recursive_unitless_eltype(a::Type{T}) where {T<:Array} = Array{recursive_unitless_eltype(eltype(a)),ndims(a)}
 recursive_unitless_eltype(a::Type{T}) where {T<:Number} = typeof(one(eltype(a)))
 recursive_unitless_eltype(::Type{<:Enum{T}}) where T = T

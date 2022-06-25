@@ -90,7 +90,7 @@ Base.zero(A::ArrayPartition, dims::NTuple{N,Int}) where {N} = zero(A)
 
 ## Array
 
-Base.Array(A::ArrayPartition) = ArrayPartition(Array.(A.x))
+Base.Array(A::ArrayPartition) = reduce(vcat,Array.(A.x))
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:ArrayPartition}} = reduce(hcat,Array.(VA.u))
 
 ## ones
@@ -390,13 +390,13 @@ end
 # [U11  U12  U13]   [ b1 ]
 # [ 0   U22  U23] \ [ b2 ]
 # [ 0    0   U33]   [ b3 ]
-function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitUpperTriangular,UpperTriangular}
+function LinearAlgebra.ldiv!(A::UnitUpperTriangular, bb::ArrayPartition)
     A = A.data
     n = npartitions(bb)
     b = bb.x
     lens = map(length, b)
     @inbounds for j in n:-1:1
-        Ajj = T(getblock(A, lens, j, j))
+        Ajj = UnitUpperTriangular(getblock(A, lens, j, j))
         xj = ldiv!(Ajj, vec(b[j]))
         for i in j-1:-1:1
             Aij = getblock(A, lens, i, j)
@@ -407,13 +407,30 @@ function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitUpperT
     return bb
 end
 
-function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitLowerTriangular,LowerTriangular}
+function LinearAlgebra.ldiv!(A::UpperTriangular, bb::ArrayPartition)
+    A = A.data
+    n = npartitions(bb)
+    b = bb.x
+    lens = map(length, b)
+    @inbounds for j in n:-1:1
+        Ajj = UpperTriangular(getblock(A, lens, j, j))
+        xj = ldiv!(Ajj, vec(b[j]))
+        for i in j-1:-1:1
+            Aij = getblock(A, lens, i, j)
+            # bi = -Aij * xj + bi
+            mul!(vec(b[i]), Aij, xj, -1, true)
+        end
+    end
+    return bb
+end
+
+function LinearAlgebra.ldiv!(A::UnitLowerTriangular, bb::ArrayPartition)
     A = A.data
     n = npartitions(bb)
     b = bb.x
     lens = map(length, b)
     @inbounds for j in 1:n
-        Ajj = T(getblock(A, lens, j, j))
+        Ajj = UnitLowerTriangular(getblock(A, lens, j, j))
         xj = ldiv!(Ajj, vec(b[j]))
         for i in j+1:n
             Aij = getblock(A, lens, i, j)
@@ -423,6 +440,24 @@ function LinearAlgebra.ldiv!(A::T, bb::ArrayPartition) where T<:Union{UnitLowerT
     end
     return bb
 end
+
+function LinearAlgebra.ldiv!(A::LowerTriangular, bb::ArrayPartition)
+    A = A.data
+    n = npartitions(bb)
+    b = bb.x
+    lens = map(length, b)
+    @inbounds for j in 1:n
+        Ajj = LowerTriangular(getblock(A, lens, j, j))
+        xj = ldiv!(Ajj, vec(b[j]))
+        for i in j+1:n
+            Aij = getblock(A, lens, i, j)
+            # bi = -Aij * xj + b[i]
+            mul!(vec(b[i]), Aij, xj, -1, true)
+        end
+    end
+    return bb
+end
+
 # TODO: optimize
 function LinearAlgebra._ipiv_rows!(A::LU, order::OrdinalRange, B::ArrayPartition)
     for i = order
