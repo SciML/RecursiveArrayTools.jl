@@ -23,12 +23,12 @@ b = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 vA = VectorOfArray(a)
 vB = VectorOfArray(b)
 
-vA .+ vB # Now all standard array stuff works!
+vA .* vB # Now all standard array stuff works!
 
 a = (rand(5),rand(5))
 b = (rand(5),rand(5))
 pA = ArrayPartition(a)
 pB = ArrayPartition(b)
 
-pA .+ pB # Now all standard array stuff works!
+pA .* pB # Now all standard array stuff works!
 ```
