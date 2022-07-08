@@ -497,3 +497,9 @@ function LinearAlgebra.mul!(C::ArrayPartition, A::ArrayPartition, B::ArrayPartit
     end
     return C
 end
+
+function Base.convert(::Type{ArrayPartition{T,S}}, A::ArrayPartition{<:Any,<:NTuple{N,Any}}) where {N, T, S<:NTuple{N,Any}}
+    return ArrayPartition{T,S}(
+        ntuple((@inline i -> convert(S.parameters[i], A.x[i])), Val(N))
+    )
+end

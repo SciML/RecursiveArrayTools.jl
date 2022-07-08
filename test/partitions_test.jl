@@ -197,3 +197,15 @@ end
 x = ArrayPartition(ArrayPartition([1, 2]), [3, 4])
 @test -x == 0-x
 @test typeof(x) === typeof(-x)
+
+# Test conversions
+begin
+    b = [1, 2, 3]
+    c = [1 2; 3 4]
+    d = ArrayPartition(view(b, :), c)
+
+    new_type = ArrayPartition{Float64,Tuple{Vector{Float64},Matrix{Float64}}}
+    @test (@inferred convert(new_type, d)) isa new_type
+    @test convert(new_type, d) == d
+    @test_throws MethodError convert(new_type, ArrayPartition(view(b, :), c, c))
+end
