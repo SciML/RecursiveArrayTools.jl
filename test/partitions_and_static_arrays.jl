@@ -8,3 +8,6 @@ p = ArrayPartition((zeros(Float32, 2), zeros(SMatrix{2,2, Int64},2), zeros(SVect
 
 p2 = similar(p)
 @test typeof(p2)==typeof(p)
+
+p3 = ArrayPartition(SA[1.0, 2.0], MMatrix{2,2}([3.0 4.0; 3.0 5.0]))
+@test length(typeof(p3)) == 6
