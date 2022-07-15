@@ -504,4 +504,10 @@ function Base.convert(::Type{ArrayPartition{T,S}}, A::ArrayPartition{<:Any,<:NTu
     )
 end
             
-Base.length(::Type{<:ArrayPartition{F,T}}) where {F,T <: Tuple} = T.parameters .|> length |> sum
+@generated function Base.length(::Type{<:ArrayPartition{F,T}}) where {F,N,T <: NTuple{N,StaticArray}} 
+    sum_expr = Expr(:call, :+)
+    for param in T.parameters
+        push!(sum_expr.args, :(length($param)))
+    end
+    return sum_expr
+end
