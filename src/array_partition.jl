@@ -503,3 +503,5 @@ function Base.convert(::Type{ArrayPartition{T,S}}, A::ArrayPartition{<:Any,<:NTu
         ntuple((@inline i -> convert(S.parameters[i], A.x[i])), Val(N))
     )
 end
+            
+Base.length(::Type{<:ArrayPartition{F,T}}) where {F,T <: Tuple} = T.parameters .|> length |> sum
