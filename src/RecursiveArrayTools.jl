@@ -19,11 +19,14 @@ import ArrayInterfaceStaticArraysCore
 
 using FillArrays
 
+import Tables, IteratorInterfaceExtensions
+
 abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
 abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
 include("utils.jl")
 include("vector_of_array.jl")
+include("tabletraits.jl")
 include("array_partition.jl")
 include("zygote.jl")
 
