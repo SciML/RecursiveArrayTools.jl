@@ -15,10 +15,10 @@ sol = solve(prob, Tsit5())
 
 sol_new = DiffEqArray(
     sol.u[1:10],
-                      sol.t[1:10],
-                      sol.prob.f.syms,
-                      sol.prob.f.indepsym,
-                      sol.prob.f.observed,
+    sol.t[1:10],
+    sol.prob.f.syms,
+    sol.prob.f.indepsym,
+    sol.prob.f.observed,
     sol.prob.p
 )
 
