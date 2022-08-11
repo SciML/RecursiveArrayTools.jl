@@ -19,7 +19,7 @@ function ChainRulesCore.rrule(::Type{<:ArrayPartition}, x::S, ::Type{Val{copy_x}
   function ArrayPartition_adjoint(_y)
       y = Array(_y)
       starts = vcat(0,cumsum(reduce(vcat,length.(x))))
-      NoTangent(), ArrayPartition(ntuple(i -> reshape(y[starts[i]+1:starts[i+1]], size(x[i]))), length(x)), NoTangent()
+      NoTangent(), ntuple(i -> reshape(y[starts[i]+1:starts[i+1]], size(x[i])), length(x)), NoTangent()
   end
 
   ArrayPartition(x, Val{copy_x}), ArrayPartition_adjoint
