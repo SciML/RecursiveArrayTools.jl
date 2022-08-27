@@ -1,7 +1,17 @@
 # RecursiveArrayTools.jl
 
+[![Join the chat at https://julialang.zulipchat.com #sciml-bridged](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://recursivearraytools.sciml.ai/stable/)
+[![Global Docs](https://img.shields.io/badge/docs-SciML-blue.svg)](https://docs.sciml.ai/dev/modules/RecursiveArrayTools/)
+
+[![codecov](https://codecov.io/gh/SciML/RecursiveArrayTools.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/SciML/RecursiveArrayTools.jl)
 [![Build Status](https://github.com/SciML/RecursiveArrayTools.jl/workflows/CI/badge.svg)](https://github.com/SciML/RecursiveArrayTools.jl/actions?query=workflow%3ACI)
-[![codecov.io](http://codecov.io/github/SciML/RecursiveArrayTools.jl/coverage.svg?branch=master)](http://codecov.io/github/SciML/RecursiveArrayTools.jl?branch=master)
+
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
+
+
+
 [![Build status](https://badge.buildkite.com/5f39777d009ce94ef1dcf2a4881c68b9fbcaf6f69f1d8b8df2.svg)](https://buildkite.com/julialang/recursivearraytools-dot-jl)
 
 RecursiveArrayTools.jl is a set of tools for dealing with recursive arrays like
