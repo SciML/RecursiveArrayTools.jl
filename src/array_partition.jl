@@ -10,7 +10,7 @@ However, broadcast is overloaded to loop in an efficient manner, meaning that
 do not match types. A full array interface is included for completeness, which
 allows this array type to be used in place of a standard array where
 such a type stable broadcast may be needed. One example is in heterogeneous
-differential equations for [DifferentialEquations.jl](https://github.com/JuliaDiffEq/DifferentialEquations.jl).
+differential equations for [DifferentialEquations.jl](https://docs.sciml.ai/DiffEqDocs/stable/).
 
 An `ArrayPartition` acts like a single array. `A[i]` indexes through the first
 array, then the second, etc., all linearly. But `A.x` is where the arrays are stored.
