@@ -9,7 +9,7 @@ makedocs(
     clean=true,doctest=false,
     format = Documenter.HTML(analytics = "UA-90474609-3",
                              assets = ["assets/favicon.ico"],
-                             canonical="https://recursivearraytools.sciml.ai/stable/"),
+                             canonical="https://docs.sciml.ai/RecursiveArrayTools/stable/"),
     pages=pages
 )
 
