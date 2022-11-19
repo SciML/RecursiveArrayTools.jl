@@ -1,3 +1,7 @@
 [deps]
 ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
+
+[compat]
+ModelingToolkit = "8.33"
+OrdinaryDiffEq = "6.31"
