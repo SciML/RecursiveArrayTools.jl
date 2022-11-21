@@ -13,6 +13,7 @@ end
 # Immutable FieldVector
 vec = ImmutableFV(1.,2.)
 a = [vec]
+@test recursive_unitless_eltype(a) == ImmutableFV
 b = zero(a)
 recursivecopy!(b, a)
 @test a[1] == b[1]
@@ -25,6 +26,7 @@ copyat_or_push!(a, 2, b[1])
 # Mutable FieldVector
 vec = MutableFV(1.,2.)
 a = [vec]
+@test recursive_unitless_eltype(a) == MutableFV
 b = zero(a)
 recursivecopy!(b, a)
 @test a[1] == b[1]
