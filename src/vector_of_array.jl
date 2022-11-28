@@ -77,6 +77,8 @@ end
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
 Base.Array(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:Number}} = VA.u
 Base.Matrix(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = reduce(hcat,VA.u)
+Base.Matrix(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:Number}} = Matrix(VA.u)
+Base.Matrix(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:AbstractVector}} = vec(reduce(hcat,VA.u))
 Base.Vector(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A <: AbstractVector{<:Number}} = VA.u
 function Base.Array(VA::AbstractVectorOfArray)
   vecs = vec.(VA.u)
