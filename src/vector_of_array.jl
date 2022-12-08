@@ -33,27 +33,6 @@ mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
 end
 # VectorOfArray with an added series for time
 
-
-struct SymbolCache{S,T,U}
-  syms::S
-  indepsym::T
-  paramsyms::U
-end
-
-is_indep_sym(sc::SymbolCache, sym) = isequal(sc.indepsym, sym)
-is_indep_sym(::SymbolCache{S,Nothing}, _) where {S} = false
-state_sym_to_index(sc::SymbolCache, sym) = findfirst(isequal(sym), sc.syms)
-state_sym_to_index(::SymbolCache{Nothing}, _) = nothing
-is_state_sym(sc::SymbolCache, sym) = !isnothing(state_sym_to_index(sc, sym))
-param_sym_to_index(sc::SymbolCache, sym) = findfirst(isequal(sym), sc.paramsyms)
-param_sym_to_index(::SymbolCache{S,T,Nothing}, _) where {S,T} = nothing
-is_param_sym(sc::SymbolCache, sym) = !isnothing(param_sym_to_index(sc, sym))
-
-Base.copy(VA::SymbolCache) = typeof(VA)(
-    (VA.syms===nothing) ? nothing : copy(VA.syms),
-    (VA.indepsym===nothing) ? nothing : copy(VA.indepsym),
-    (VA.paramsyms===nothing) ? nothing : copy(VA.paramsyms),
-  )
 """
 ```julia
 DiffEqArray(u::AbstractVector,t::AbstractVector)
