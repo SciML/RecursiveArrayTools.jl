@@ -93,11 +93,11 @@ VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N} = VectorOfArray{
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT<:AbstractArray{T, N}} = VectorOfArray{T, N+1, typeof(vec)}(vec)
 
-DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), SymbolCache{typeof(syms), typeof(indepsym), Nothing}, typeof(observed), typeof(p)}(vec, ts, SymbolCache(syms, indepsym, nothing), observed, p)
+DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), SymbolCache{typeof(syms), Vector{typeof(indepsym)}, Nothing}, typeof(observed), typeof(p)}(vec, ts, SymbolCache(syms, [indepsym], nothing), observed, p)
 # Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)), syms, indepsym, observed, p)
 function DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N, VT<:AbstractArray{T, N}}
-  DiffEqArray{T, N+1, typeof(vec), typeof(ts), SymbolCache{typeof(syms), typeof(indepsym), Nothing}, typeof(observed), typeof(p)}(vec, ts, SymbolCache(syms, indepsym, nothing), observed, p)
+  DiffEqArray{T, N+1, typeof(vec), typeof(ts), SymbolCache{typeof(syms), Vector{typeof(indepsym)}, Nothing}, typeof(observed), typeof(p)}(vec, ts, SymbolCache(syms, [indepsym], nothing), observed, p)
 end
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
