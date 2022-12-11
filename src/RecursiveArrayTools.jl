@@ -7,6 +7,7 @@ module RecursiveArrayTools
 using DocStringExtensions
 using RecipesBase, StaticArraysCore, Statistics,
       ArrayInterfaceCore, LinearAlgebra
+using SymbolicIndexingInterface
 
 import ChainRulesCore
 import ChainRulesCore: NoTangent
@@ -36,9 +37,6 @@ Base.show(io::IO, x::Union{ArrayPartition,AbstractVectorOfArray}) = invoke(show,
 import GPUArraysCore
 Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
 ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray}, xs::AbstractVectorOfArray) = T(xs), ȳ -> (NoTangent(),ȳ)
-
-export independent_variables, is_indep_sym, states, state_sym_to_index, is_state_sym,
-       parameters, param_sym_to_index, is_param_sym, SymbolCache
 
 export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
        AllObserved, vecarr_to_arr, vecarr_to_vectors, tuples
