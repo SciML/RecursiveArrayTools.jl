@@ -53,11 +53,10 @@ A[1,:]  # all time periods for f(t)
 A.t
 ```
 """
-mutable struct DiffEqArray{T, N, A, B, C, D, E, F} <: AbstractDiffEqArray{T, N, A}
+mutable struct DiffEqArray{T, N, A, B, C, E, F} <: AbstractDiffEqArray{T, N, A}
   u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
   t::B
-  syms::C
-  indepsym::D
+  sc::C
   observed::E
   p::F
 end
@@ -94,11 +93,23 @@ VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N} = VectorOfArray{
 VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
 VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT<:AbstractArray{T, N}} = VectorOfArray{T, N+1, typeof(vec)}(vec)
 
-DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N} = DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
+function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N}
+  sc = if isnothing(indepsym) || indepsym isa AbstractArray
+    SymbolCache{typeof(syms),typeof(indepsym),Nothing}(syms, indepsym, nothing)
+  else
+    SymbolCache{typeof(syms),Vector{typeof(indepsym)},Nothing}(syms, [indepsym], nothing)
+  end
+  DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(sc), typeof(observed), typeof(p)}(vec, ts, sc, observed, p)
+end
 # Assume that the first element is representative of all other elements
 DiffEqArray(vec::AbstractVector,ts::AbstractVector, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) = DiffEqArray(vec, ts, (size(vec[1])..., length(vec)), syms, indepsym, observed, p)
 function DiffEqArray(vec::AbstractVector{VT},ts::AbstractVector, syms=nothing, indepsym=nothing, observed=nothing, p=nothing) where {T, N, VT<:AbstractArray{T, N}}
-  DiffEqArray{T, N+1, typeof(vec), typeof(ts), typeof(syms), typeof(indepsym), typeof(observed), typeof(p)}(vec, ts, syms, indepsym, observed, p)
+  sc = if isnothing(indepsym) || indepsym isa AbstractArray
+    SymbolCache{typeof(syms),typeof(indepsym),Nothing}(syms, indepsym, nothing)
+  else
+    SymbolCache{typeof(syms),Vector{typeof(indepsym)},Nothing}(syms, [indepsym], nothing)
+  end
+  DiffEqArray{T, N+1, typeof(vec), typeof(ts), typeof(sc), typeof(observed), typeof(p)}(vec, ts, sc, observed, p)
 end
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
@@ -138,37 +149,39 @@ Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,::Co
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, ::Colon,i::Int) where {T, N} = A.u[i]
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,II::AbstractArray{Int}) where {T, N} = [A.u[j][i] for j in II]
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym) where {T, N}
-  if issymbollike(sym) && A.syms !== nothing
-    i = findfirst(isequal(Symbol(sym)),A.syms)
-  else
-    i = sym
-  end
-
-  if i === nothing
-    if issymbollike(sym) && A.indepsym !== nothing && Symbol(sym) == A.indepsym
-      A.t
+  if issymbollike(sym) && !isnothing(A.sc)
+    if is_indep_sym(A.sc, sym)
+      return A.t
+    elseif is_state_sym(A.sc, sym)
+      return getindex.(A.u, state_sym_to_index(A.sc, sym))
+    elseif is_param_sym(A.sc, sym)
+      return A.p[param_sym_to_index(A.sc, sym)]
     else
-      observed(A,sym,:)
+      return observed(A, sym, :)
+    end
+  elseif all(issymbollike, sym) && !isnothing(A.sc)
+    if all(Base.Fix1(is_param_sym, A.sc), sym)
+      return getindex.((A,), sym)
+    else
+      return [getindex.((A,), sym, i) for i in eachindex(A.t)]
     end
   else
-    Base.getindex.(A.u, i)
+    return getindex.(A.u, sym)
   end
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},sym,args...) where {T, N}
-  if issymbollike(sym) && A.syms !== nothing
-    i = findfirst(isequal(Symbol(sym)),A.syms)
-  else
-    i = sym
-  end
-
-  if i === nothing
-    if issymbollike(sym) && A.indepsym !== nothing && Symbol(sym) == A.indepsym
-      A.t[args...]
+  if issymbollike(sym) && !isnothing(A.sc)
+    if is_indep_sym(A.sc, sym)
+      return A.t[args...]
+    elseif is_state_sym(A.sc, sym)
+      return A[sym][args...]
     else
-      observed(A,sym,args...)
+      return observed(A, sym, args...)
     end
+  elseif all(issymbollike, sym) && !isnothing(A.sc)
+    return reduce(vcat, map(s -> A[s, args...]', sym))
   else
-    Base.getindex.(A.u, i, args...)
+    return getindex.(A.u, sym)
   end
 end
 Base.@propagate_inbounds Base.getindex(A::AbstractDiffEqArray{T, N}, I::Int...) where {T, N} = A.u[I[end]][Base.front(I)...]
@@ -230,8 +243,7 @@ tuples(VA::DiffEqArray) = tuple.(VA.t,VA.u)
 Base.copy(VA::AbstractDiffEqArray) = typeof(VA)(
     copy(VA.u),
     copy(VA.t),
-    (VA.syms===nothing) ? nothing : copy(VA.syms),
-    (VA.indepsym===nothing) ? nothing : copy(VA.indepsym),
+    (VA.sc===nothing) ? nothing : copy(VA.sc),
     (VA.observed===nothing) ? nothing : copy(VA.observed),
     (VA.p===nothing) ? nothing : copy(VA.p)
   )

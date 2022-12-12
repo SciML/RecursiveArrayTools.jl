@@ -7,6 +7,7 @@ module RecursiveArrayTools
 using DocStringExtensions
 using RecipesBase, StaticArraysCore, Statistics,
       ArrayInterfaceCore, LinearAlgebra
+using SymbolicIndexingInterface
 
 import ChainRulesCore
 import ChainRulesCore: NoTangent
