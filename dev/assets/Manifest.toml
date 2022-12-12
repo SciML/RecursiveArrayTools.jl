@@ -214,9 +214,9 @@ uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
 
 [[deps.SymbolicIndexingInterface]]
 deps = ["DocStringExtensions"]
-git-tree-sha1 = "28d52e359667e838e844c47b8d825c038c3cfc6a"
+git-tree-sha1 = "c45c06465cbdb334bb9f53a973217c217fcf5bdd"
 uuid = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
-version = "0.1.0"
+version = "0.2.0"
 
 [[deps.TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
