@@ -225,10 +225,7 @@ end
 Returns the entry at index `j...` of  every partition of `A`.
 """
 Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Colon, j...)
-  @boundscheck 0 < i <= length(A.x) || throw(BoundsError(A.x, i))
-  @inbounds b = A.x[i]
-  @boundscheck checkbounds(b, j...)
-  @inbounds return b[j...]
+    return getindex.(A.x, (j...,))
 end
 
 """
