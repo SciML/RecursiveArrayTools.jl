@@ -220,6 +220,15 @@ Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int, j...)
 end
 
 """
+    getindex(A::ArrayPartition, i::Colon, j...)
+
+Returns the entry at index `j...` of  every partition of `A`.
+"""
+Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Colon, j...)
+    return getindex.(A.x, (j...,))
+end
+
+"""
     getindex(A::ArrayPartition, ::Colon)
 
 Returns a vector with all elements of array partition `A`.

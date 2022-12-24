@@ -58,6 +58,7 @@ copyto!(p,c)
 ## inference tests
 
 x = ArrayPartition([1, 2], [3.0, 4.0])
+@test x[:,1] == (1,3.0)
 
 # similar partitions
 @inferred similar(x)
