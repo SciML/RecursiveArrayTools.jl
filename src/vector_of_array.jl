@@ -244,7 +244,6 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sym,
                                                 args...) where {T, N}
-    Main._a[] = (A, sym, args)
     if issymbollike(sym) && !isnothing(A.sc)
         if is_indep_sym(A.sc, sym)
             return A.t[args...]
