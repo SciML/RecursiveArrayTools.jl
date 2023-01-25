@@ -522,9 +522,9 @@ end
 
 function LinearAlgebra.ldiv!(A::LowerTriangular{T, <:LinearAlgebra.Adjoint{T}},
                              bb::ArrayPartition) where {T}
-    _ldiv(A, bb)
+    _ldiv!(A, bb)
 end
-LinearAlgebra.ldiv!(A::LowerTriangular, bb::ArrayPartition) = _ldiv(A, bb)
+LinearAlgebra.ldiv!(A::LowerTriangular, bb::ArrayPartition) = _ldiv!(A, bb)
 
 # TODO: optimize
 function LinearAlgebra._ipiv_rows!(A::LU, order::OrdinalRange, B::ArrayPartition)
