@@ -148,8 +148,8 @@ copyat_or_push!{T}(a::AbstractVector{T},i::Int,x)
 
 If `i<length(x)`, it's simply a `recursivecopy!` to the `i`th element. Otherwise, it will
 `push!` a `deepcopy`.
-"""
-function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}=Val{true}) where {T,perform_copy}
+"""  
+function copyat_or_push!(a::AbstractVector{T},i::Int,x,perform_copy=true) where {T}
   @inbounds if length(a) >= i
     if !ArrayInterfaceCore.ismutable(T) || !perform_copy
       # TODO: Check for `setindex!`` if T <: StaticArraysCore.StaticArray and use `copy!(b[i],a[i])`
@@ -171,7 +171,11 @@ function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy
   end
   nothing
 end
-
+  
+function copyat_or_push!(a::AbstractVector{T},i::Int,x,nc::Type{Val{perform_copy}}) where {T, perform_copy}
+    copyat_or_push!(a,i,x,perform_copy)
+end
+  
 """
 ```julia
 recursive_one(a)
