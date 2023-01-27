@@ -124,7 +124,7 @@ function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray
     VectorOfArray{T, N + 1, typeof(vec)}(vec)
 end
 
-function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N}, syms = nothing,
+function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N, Int}, syms = nothing,
                      indepsym = nothing, observed = nothing, p = nothing) where {T, N}
     sc = if isnothing(indepsym) || indepsym isa AbstractArray
         SymbolCache{typeof(syms), typeof(indepsym), Nothing}(syms, indepsym, nothing)
