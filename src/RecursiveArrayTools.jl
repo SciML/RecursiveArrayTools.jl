@@ -42,10 +42,10 @@ function ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray},
     T(xs), ȳ -> (NoTangent(), ȳ)
 end
 
-import Requires
-function __init__()
-    @static if !isdefined(Base, :get_extension)
-        Requires.@require ReverseDiff="37e2e3b7-166d-5795-8a7a-e32c996b4267" begin include("../ext/RecursiveArrayToolsReverseDiffExt.jl") end
+@static if !isdefined(Base, :get_extension)
+    import Requires
+    function __init__()
+            Requires.@require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/RecursiveArrayToolsTrackerExt.jl") end
     end
 end
 

@@ -1,4 +1,7 @@
-module RecursiveArrayToolsReverseDiffExt
+module RecursiveArrayToolsTrackerExt
+
+import RecursiveArrayTools
+import Tracker
 
 function RecursiveArrayTools.recursivecopy!(b::AbstractArray{T, N},
                                             a::AbstractArray{T2, N}) where {
