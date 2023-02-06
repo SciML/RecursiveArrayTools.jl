@@ -55,6 +55,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
