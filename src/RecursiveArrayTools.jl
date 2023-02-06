@@ -42,6 +42,13 @@ function ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray},
     T(xs), ȳ -> (NoTangent(), ȳ)
 end
 
+import Requires
+function __init__()
+    @static if !isdefined(Base, :get_extension)
+        Requires.@require ReverseDiff="37e2e3b7-166d-5795-8a7a-e32c996b4267" begin include("../ext/RecursiveArrayToolsReverseDiffExt.jl") end
+    end
+end
+
 export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
        AllObserved, vecarr_to_vectors, tuples
 
