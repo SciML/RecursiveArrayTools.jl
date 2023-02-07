@@ -7,12 +7,12 @@ function Tables.rows(A::AbstractDiffEqArray)
         N = length(A.u[1])
         names = [
             :timestamp,
-            (A.sc !== nothing && A.sc.syms !== nothing ? (A.sc.syms[i] for i in 1:N) :
+            (!(A.sc isa  SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}) ? (states(A.sc)[i] for i in 1:N) :
              (Symbol("value", i) for i in 1:N))...,
         ]
         types = Type[eltype(A.t), (eltype(A.u[1]) for _ in 1:N)...]
     else
-        names = [:timestamp, A.sc !== nothing && A.sc.syms !== nothing ? A.sc.syms[1] : :value]
+        names = [:timestamp, !(A.sc isa  SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}) ? states(A.sc)[1] : :value]
         types = Type[eltype(A.t), VT]
     end
     return AbstractDiffEqArrayRows(names, types, A.t, A.u)
@@ -31,8 +31,8 @@ struct AbstractDiffEqArrayRows{T, U}
     u::U
 end
 function AbstractDiffEqArrayRows(names, types, t, u)
-    AbstractDiffEqArrayRows(names, types,
-                                   Dict(nm => i for (i, nm) in enumerate(names)), t, u)
+    AbstractDiffEqArrayRows(Symbol.(names), types,
+                                   Dict(Symbol(nm) => i for (i, nm) in enumerate(names)), t, u)
 end
 
 Base.length(x::AbstractDiffEqArrayRows) = length(x.u)

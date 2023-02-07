@@ -2,6 +2,8 @@ using Pkg
 using RecursiveArrayTools
 using Test
 using Aqua
+using SafeTestsets
+
 Aqua.test_all(RecursiveArrayTools, ambiguities = false)
 @test_broken isempty(Test.detect_ambiguities(RecursiveArrayTools))
 const GROUP = get(ENV, "GROUP", "All")
@@ -21,26 +23,27 @@ end
 
 @time begin
     if GROUP == "Core" || GROUP == "All"
-        @time @testset "Utils Tests" begin include("utils_test.jl") end
-        @time @testset "Partitions Tests" begin include("partitions_test.jl") end
-        @time @testset "VecOfArr Indexing Tests" begin include("basic_indexing.jl") end
-        @time @testset "SymbolicIndexingInterface API test" begin include("symbolic_indexing_interface_test.jl") end
-        @time @testset "VecOfArr Interface Tests" begin include("interface_tests.jl") end
-        @time @testset "Table traits" begin include("tabletraits.jl") end
-        @time @testset "StaticArrays Tests" begin include("copy_static_array_test.jl") end
-        @time @testset "Linear Algebra Tests" begin include("linalg.jl") end
-        @time @testset "Upstream Tests" begin include("upstream.jl") end
-        @time @testset "Adjoint Tests" begin include("adjoints.jl") end
+        @time @safetestset "Utils Tests" begin include("utils_test.jl") end
+        @time @safetestset "Partitions Tests" begin include("partitions_test.jl") end
+        @time @safetestset "VecOfArr Indexing Tests" begin include("basic_indexing.jl") end
+        @time @safetestset "SymbolicIndexingInterface API test" begin include("symbolic_indexing_interface_test.jl") end
+        @time @safetestset "VecOfArr Interface Tests" begin include("interface_tests.jl") end
+        @time @safetestset "Table traits" begin include("tabletraits.jl") end
+        @time @safetestset "StaticArrays Tests" begin include("copy_static_array_test.jl") end
+        @time @safetestset "Linear Algebra Tests" begin include("linalg.jl") end
+        @time @safetestset "Upstream Tests" begin include("upstream.jl") end
+        @time @safetestset "Adjoint Tests" begin include("adjoints.jl") end
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"
         activate_downstream_env()
-        @time @testset "DiffEqArray Indexing Tests" begin include("downstream/symbol_indexing.jl") end
-        @time @testset "Event Tests with ArrayPartition" begin include("downstream/downstream_events.jl") end
+        @time @safetestset "DiffEqArray Indexing Tests" begin include("downstream/symbol_indexing.jl") end
+        @time @safetestset "Event Tests with ArrayPartition" begin include("downstream/downstream_events.jl") end
+        @time @safetestset "TrackerExt" begin include("downstream/TrackerExt.jl") end
     end
 
     if !is_APPVEYOR && GROUP == "GPU"
         activate_gpu_env()
-        @time @testset "VectorOfArray GPU" begin include("gpu/vectorofarray_gpu.jl") end
+        @time @safetestset "VectorOfArray GPU" begin include("gpu/vectorofarray_gpu.jl") end
     end
 end
