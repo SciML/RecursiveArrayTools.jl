@@ -7,12 +7,12 @@ function Tables.rows(A::AbstractDiffEqArray)
         N = length(A.u[1])
         names = [
             :timestamp,
-            (A.sc !== nothing ? (states(A.sc)[i] for i in 1:N) :
+            (!(A.sc isa  SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}) ? (states(A.sc)[i] for i in 1:N) :
              (Symbol("value", i) for i in 1:N))...,
         ]
         types = Type[eltype(A.t), (eltype(A.u[1]) for _ in 1:N)...]
     else
-        names = [:timestamp, A.sc !== nothing ? states(A.sc)[1] : :value]
+        names = [:timestamp, !(A.sc isa  SymbolicIndexingInterface.SymbolCache{Nothing, Nothing, Nothing}) ? states(A.sc)[1] : :value]
         types = Type[eltype(A.t), VT]
     end
     return AbstractDiffEqArrayRows(names, types, A.t, A.u)
