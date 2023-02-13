@@ -18,7 +18,7 @@ Thus, for:
 
 ```julia
 using RecursiveArrayTools
-A = ArrayPartition(y,z)
+A = ArrayPartition(y, z)
 ```
 
 we would have `A.x[1]==y` and `A.x[2]==z`. Broadcasting like `f.(A)` is efficient.

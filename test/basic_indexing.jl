@@ -2,14 +2,14 @@ using RecursiveArrayTools, Test
 
 # Example Problem
 recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-testa = cat(recs..., dims=2)
+testa = cat(recs..., dims = 2)
 testva = VectorOfArray(recs)
 @test maximum(testva) == maximum(maximum.(recs))
 
 # broadcast with array
 X = rand(3, 3)
 mulX = sqrt.(abs.(testva .* X))
-ref = mapreduce((x,y)->sqrt.(abs.(x.*y)), hcat, testva, eachcol(X))
+ref = mapreduce((x, y) -> sqrt.(abs.(x .* y)), hcat, testva, eachcol(X))
 @test mulX == ref
 fill!(mulX, 0)
 mulX .= sqrt.(abs.(testva .* X))
@@ -23,8 +23,8 @@ mulX .= sqrt.(abs.(testva .* X))
 @test testva[1:2, 1:2] == [1 4; 2 5]
 @test testa[1:2, 1:2] == [1 4; 2 5]
 
-t = [1,2,3]
-diffeq = DiffEqArray(recs,t)
+t = [1, 2, 3]
+diffeq = DiffEqArray(recs, t)
 @test Array(diffeq) == [1 4 7
                         2 5 8
                         3 6 9]
@@ -33,20 +33,20 @@ diffeq = DiffEqArray(recs,t)
 # # ndims == 2
 t = 1:10
 recs = [rand(8) for i in 1:10]
-testa = cat(recs...,dims=2)
+testa = cat(recs..., dims = 2)
 testva = VectorOfArray(recs)
 
 # ## Linear indexing
 @test testva[1] == testa[:, 1]
 @test testva[:] == recs
 @test testva[end] == testa[:, end]
-@test testva[2:end] == VectorOfArray([recs[i] for i = 2:length(recs)])
+@test testva[2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
 
-diffeq = DiffEqArray(recs,t)
+diffeq = DiffEqArray(recs, t)
 @test diffeq[1] == testa[:, 1]
 @test diffeq[:] == recs
 @test diffeq[end] == testa[:, end]
-@test diffeq[2:end] == DiffEqArray([recs[i] for i = 2:length(recs)], t)
+@test diffeq[2:end] == DiffEqArray([recs[i] for i in 2:length(recs)], t)
 
 # ## (Int, Int)
 @test testa[5, 4] == testva[5, 4]
@@ -70,9 +70,9 @@ diffeq = DiffEqArray(recs,t)
 # # ndims == 3
 t = 1:15
 recs = recs = [rand(10, 8) for i in 1:15]
-testa = cat(recs...,dims=3)
+testa = cat(recs..., dims = 3)
 testva = VectorOfArray(recs)
-diffeq = DiffEqArray(recs,t)
+diffeq = DiffEqArray(recs, t)
 
 # ## (Int, Int, Int)
 @test testa[1, 7, 14] == testva[1, 7, 14]
@@ -111,7 +111,7 @@ diffeq = DiffEqArray(recs,t)
 t = 1:3
 recs = [[1, 2, 3], [3, 5, 6, 7], [8, 9, 10, 11]]
 testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
-diffeq = DiffEqArray(recs,t)
+diffeq = DiffEqArray(recs, t)
 
 @test testva[:, 1] == recs[1]
 @test testva[1:2, 1:2] == [1 3; 2 5]
@@ -119,24 +119,24 @@ diffeq = DiffEqArray(recs,t)
 @test diffeq[1:2, 1:2] == [1 3; 2 5]
 
 t = 1:5
-recs = [rand(2,2) for i in 1:5]
+recs = [rand(2, 2) for i in 1:5]
 testva = VectorOfArray(recs)
-diffeq = DiffEqArray(recs,t)
+diffeq = DiffEqArray(recs, t)
 
-@test Array(testva) isa Array{Float64,3}
-@test Array(diffeq) isa Array{Float64,3}
+@test Array(testva) isa Array{Float64, 3}
+@test Array(diffeq) isa Array{Float64, 3}
 
-v = VectorOfArray([zeros(20), zeros(10,10), zeros(3,3,3)])
+v = VectorOfArray([zeros(20), zeros(10, 10), zeros(3, 3, 3)])
 v[CartesianIndex((2, 3, 2, 3))] = 1
 @test v[CartesianIndex((2, 3, 2, 3))] == 1
 @test v.u[3][2, 3, 2] == 1
 
-v = DiffEqArray([zeros(20), zeros(10,10), zeros(3,3,3)], 1:3)
+v = DiffEqArray([zeros(20), zeros(10, 10), zeros(3, 3, 3)], 1:3)
 v[CartesianIndex((2, 3, 2, 3))] = 1
 @test v[CartesianIndex((2, 3, 2, 3))] == 1
 @test v.u[3][2, 3, 2] == 1
 
-v = VectorOfArray([rand(20), rand(10,10), rand(3,3,3)])
+v = VectorOfArray([rand(20), rand(10, 10), rand(3, 3, 3)])
 w = v .* v
 @test w isa VectorOfArray
 @test w[1] isa Vector
@@ -150,8 +150,7 @@ w = v .+ 1
 @test w isa VectorOfArray
 @test w.u == map(x -> x .+ 1, v.u)
 
-
-v = DiffEqArray([rand(20), rand(10,10), rand(3,3,3)], 1:3)
+v = DiffEqArray([rand(20), rand(10, 10), rand(3, 3, 3)], 1:3)
 w = v .* v
 @test_broken w isa DiffEqArray # FIXME
 @test w[1] isa Vector
@@ -179,4 +178,4 @@ mulX .= sqrt.(abs.(testva .* testvb))
 # https://github.com/SciML/RecursiveArrayTools.jl/issues/49
 a = ArrayPartition(1:5, 1:6)
 a[1:8]
-a[[1,3,8]]
+a[[1, 3, 8]]
