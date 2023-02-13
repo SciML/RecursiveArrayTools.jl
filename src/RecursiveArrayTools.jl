@@ -45,7 +45,7 @@ end
 import Requires
 @static if !isdefined(Base, :get_extension)
     function __init__()
-            Requires.@require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/RecursiveArrayToolsTrackerExt.jl") end
+        Requires.@require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/RecursiveArrayToolsTrackerExt.jl") end
     end
 end
 

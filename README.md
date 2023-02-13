@@ -7,7 +7,7 @@
 [![Build Status](https://github.com/SciML/RecursiveArrayTools.jl/workflows/CI/badge.svg)](https://github.com/SciML/RecursiveArrayTools.jl/actions?query=workflow%3ACI)
 [![build status](https://badge.buildkite.com/9eab94781cf0af9a3566e9b9f16abe5aea167b640b88065285.svg?branch=master)](https://buildkite.com/julialang/recursivearraytools-dot-jl)
 
-[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor%27s%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 [![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
 
 RecursiveArrayTools.jl is a set of tools for dealing with recursive arrays like
@@ -31,8 +31,8 @@ vB = VectorOfArray(b)
 
 vA .* vB # Now all standard array stuff works!
 
-a = (rand(5),rand(5))
-b = (rand(5),rand(5))
+a = (rand(5), rand(5))
+b = (rand(5), rand(5))
 pA = ArrayPartition(a)
 pB = ArrayPartition(b)
 
