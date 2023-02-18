@@ -114,9 +114,9 @@ end
 Base.ones(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = ones(A)
 
 # mutable iff all components of ArrayPartition are mutable
-@generated function ArrayInterfaceCore.ismutable(::Type{<:ArrayPartition{T, S}}) where {T, S
+@generated function ArrayInterface.ismutable(::Type{<:ArrayPartition{T, S}}) where {T, S
                                                                                         }
-    res = all(ArrayInterfaceCore.ismutable, S.parameters)
+    res = all(ArrayInterface.ismutable, S.parameters)
     return :($res)
 end
 
@@ -429,7 +429,7 @@ end
 
 ## Linear Algebra
 
-ArrayInterfaceCore.zeromatrix(A::ArrayPartition) = ArrayInterfaceCore.zeromatrix(Vector(A))
+ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
 
 function LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition)
     (x = ldiv!(A, Array(b)); copyto!(b, x))

@@ -6,17 +6,12 @@ module RecursiveArrayTools
 
 using DocStringExtensions
 using RecipesBase, StaticArraysCore, Statistics,
-      ArrayInterfaceCore, LinearAlgebra
+      ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
 
 import ChainRulesCore
 import ChainRulesCore: NoTangent
 import ZygoteRules, Adapt
-
-# Required for the downstream_events.jl test
-# Since `ismutable` on an ArrayPartition needs
-# to know static arrays are not mutable
-import ArrayInterfaceStaticArraysCore
 
 using FillArrays
 

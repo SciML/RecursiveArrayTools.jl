@@ -18,11 +18,11 @@ function recursivecopy(a::AbstractArray{T, N}) where {T <: Number, N}
 end
 
 function recursivecopy(a::AbstractArray{T, N}) where {T <: AbstractArray, N}
-    if ArrayInterfaceCore.ismutable(a)
+    if ArrayInterface.ismutable(a)
         b = similar(a)
         map!(recursivecopy, b, a)
     else
-        ArrayInterfaceCore.restructure(a, map(recursivecopy, a))
+        ArrayInterface.restructure(a, map(recursivecopy, a))
     end
 end
 
@@ -59,7 +59,7 @@ end
 function recursivecopy!(b::AbstractArray{T, N},
                         a::AbstractArray{T2, N}) where {T <: AbstractArray,
                                                         T2 <: AbstractArray, N}
-    if ArrayInterfaceCore.ismutable(T)
+    if ArrayInterface.ismutable(T)
         @inbounds for i in eachindex(b, a)
             recursivecopy!(b[i], a[i])
         end
@@ -166,7 +166,7 @@ If `i<length(x)`, it's simply a `recursivecopy!` to the `i`th element. Otherwise
 """
 function copyat_or_push!(a::AbstractVector{T}, i::Int, x, perform_copy = true) where {T}
     @inbounds if length(a) >= i
-        if !ArrayInterfaceCore.ismutable(T) || !perform_copy
+        if !ArrayInterface.ismutable(T) || !perform_copy
             # TODO: Check for `setindex!`` if T <: StaticArraysCore.StaticArray and use `copy!(b[i],a[i])`
             #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
             a[i] = x
