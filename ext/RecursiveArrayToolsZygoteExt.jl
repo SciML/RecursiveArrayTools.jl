@@ -1,6 +1,6 @@
 module RecursiveArrayToolsZygoteExt
 
-import RecursiveArrayTools
+using RecursiveArrayTools
 
 if isdefined(Base, :get_extension)
     using Zygote
