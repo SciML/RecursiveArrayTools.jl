@@ -8,7 +8,6 @@ Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
 ArrayInterface = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
-FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 GPUArraysCore = "46192b85-c4d5-4398-a991-12ede77f4527"
 IteratorInterfaceExtensions = "82899510-4779-5014-852e-03e436cf321d"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -38,6 +37,7 @@ julia = "1.6"
 
 [extensions]
 RecursiveArrayToolsTrackerExt = "Tracker"
+RecursiveArrayToolsZygoteExt = "Zygote"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
@@ -60,3 +60,4 @@ test = ["SafeTestsets", "Aqua", "ForwardDiff", "LabelledArrays", "NLsolve", "Ord
 
 [weakdeps]
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
