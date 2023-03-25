@@ -4,10 +4,10 @@ import RecursiveArrayTools
 
 if isdefined(Base, :get_extension)
     using Zygote
-    using Zygote: FullArrays, literal_getproperty, @adjoint
+    using Zygote: FillArrays, literal_getproperty, @adjoint
 else
     using ..Zygote
-    using ..Zygote: FullArrays, literal_getproperty, @adjoint
+    using ..Zygote: FillArrays, literal_getproperty, @adjoint
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
