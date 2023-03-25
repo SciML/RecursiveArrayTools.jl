@@ -115,7 +115,7 @@ Base.ones(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = ones(A)
 
 # mutable iff all components of ArrayPartition are mutable
 @generated function ArrayInterface.ismutable(::Type{<:ArrayPartition{T, S}}) where {T, S
-                                                                                        }
+                                                                                    }
     res = all(ArrayInterface.ismutable, S.parameters)
     return :($res)
 end
