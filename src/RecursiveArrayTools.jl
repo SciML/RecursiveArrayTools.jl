@@ -9,11 +9,7 @@ using RecipesBase, StaticArraysCore, Statistics,
       ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
 
-import ChainRulesCore
-import ChainRulesCore: NoTangent
-import ZygoteRules, Adapt
-
-using FillArrays
+import Adapt
 
 import Tables, IteratorInterfaceExtensions
 
@@ -24,7 +20,6 @@ include("utils.jl")
 include("vector_of_array.jl")
 include("tabletraits.jl")
 include("array_partition.jl")
-include("zygote.jl")
 
 function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
     invoke(show, Tuple{typeof(io), Any}, io, x)
@@ -32,15 +27,12 @@ end
 
 import GPUArraysCore
 Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
-function ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray},
-                              xs::AbstractVectorOfArray)
-    T(xs), ȳ -> (NoTangent(), ȳ)
-end
 
 import Requires
 @static if !isdefined(Base, :get_extension)
     function __init__()
         Requires.@require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/RecursiveArrayToolsTrackerExt.jl") end
+        Requires.@require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/RecursiveArrayToolsZygoteExt.jl") end
     end
 end
 

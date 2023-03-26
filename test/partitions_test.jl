@@ -191,20 +191,20 @@ up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
 @testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,
+                                                                                     2,
+                                                                                     false),
+                                                                                    ([
+                                                                                         1,
+                                                                                     ],
+                                                                                     2,
+                                                                                     false),
+                                                                                    ([
+                                                                                         1,
+                                                                                     ],
+                                                                                     [
                                                                                          2,
-                                                                                         false),
-                                                                                        ([
-                                                                                             1,
-                                                                                         ],
-                                                                                         2,
-                                                                                         false),
-                                                                                        ([
-                                                                                             1,
-                                                                                         ],
-                                                                                         [
-                                                                                             2,
-                                                                                         ],
-                                                                                         true))
+                                                                                     ],
+                                                                                     true))
     @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
 end
 
