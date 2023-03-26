@@ -20,7 +20,6 @@ include("utils.jl")
 include("vector_of_array.jl")
 include("tabletraits.jl")
 include("array_partition.jl")
-include("zygote.jl")
 
 function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
     invoke(show, Tuple{typeof(io), Any}, io, x)

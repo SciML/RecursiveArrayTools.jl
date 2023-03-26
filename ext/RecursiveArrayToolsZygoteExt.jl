@@ -4,11 +4,14 @@ using RecursiveArrayTools
 
 if isdefined(Base, :get_extension)
     using Zygote
-    using Zygote: FillArrays, literal_getproperty, @adjoint
+    using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
 else
     using ..Zygote
-    using ..Zygote: FillArrays, literal_getproperty, @adjoint
+    using ..Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
 end
+
+# Define a new species of projection operator for this type:
+ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
     function AbstractVectorOfArray_getindex_adjoint(Δ)
