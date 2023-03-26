@@ -190,7 +190,7 @@ up = ap .+ 1
 up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
-@testset "ArrayInterfaceCore.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,
+@testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,
                                                                                          2,
                                                                                          false),
                                                                                         ([
@@ -205,7 +205,7 @@ up = 2 .* ap .+ 1
                                                                                              2,
                                                                                          ],
                                                                                          true))
-    @test ArrayInterfaceCore.ismutable(ArrayPartition(a, b)) == r
+    @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
 end
 
 # Test unary minus
