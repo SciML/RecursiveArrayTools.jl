@@ -13,6 +13,11 @@ end
 # Define a new species of projection operator for this type:
 ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
+function ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray},
+                              xs::AbstractVectorOfArray)
+    T(xs), ȳ -> (NoTangent(), ȳ)
+end
+
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
     function AbstractVectorOfArray_getindex_adjoint(Δ)
         Δ′ = [(i == j ? Δ : Fill(zero(eltype(x)), size(x)))

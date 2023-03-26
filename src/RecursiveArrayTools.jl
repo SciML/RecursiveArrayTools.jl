@@ -27,10 +27,6 @@ end
 
 import GPUArraysCore
 Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
-function ChainRulesCore.rrule(T::Type{<:GPUArraysCore.AbstractGPUArray},
-                              xs::AbstractVectorOfArray)
-    T(xs), ȳ -> (NoTangent(), ȳ)
-end
 
 import Requires
 @static if !isdefined(Base, :get_extension)
