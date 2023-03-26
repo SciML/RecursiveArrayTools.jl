@@ -9,9 +9,7 @@ using RecipesBase, StaticArraysCore, Statistics,
       ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
 
-import ChainRulesCore
-import ChainRulesCore: NoTangent
-import ZygoteRules, Adapt
+import Adapt
 
 import Tables, IteratorInterfaceExtensions
 
