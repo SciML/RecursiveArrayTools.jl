@@ -14,6 +14,7 @@ end
 ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
 Zygote._tryreverse(m::typeof(map), x::AbstractVectorOfArray) = x
+Zygote._tryreverse(m::typeof(map), x::Matrix) = x
 
 function ChainRulesCore.rrule(T::Type{<:RecursiveArrayTools.GPUArraysCore.AbstractGPUArray},
                               xs::AbstractVectorOfArray)
