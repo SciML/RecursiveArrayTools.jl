@@ -1,11 +1,11 @@
-using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterfaceCore
+using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface
 function lorenz(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
     du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
 u0 = ArrayPartition([1.0, 0.0], [0.0])
-@test ArrayInterfaceCore.zeromatrix(u0) isa Matrix
+@test ArrayInterface.zeromatrix(u0) isa Matrix
 tspan = (0.0, 100.0)
 prob = ODEProblem(lorenz, u0, tspan)
 sol = solve(prob, Tsit5())
@@ -39,16 +39,16 @@ end
 @test solve(ODEProblem(dyn,
                        ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
                                       ArrayPartition(zeros(1), [0.75])),
-                       (0.0, 1.0)), AutoTsit5(Rodas5())).retcode == :Success
+                       (0.0, 1.0)), AutoTsit5(Rodas5())).retcode == ReturnCode.Success
 
 if VERSION < v"1.7"
     @test solve(ODEProblem(dyn,
                            ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
                                           ArrayPartition(zeros(1), [0.75])),
-                           (0.0, 1.0)), Rodas5()).retcode == :Success
+                           (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
 else
     @test_broken solve(ODEProblem(dyn,
                                   ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
                                                  ArrayPartition(zeros(1), [0.75])),
-                                  (0.0, 1.0)), Rodas5()).retcode == :Success
+                                  (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
 end
