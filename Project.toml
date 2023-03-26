@@ -28,7 +28,7 @@ Requires = "1.0"
 StaticArraysCore = "1.1"
 SymbolicIndexingInterface = "0.1, 0.2"
 Tables = "1"
-Zygote = "= 0.6.55"
+Zygote = "= 0.6.57"
 julia = "1.6"
 
 [extensions]

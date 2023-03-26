@@ -15,7 +15,7 @@ ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfAr
 
 function ChainRulesCore.rrule(T::Type{<:RecursiveArrayTools.GPUArraysCore.AbstractGPUArray},
                               xs::AbstractVectorOfArray)
-    T(xs), ȳ -> (NoTangent(), ȳ)
+    T(xs), ȳ -> (ChainRulesCore.NoTangent(), ȳ)
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
