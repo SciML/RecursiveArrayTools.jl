@@ -356,7 +356,7 @@ Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u
 
 Base.reverse!(VA::AbstractVectorOfArray) = reverse!(VA.u)
 Base.reverse(VA::VectorOfArray) = VectorOfArray(reverse(VA.u))
-Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.c, VA.observed, VA.p)
+Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.sc, VA.observed, VA.p)
 
 function Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractArray) where {T, N}
     push!(VA.u, new_item)
