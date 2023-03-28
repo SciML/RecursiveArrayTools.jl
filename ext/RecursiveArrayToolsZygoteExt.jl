@@ -13,9 +13,6 @@ end
 # Define a new species of projection operator for this type:
 ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
-Zygote._tryreverse(m::typeof(map), x::AbstractVectorOfArray) = x
-Zygote._tryreverse(m::typeof(map), x::Matrix) = x
-
 function ChainRulesCore.rrule(T::Type{<:RecursiveArrayTools.GPUArraysCore.AbstractGPUArray},
                               xs::AbstractVectorOfArray)
     T(xs), ȳ -> (ChainRulesCore.NoTangent(), ȳ)
