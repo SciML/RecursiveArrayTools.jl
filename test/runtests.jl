@@ -33,6 +33,7 @@ end
         @time @safetestset "Linear Algebra Tests" begin include("linalg.jl") end
         @time @safetestset "Upstream Tests" begin include("upstream.jl") end
         @time @safetestset "Adjoint Tests" begin include("adjoints.jl") end
+        @time @safetestset "Measurement Tests" begin include("measurements.jl") end
     end
 
     if !is_APPVEYOR && GROUP == "Downstream"
