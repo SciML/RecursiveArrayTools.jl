@@ -31,6 +31,7 @@ Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArra
 import Requires
 @static if !isdefined(Base, :get_extension)
     function __init__()
+        Requires.@require Measurements="eff96d63-e80a-5855-80a2-b1b0885c5ab7" begin include("../ext/RecursiveArrayToolsMeasurementsExt.jl") end
         Requires.@require Tracker="9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c" begin include("../ext/RecursiveArrayToolsTrackerExt.jl") end
         Requires.@require Zygote="e88e6eb3-aa80-5325-afca-941959d7151f" begin include("../ext/RecursiveArrayToolsZygoteExt.jl") end
     end
