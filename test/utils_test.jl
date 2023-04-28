@@ -99,3 +99,21 @@ x = similar(x)
 recursivefill!(x, true)
 @test x[1] == MVector{10}(ones(10))
 @test x[2] == MVector{10}(ones(10))
+
+# Test VectorOfArray + recursivefill! + static arrays
+@testset "VectorOfArray + recursivefill! + static arrays" begin
+    Vec3 = SVector{3, Float64}
+    x = [randn(Vec3, n) for n in 1:4]  # vector of vectors of static arrays
+
+    x_voa = VectorOfArray(x)
+    @test eltype(x_voa) === Vec3
+    @test first(x_voa) isa AbstractVector{Vec3}
+
+    y_voa = recursivecopy(x_voa)
+    recursivefill!(y_voa, true)
+    @test all(y_voa[n] == fill(ones(Vec3), n) for n in 1:4)
+
+    y_voa = recursivecopy(x_voa)
+    recursivefill!(y_voa, ones(Vec3))
+    @test all(y_voa[n] == fill(ones(Vec3), n) for n in 1:4)
+end
