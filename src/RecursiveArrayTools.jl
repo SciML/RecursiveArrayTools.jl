@@ -13,6 +13,10 @@ import Adapt
 
 import Tables, IteratorInterfaceExtensions
 
+import SymbolicsBase: AllObserved, issymbollike
+# Re-export from SymbolicsBase
+export AllObserved
+
 abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
 abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
@@ -38,7 +42,7 @@ import Requires
 end
 
 export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
-       AllObserved, vecarr_to_vectors, tuples
+       vecarr_to_vectors, tuples
 
 export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_push!,
        vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,

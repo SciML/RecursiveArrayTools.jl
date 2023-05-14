@@ -61,17 +61,8 @@ mutable struct DiffEqArray{T, N, A, B, C, E, F} <: AbstractDiffEqArray{T, N, A}
     p::F
 end
 ### Abstract Interface
-struct AllObserved
-end
 
 Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
-
-@generated function issymbollike(x)
-    x <: Union{Symbol, AllObserved} && return true
-    ss = ["Operation", "Variable", "Sym", "Num", "Term"]
-    s = string(Symbol(__parameterless_type(x)))
-    any(x -> occursin(x, s), ss)
-end
 
 function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
                                                                A <: AbstractVector{
