@@ -435,12 +435,14 @@ function LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition)
     (x = ldiv!(A, Array(b)); copyto!(b, x))
 end
 
-function LinearAlgebra.ldiv!(A::LinearAlgebra.SVD{T, Tr, M}, b::ArrayPartition) where {Tr, T, M<:AbstractArray{T}}
-    (x = ldiv!(A, Array(b)); copyto!(b, x))
-end
+@static if VERSION >= v"1.9"
+    function LinearAlgebra.ldiv!(A::LinearAlgebra.SVD{T, Tr, M}, b::ArrayPartition) where {Tr, T, M<:AbstractArray{T}}
+        (x = ldiv!(A, Array(b)); copyto!(b, x))
+    end
 
-function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C}, b::ArrayPartition) where {T<:Union{Float32, Float64, ComplexF64, ComplexF32}, M<:AbstractMatrix{T}, C<:AbstractMatrix{T}}
-    (x = ldiv!(A, Array(b)); copyto!(b, x))
+    function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C}, b::ArrayPartition) where {T<:Union{Float32, Float64, ComplexF64, ComplexF32}, M<:AbstractMatrix{T}, C<:AbstractMatrix{T}}
+        (x = ldiv!(A, Array(b)); copyto!(b, x))
+    end
 end
 
 function LinearAlgebra.ldiv!(A::LU, b::ArrayPartition)
