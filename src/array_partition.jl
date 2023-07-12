@@ -434,6 +434,15 @@ ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(
 function LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition)
     (x = ldiv!(A, Array(b)); copyto!(b, x))
 end
+
+function LinearAlgebra.ldiv!(A::LinearAlgebra.SVD{T, Tr, M}, b::ArrayPartition) where {Tr, T, M<:AbstractArray{T}}
+    (x = ldiv!(A, Array(b)); copyto!(b, x))
+end
+
+function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C}, b::ArrayPartition) where {T<:Union{Float32, Float64, ComplexF64, ComplexF32}, M<:AbstractMatrix{T}, C<:AbstractMatrix{T}}
+    (x = ldiv!(A, Array(b)); copyto!(b, x))
+end
+
 function LinearAlgebra.ldiv!(A::LU, b::ArrayPartition)
     LinearAlgebra._ipiv_rows!(A, 1:length(A.ipiv), b)
     ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), b))

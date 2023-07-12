@@ -67,10 +67,13 @@ end
 Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
 
 @generated function issymbollike(x)
-    x <: Union{Symbol, AllObserved} && return true
+    x <: Union{Symbol, AllObserved} && return quote true end
     ss = ["Operation", "Variable", "Sym", "Num", "Term"]
     s = string(Symbol(__parameterless_type(x)))
-    any(x -> occursin(x, s), ss)
+    bool = any(x -> occursin(x, s), ss) 
+    quote 
+        $bool
+    end
 end
 
 function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
