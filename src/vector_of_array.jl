@@ -544,3 +544,10 @@ end
 end
 unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
 unpack_args_voa(::Any, args::Tuple{}) = ()
+
+function Base.lastindex(A::AbstractVectorOfArray, i=1)
+    i == 1 && return length(A)
+    len1 = lastindex(A[1], i-1)
+    all(x->isequal(lastindex(x, i-1), len1), A) && return len1
+    throw(ArgumentError("Can not get lastindex of an AbstractVectorOfArray for dimensions other than 1"))
+end
