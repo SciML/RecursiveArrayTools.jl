@@ -70,8 +70,8 @@ Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
     x <: Union{Symbol, AllObserved} && return quote true end
     ss = ["Operation", "Variable", "Sym", "Num", "Term"]
     s = string(Symbol(__parameterless_type(x)))
-    bool = any(x -> occursin(x, s), ss) 
-    quote 
+    bool = any(x -> occursin(x, s), ss)
+    quote
         $bool
     end
 end
@@ -161,8 +161,12 @@ end
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.firstindex(VA::AbstractVectorOfArray) = firstindex(VA.u)
-@inline Base.lastindex(VA::AbstractVectorOfArray) = lastindex(VA.u)
-
+function Base.lastindex(A::AbstractVectorOfArray, i=1)
+    i == 1 && return length(A)
+    len1 = lastindex(A[1], i-1)
+    all(x->isequal(lastindex(x, i-1), len1), A) && return len1
+    throw(ArgumentError("`end` is not defined for AbstractVectorOfArray types when the arrays have different sizes. Either enforce that the arrays are all similarly sized or directly define the index value.
+Note that a common reason for this error in the SciMLSolution context comes from adaptively sized models. Using arguments like `saveat` can enforce that an ensemble of solutions are all saved at the same time points and thus all have the same size. Similarly, if an ODE is solved with adaptivity in the size of the system (such as for adaptive grids) then this error can refer to the changing size of the ODE through the time series."))
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
 @inline Base.eachindex(VA::AbstractVectorOfArray) = Base.OneTo(length(VA.u))
 @inline Base.IteratorSize(VA::AbstractVectorOfArray) = Base.HasLength()
@@ -544,12 +548,4 @@ end
 end
 unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
 unpack_args_voa(::Any, args::Tuple{}) = ()
-
-function Base.lastindex(A::AbstractVectorOfArray, i=1)
-    i == 1 && return length(A)
-    len1 = lastindex(A[1], i-1)
-    all(x->isequal(lastindex(x, i-1), len1), A) && return len1
-    throw(ArgumentError("`end` is not defined for AbstractVectorOfArray types when the arrays have different sizes. Either enforce that the arrays are all similarly sized or directly define the index value. 
-    
-Note that a common reason for this error in the SciMLSolution context comes from adaptively sized models. Using arguments like `saveat` can enforce that an ensemble of solutions are all saved at the same time points and thus all have the same size. Similarly, if an ODE is solved with adaptivity in the size of the system (such as for adaptive grids) then this error can refer to the changing size of the ODE through the time series."))
 end
