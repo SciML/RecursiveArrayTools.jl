@@ -394,7 +394,7 @@ end
 
 function Base._reshape(parent::VectorOfArray, dims::Base.Dims)
     n = prod(size(parent))
-    prod(dims) == n || _throw_dmrs(n, "size", dims)
+    prod(dims) == n || Base._throw_dmrs(n, "size", dims)
     Base.__reshape((parent, IndexStyle(parent)), dims)
 end
 
