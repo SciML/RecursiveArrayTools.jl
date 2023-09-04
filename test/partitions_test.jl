@@ -69,6 +69,9 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @test (@inferred similar(x, Int, (2, 2))) isa AbstractMatrix{Int}
 # @inferred similar(x, Int, Float64)
 
+# Copy
+@inferred copy(x)
+
 # zero
 @inferred zero(x)
 @inferred zero(x, (2, 2))
@@ -224,4 +227,14 @@ begin
     @test (@inferred convert(new_type, d)) isa new_type
     @test convert(new_type, d) == d
     @test_throws MethodError convert(new_type, ArrayPartition(view(b, :), c, c))
+end
+
+
+@testset "Copy with type changing array" begin
+    # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied 
+    struct TypeChangingArray{T, N} <: AbstractArray{T, N} end
+    Base.copy(::TypeChangingArray{T, N}) where {T,N} = Array{T,N}(undef, ntuple(_ -> 0, N)) 
+
+    a = ArrayPartition(TypeChangingArray{Int, 2}(), TypeChangingArray{Float32, 2}())
+    @test copy(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
 end
