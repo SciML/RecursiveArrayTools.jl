@@ -81,10 +81,10 @@ function Base.similar(A::ArrayPartition, ::Type{T}, ::Type{S}, R::DataType...) w
     ArrayPartition(f, N)
 end
 
-Base.copy(A::ArrayPartition{T, S}) where {T, S} = ArrayPartition{T, S}(copy.(A.x))
+Base.copy(A::ArrayPartition) = ArrayPartition(map(copy, A.x))
 
 ## zeros
-Base.zero(A::ArrayPartition{T, S}) where {T, S} = ArrayPartition{T, S}(zero.(A.x))
+Base.zero(A::ArrayPartition) = ArrayPartition(map(zero, A.x))
 # ignore dims since array partitions are vectors
 Base.zero(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = zero(A)
 
