@@ -4,7 +4,10 @@ using Test
 using Aqua
 using SafeTestsets
 
-Aqua.test_all(RecursiveArrayTools, ambiguities = false)
+if VERSION >= v"1.9"
+    Aqua.test_all(RecursiveArrayTools, ambiguities = false)
+end
+
 @test_broken isempty(Test.detect_ambiguities(RecursiveArrayTools))
 const GROUP = get(ENV, "GROUP", "All")
 const is_APPVEYOR = (Sys.iswindows() && haskey(ENV, "APPVEYOR"))
