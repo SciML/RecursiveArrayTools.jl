@@ -242,3 +242,5 @@ end
     @test copy(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
     @test zero(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
 end
+
+@test !iszero(ArrayPartition([2], [3, 4]))

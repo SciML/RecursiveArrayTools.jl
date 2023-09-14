@@ -169,7 +169,7 @@ Base.any(f, A::ArrayPartition) = any(f, (any(f, x) for x in A.x))
 Base.any(f::Function, A::ArrayPartition) = any(f, (any(f, x) for x in A.x))
 Base.any(A::ArrayPartition) = any(identity, A)
 Base.all(f, A::ArrayPartition) = all(f, (all(f, x) for x in A.x))
-Base.all(f::Function, A::ArrayPartition) = all(f, (all(f, x) for x in A.x))
+Base.all(f::Function, A::ArrayPartition) = all((all(f, x) for x in A.x))
 Base.all(A::ArrayPartition) = all(identity, A)
 
 function Base.copyto!(dest::AbstractArray, A::ArrayPartition)
