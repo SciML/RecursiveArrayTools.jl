@@ -264,6 +264,8 @@ function Base._unsafe_getindex(::IndexStyle, A::ArrayPartition,
     return dest
 end
 
+Base._maybe_reshape(::IndexCartesian, A::ArrayPartition, I::Vararg{Union{Real, AbstractArray}, N}) where {N} = Vector(A)
+
 """
     setindex!(A::ArrayPartition, v, i::Int, j...)
 

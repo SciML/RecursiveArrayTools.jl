@@ -244,3 +244,6 @@ end
 end
 
 @test !iszero(ArrayPartition([2], [3, 4]))
+@testset "Cartesian indexing" begin
+    @test ArrayPartition([1,2], [3])[1:3,1] == [1, 2, 3]
+end
