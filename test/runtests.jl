@@ -43,6 +43,7 @@ end
         activate_downstream_env()
         @time @safetestset "DiffEqArray Indexing Tests" begin include("downstream/symbol_indexing.jl") end
         @time @safetestset "Event Tests with ArrayPartition" begin include("downstream/downstream_events.jl") end
+        @time @safetestset "Measurements and Units" begin include("downstream/measurements_and_units.jl") end
         @time @safetestset "TrackerExt" begin include("downstream/TrackerExt.jl") end
     end
 
