@@ -243,6 +243,7 @@ end
     @test zero(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
 end
 
+@test !iszero(ArrayPartition([2], [3, 4]))
 @testset "Cartesian indexing" begin
     @test ArrayPartition([1,2], [3])[1:3,1] == [1, 2, 3]
 end
