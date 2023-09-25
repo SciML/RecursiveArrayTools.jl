@@ -7,7 +7,7 @@ VectorOfArray(u::AbstractVector)
 
 A `VectorOfArray` is an array which has the underlying data structure `Vector{AbstractArray{T}}`
 (but, hopefully, concretely typed!). This wrapper over such data structures allows one to lazily
-act like it's a higher-dimensional vector, and easily convert to different forms. The indexing
+act like it's a higher-dimensional vector, and easily convert it to different forms. The indexing
 structure is:
 
 ```julia
