@@ -190,6 +190,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
     RecursiveArrayTools.VectorOfArray(A.u)[I...]
 end
 
+__parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
                                                 I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
