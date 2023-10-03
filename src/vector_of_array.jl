@@ -64,11 +64,9 @@ end
 struct AllObserved
 end
 
-function issymbollike(x)
-    x isa Union{Symbol, AllObserved} && return true
-    ss = (:Operation, :Variable, :Sym, :Num, :Term)
-    return typeof(x).name.name in ss
-end
+# extended by Symbolcs
+issymbollike(::Any) = false
+issymbollike(::Union{Symbol, AllObserved}) = true
 
 function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
                                                                A <: AbstractVector{
