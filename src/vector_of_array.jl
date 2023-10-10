@@ -64,17 +64,9 @@ end
 struct AllObserved
 end
 
-Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
-
-@generated function issymbollike(x)
-    x <: Union{Symbol, AllObserved} && return quote true end
-    ss = ["Operation", "Variable", "Sym", "Num", "Term"]
-    s = string(Symbol(__parameterless_type(x)))
-    bool = any(x -> occursin(x, s), ss) 
-    quote 
-        $bool
-    end
-end
+# extended by Symbolcs
+issymbollike(::Any) = false
+issymbollike(::Union{Symbol, AllObserved}) = true
 
 function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
                                                                A <: AbstractVector{
@@ -196,6 +188,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
     RecursiveArrayTools.VectorOfArray(A.u)[I...]
 end
 
+__parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
                                                 I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
