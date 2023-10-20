@@ -13,7 +13,7 @@ import Adapt
 
 import Tables, IteratorInterfaceExtensions
 
-abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
+abstract type AbstractVectorOfArray{T, N, A} end
 abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
 include("utils.jl")
