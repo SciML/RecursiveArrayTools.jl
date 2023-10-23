@@ -53,12 +53,11 @@ A[1, :]  # all time periods for f(t)
 A.t
 ```
 """
-mutable struct DiffEqArray{T, N, A, B, C, E, F} <: AbstractDiffEqArray{T, N, A}
+mutable struct DiffEqArray{T, N, A, B, F, S} <: AbstractDiffEqArray{T, N, A}
     u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
     t::B
-    sc::C
-    observed::E
     p::F
+    sys::S
 end
 ### Abstract Interface
 struct AllObserved
@@ -115,36 +114,54 @@ function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray
     VectorOfArray{T, N + 1, typeof(vec)}(vec)
 end
 
-function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N, Int}, syms = nothing,
-                     indepsym = nothing, observed = nothing, p = nothing) where {T, N}
-    sc = if isnothing(indepsym) || indepsym isa AbstractArray
-        SymbolCache{typeof(syms), typeof(indepsym), Nothing}(syms, indepsym, nothing)
-    else
-        SymbolCache{typeof(syms), Vector{typeof(indepsym)}, Nothing}(syms, [indepsym],
-                                                                     nothing)
-    end
-    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(sc), typeof(observed),
-                typeof(p)}(vec, ts, sc, observed, p)
+function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N, Int}, p = nothing, sys = nothing) where {T, N}
+    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec, ts, p, sys)
 end
 # Assume that the first element is representative of all other elements
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, syms = nothing,
-                     indepsym = nothing, observed = nothing, p = nothing)
-    DiffEqArray(vec, ts, (size(vec[1])..., length(vec)), syms, indepsym, observed, p)
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p = nothing, sys = nothing)
+    DiffEqArray(vec, ts, (size(vec[1])..., length(vec)), p, sys)
 end
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, syms = nothing,
-                     indepsym = nothing, observed = nothing,
-                     p = nothing) where {T, N, VT <: AbstractArray{T, N}}
-    sc = if isnothing(indepsym) || indepsym isa AbstractArray
-        SymbolCache{typeof(syms), typeof(indepsym), Nothing}(syms, indepsym, nothing)
-    else
-        SymbolCache{typeof(syms), Vector{typeof(indepsym)}, Nothing}(syms, [indepsym],
-                                                                     nothing)
-    end
-    DiffEqArray{T, N + 1, typeof(vec), typeof(ts), typeof(sc), typeof(observed), typeof(p)}(vec,
-                                                                                            ts,
-                                                                                            sc,
-                                                                                            observed,
-                                                                                            p)
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p = nothing, sys = nothing) where {T, N, VT <: AbstractArray{T, N}}
+    DiffEqArray{T, N + 1, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec, ts, p, sys)
+end
+
+# SymbolicIndexingInterface implementation for DiffEqArray
+# Just forward to A.sys
+function SymbolicIndexingInterface.is_variable(A::DiffEqArray, sym)
+    return is_variable(A.sys, sym)
+end
+function SymbolicIndexingInterface.has_static_variable(A::DiffEqArray)
+    return has_static_variable(A.sys)
+end
+function SymbolicIndexingInterface.variable_index(A::DiffEqArray, sym)
+    return variable_index(A.sys, sym)
+end
+function SymbolicIndexingInterface.variable_index(A::DiffEqArray, sym, t)
+    return variable_index(A.sys, sym, t)
+end
+function SymbolicIndexingInterface.is_parameter(A::DiffEqArray, sym)
+    return is_parameter(A.sys, sym)
+end
+function SymbolicIndexingInterface.parameter_index(A::DiffEqArray, sym)
+    return parameter_index(A.sys, sym)
+end
+function SymbolicIndexingInterface.is_independent_variable(A::DiffEqArray, sym)
+    return is_independent_variable(A.sys, sym)
+end
+function SymbolicIndexingInterface.is_observed(A::DiffEqArray, sym)
+    return is_observed(A.sys, sym)
+end
+function SymbolicIndexingInterface.observed(A::DiffEqArray, sym)
+    return observed(A.sys, sym)
+end
+function SymbolicIndexingInterface.observed(A::DiffEqArray, sym, symbolic_states)
+    return observed(A.sys, sym, symbolic_states)
+end
+function SymbolicIndexingInterface.is_time_dependent(A::DiffEqArray)
+    return is_time_dependent(A.sys)
+end
+function SymbolicIndexingInterface.constant_structure(A::DiffEqArray)
+    return constant_structure(A.sys)
 end
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
@@ -215,39 +232,45 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i:
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
                                                 sym) where {T, N}
-    if issymbollike(sym) && !isnothing(A.sc)
-        if is_indep_sym(A.sc, sym)
-            return A.t
-        elseif is_state_sym(A.sc, sym)
-            return getindex.(A.u, state_sym_to_index(A.sc, sym))
-        elseif is_param_sym(A.sc, sym)
-            return A.p[param_sym_to_index(A.sc, sym)]
-        elseif A.observed !== nothing
-            return observed(A, sym, :)
+    A.sys === nothing && error("Cannot use symbolic indexing without a system")
+
+    if is_independent_variable(A, sym)
+        return A.t
+    elseif is_variable(A, sym)
+        if has_static_variable(A)
+            return getindex.(A.u, variable_index(A, sym))
+        else
+            return getindex.(A.u, variable_index.((A, ), (sym, ), A.t))
         end
-    elseif all(issymbollike, sym) && !isnothing(A.sc)
-        if all(Base.Fix1(is_param_sym, A.sc), sym)
+    elseif is_parameter(A, sym)
+        return A.p[parameter_index(A, sym)]
+    elseif issymbolic(sym) == Symbolic()
+        return _observed(A, sym, :)
+    elseif all(isequal(Symbolic()), issymbolic.(collect(sym)))
+        if all(x -> is_parameter(A, x), collect(sym))
             return getindex.((A,), sym)
         else
             return [getindex.((A,), sym, i) for i in eachindex(A.t)]
         end
     end
-    return getindex.(A.u, sym)
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sym,
                                                 args...) where {T, N}
-    if issymbollike(sym) && !isnothing(A.sc)
-        if is_indep_sym(A.sc, sym)
-            return A.t[args...]
-        elseif is_state_sym(A.sc, sym)
+    A.sys === nothing && error("Cannot use symbolic indexing without a system")
+
+    if is_independent_variable(A, sym)
+        return A.t[args...]
+    elseif is_variable(A.sys, sym)
+        if has_static_variable(A)
             return A[sym][args...]
-        elseif A.observed !== nothing
-            return observed(A, sym, args...)
+        else
+            return getindex.(A.u, variable_index.((A, ), (sym, ), A.t[args...]))
         end
-    elseif all(issymbollike, sym) && !isnothing(A.sc)
-        return reduce(vcat, map(s -> A[s, args...]', sym))
+    elseif issymbolic(sym) == Symbolic()
+        return observed(A, sym, args...)
+    elseif all(isequal(Symbolic()), issymbolic.(collect(sym)))
+        return reduce(vcat, map(s -> A[s, args...]' ,sym))
     end
-    return getindex.(A.u, sym)
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
                                                 I::Int...) where {T, N}
@@ -265,14 +288,14 @@ Base.@propagate_inbounds function Base.getindex(VA::AbstractDiffEqArray{T, N},
     return VA.u[i][jj]
 end
 
-function observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
-    A.observed(sym, A.u[i], A.p, A.t[i])
+function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
+    observed(A, sym)(A.u[i], A.p, A.t[i])
 end
-function observed(A::AbstractDiffEqArray{T, N}, sym, i::AbstractArray{Int}) where {T, N}
-    A.observed.((sym,), A.u[i], (A.p,), A.t[i])
+function _observed(A::AbstractDiffEqArray{T, N}, sym, i::AbstractArray{Int}) where {T, N}
+    observed(A, sym).(A.u[i], (A.p,), A.t[i])
 end
-function observed(A::AbstractDiffEqArray{T, N}, sym, ::Colon) where {T, N}
-    A.observed.((sym,), A.u, (A.p,), A.t)
+function _observed(A::AbstractDiffEqArray{T, N}, sym, ::Colon) where {T, N}
+    observed(A, sym).(A.u, (A.p,), A.t)
 end
 
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,
