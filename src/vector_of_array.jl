@@ -64,10 +64,6 @@ end
 struct AllObserved
 end
 
-# extended by Symbolcs
-issymbollike(::Any) = false
-issymbollike(::Union{Symbol, AllObserved}) = true
-
 function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
                                                                A <: AbstractVector{
                                                                               <:AbstractVector

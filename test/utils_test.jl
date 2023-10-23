@@ -67,10 +67,6 @@ function test_recursive_bottom_eltype()
 end
 test_recursive_bottom_eltype()
 
-using RecursiveArrayTools: issymbollike
-@test !issymbollike(1)
-@test issymbollike(:a)
-
 x = zeros(10)
 recursivefill!(x, 1.0)
 @test x == ones(10)
