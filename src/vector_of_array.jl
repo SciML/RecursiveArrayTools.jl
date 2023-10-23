@@ -423,6 +423,13 @@ end
 # conversion tools
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA[1])]
 Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array, VA)) # Allocates
+# stack non-ragged arrays to convert them
+function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
+    if !allequal(size.(VA.u))
+        error("Can only convert non-ragged VectorOfArray to Array")
+    end
+    return stack(VA.u; dims=1)
+end
 
 # statistics
 @inline Base.sum(f, VA::AbstractVectorOfArray) = sum(f, Array(VA))
@@ -443,8 +450,8 @@ end
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray)
     (println(io, summary(x), ':'); show(io, m, x.u))
 end
-function Base.summary(A::AbstractVectorOfArray)
-    string("VectorOfArray{", eltype(A), ",", ndims(A), "}")
+function Base.summary(A::AbstractVectorOfArray{T,N}) where {T,N}
+    string("VectorOfArray{", T, ",", N, "}")
 end
 
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractDiffEqArray)
