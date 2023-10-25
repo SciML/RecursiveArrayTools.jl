@@ -498,6 +498,8 @@ end
 function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N}
     VectorOfArrayStyle{N}()
 end
+# make vectorofarrays broadcastable so they aren't collected
+Broadcast.broadcastable(x::AbstractVectorOfArray) = x
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
