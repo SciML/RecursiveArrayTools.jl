@@ -366,9 +366,8 @@ tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 function Base.copy(VA::AbstractDiffEqArray)
     typeof(VA)(copy(VA.u),
                copy(VA.t),
-               (VA.sc === nothing) ? nothing : copy(VA.sc),
-               (VA.observed === nothing) ? nothing : copy(VA.observed),
-               (VA.p === nothing) ? nothing : copy(VA.p))
+               (VA.p === nothing) ? nothing : copy(VA.p),
+               (VA.sys === nothing) ? nothing : copy(VA.sys))
 end
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
