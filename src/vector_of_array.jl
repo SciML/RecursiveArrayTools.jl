@@ -338,6 +338,8 @@ end
 
 # Interface for the two-dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
+Base.axes(VA::AbstractVectorOfArray) = Base.OneTo.(size(VA))
+Base.axes(VA::AbstractVectorOfArray, d::Int) = Base.OneTo(size(VA)[d])
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
                                                 I::Int...) where {T, N}
     VA.u[I[end]][Base.front(I)...]
