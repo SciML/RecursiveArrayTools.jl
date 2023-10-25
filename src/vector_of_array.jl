@@ -354,6 +354,10 @@ end
 function Base.:(==)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
     return A.u == B.u
 end
+function Base.:(==)(A::AbstractVectorOfArray, B::AbstractArray)
+    return A.u == B
+end
+Base.:(==)(A::AbstractArray, B::AbstractVectorOfArray) = B == A
 
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray
