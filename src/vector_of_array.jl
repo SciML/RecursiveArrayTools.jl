@@ -351,6 +351,10 @@ Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}
     VA.u[I[end]][Base.front(I)...] = v
 end
 
+function Base.:(==)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
+    return A.u == B.u
+end
+
 # The iterator will be over the subarrays of the container, not the individual elements
 # unlike an true AbstractArray
 function Base.iterate(VA::AbstractVectorOfArray, state = 1)
