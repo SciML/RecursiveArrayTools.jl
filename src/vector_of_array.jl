@@ -218,6 +218,14 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
     return A[ntuple(x -> Colon(), ndims(A))...][I, J...]
 end
 
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, args...)
+    if last(args) isa Union{Integer,CartesianIndex}
+        return getindex(A.u[last(args)], Base.front(args)...)
+    else
+        return stack(getindex.(A.u[last(args)], tuple.(Base.front(args))...))
+    end
+end
+
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,
                                                 ::Colon) where {T, N}
     [A.u[j][i] for j in 1:length(A)]
