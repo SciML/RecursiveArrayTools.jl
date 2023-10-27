@@ -403,6 +403,7 @@ function Base.append!(VA::AbstractVectorOfArray{T, N},
 end
 
 # Tools for creating similar objects
+Base.eltype(::VectorOfArray{T}) where {T} = T
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
     VectorOfArray([similar(VA[i], T) for i in eachindex(VA)])
 end
