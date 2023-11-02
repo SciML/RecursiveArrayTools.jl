@@ -416,6 +416,14 @@ function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
 end
 
 # Operations
+function Base.isapprox(A::AbstractVectorOfArray, B::Union{AbstractVectorOfArray,AbstractArray}; kwargs...)
+    return all(isapprox.(A, B; kwargs...))
+end
+
+function Base.isapprox(A::AbstractArray, B::AbstractVectorOfArray; kwargs...)
+    return all(isapprox.(A, B; kwargs...))
+end
+
 for op in [:(Base.:-), :(Base.:+)]
     @eval function ($op)(A::AbstractVectorOfArray, B::Union{AbstractVectorOfArray,AbstractArray})
         ($op).(A, B)
