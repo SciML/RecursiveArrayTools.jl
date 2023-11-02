@@ -388,7 +388,7 @@ Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u
 
 Base.reverse!(VA::AbstractVectorOfArray) = reverse!(VA.u)
 Base.reverse(VA::VectorOfArray) = VectorOfArray(reverse(VA.u))
-Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.sc, VA.observed, VA.p)
+Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.p, VA.sys)
 
 function Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractArray) where {T, N}
     push!(VA.u, new_item)
@@ -400,6 +400,38 @@ function Base.append!(VA::AbstractVectorOfArray{T, N},
         push!(VA, item)
     end
     return VA
+end
+
+# AbstractArray methods
+Base.ndims(::AbstractVectorOfArray{T,N}) where {T,N} = N
+function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
+    if checkbounds(Bool, VA.u, last(idx))
+        if last(idx) isa Integer
+            return all(checkbounds.(Bool, (VA.u[last(idx)],), Base.front(idx)))
+        else
+            return all(checkbounds.(Bool, VA.u[last(idx)], Base.front(idx)))
+        end
+    end
+    return false
+end
+
+# Operations
+for op in [:(Base.:-), :(Base.:+)]
+    @eval function ($op)(A::AbstractVectorOfArray, B::Union{AbstractVectorOfArray,AbstractArray})
+        ($op).(A, B)
+    end
+    @eval function ($op)(A::AbstractArray, B::AbstractVectorOfArray)
+        ($op).(A, B)
+    end
+end
+
+for op in [:(Base.:/), :(Base.:\), :(Base.:*)]
+    if op !== :(Base.:/)
+        @eval ($op)(A::Number, B::AbstractVectorOfArray) = ($op).(A, B)
+    end
+    if op !== :(Base.:\)
+        @eval ($op)(A::AbstractVectorOfArray, B::Number) = ($op).(A, B)
+    end
 end
 
 # Tools for creating similar objects
@@ -446,7 +478,7 @@ function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
     if !allequal(size.(VA.u))
         error("Can only convert non-ragged VectorOfArray to Array")
     end
-    return stack(VA.u; dims=1)
+    return stack(VA.u)
 end
 
 # statistics
