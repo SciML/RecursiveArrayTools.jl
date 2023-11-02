@@ -442,6 +442,13 @@ for op in [:(Base.:/), :(Base.:\), :(Base.:*)]
     end
 end
 
+function Base.CartesianIndices(VA::AbstractVectorOfArray)
+    if !allequal(size.(VA.u))
+        error("CartesianIndices only valid for non-ragged arrays")
+    end
+    return CartesianIndices((size(VA.u[1])..., length(VA.u)))
+end
+
 # Tools for creating similar objects
 Base.eltype(::VectorOfArray{T}) where {T} = T
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
