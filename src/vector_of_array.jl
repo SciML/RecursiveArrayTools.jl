@@ -534,8 +534,8 @@ end
     convert(Array, VA)
 end
 @recipe function f(VA::AbstractDiffEqArray)
-    xguide --> ((VA.sc.indepsym !== nothing) ? string(VA.sc.indepsym) : "")
-    label --> ((VA.sc.syms !== nothing) ? reshape(string.(VA.sc.syms), 1, :) : "")
+    xguide --> ""
+    label --> ""
     VA.t, VA'
 end
 @recipe function f(VA::DiffEqArray{T, 1}) where {T}
