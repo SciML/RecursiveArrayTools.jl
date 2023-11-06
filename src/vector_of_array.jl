@@ -118,20 +118,22 @@ function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N, Int}, p = nothing, 
     DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec, ts, p, sys)
 end
 # Assume that the first element is representative of all other elements
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p = nothing, sys = nothing)
-    DiffEqArray(vec, ts, (size(vec[1])..., length(vec)), p, sys)
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing; variables = nothing, parameters = nothing, independent_variables = nothing)
+    sys = SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, []))
+    _size = size(vec[1])
+    return DiffEqArray{eltype(eltype(vec)),length(_size),typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
 end
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p = nothing, sys = nothing) where {T, N, VT <: AbstractArray{T, N}}
-    DiffEqArray{T, N + 1, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec, ts, p, sys)
+
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing; variables = nothing, parameters = nothing, independent_variables = nothing) where {T,N,VT<:AbstractArray{T,N}}
+    sys = SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, []))
+    return DiffEqArray{eltype(eltype(vec)),N+1,typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
 end
+
 
 # SymbolicIndexingInterface implementation for DiffEqArray
 # Just forward to A.sys
 function SymbolicIndexingInterface.is_variable(A::DiffEqArray, sym)
     return is_variable(A.sys, sym)
-end
-function SymbolicIndexingInterface.has_static_variable(A::DiffEqArray)
-    return has_static_variable(A.sys)
 end
 function SymbolicIndexingInterface.variable_index(A::DiffEqArray, sym)
     return variable_index(A.sys, sym)
