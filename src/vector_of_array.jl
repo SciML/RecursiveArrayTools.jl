@@ -242,27 +242,28 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i:
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
                                                 sym) where {T, N}
-    A.sys === nothing && error("Cannot use symbolic indexing without a system")
-
     if is_independent_variable(A, sym)
         return A.t
     elseif is_variable(A, sym)
-        if has_static_variable(A)
+        if constant_structure(A)
             return getindex.(A.u, variable_index(A, sym))
         else
-            return getindex.(A.u, variable_index.((A, ), (sym, ), A.t))
+            return getindex.(A.u, variable_index.((A, ), (sym, ), eachindex(A.t)))
         end
     elseif is_parameter(A, sym)
         return A.p[parameter_index(A, sym)]
-    elseif issymbolic(sym) == Symbolic()
-        return _observed(A, sym, :)
-    elseif all(isequal(Symbolic()), issymbolic.(collect(sym)))
+    elseif is_observed(A, sym)
+        return observed(A, sym, :)
+    elseif symbolic_type(sym) == ArraySymbolic()
+        return getindex(A, collect(sym))
+    elseif sym isa AbstractArray
         if all(x -> is_parameter(A, x), collect(sym))
             return getindex.((A,), sym)
         else
             return [getindex.((A,), sym, i) for i in eachindex(A.t)]
         end
     end
+    return getindex.(A.u, sym)
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sym,
                                                 args...) where {T, N}
@@ -271,14 +272,14 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sy
     if is_independent_variable(A, sym)
         return A.t[args...]
     elseif is_variable(A.sys, sym)
-        if has_static_variable(A)
+        if constant_structure(A)
             return A[sym][args...]
         else
             return getindex.(A.u, variable_index.((A, ), (sym, ), A.t[args...]))
         end
-    elseif issymbolic(sym) == Symbolic()
+    elseif is_observed(A, sym)
         return observed(A, sym, args...)
-    elseif all(isequal(Symbolic()), issymbolic.(collect(sym)))
+    else
         return reduce(vcat, map(s -> A[s, args...]' ,sym))
     end
 end
