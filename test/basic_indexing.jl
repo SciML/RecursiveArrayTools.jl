@@ -16,8 +16,8 @@ mulX .= sqrt.(abs.(testva .* X))
 @test mulX == ref
 
 @test Array(testva) == [1 4 7
-                        2 5 8
-                        3 6 9]
+    2 5 8
+    3 6 9]
 
 @test testa[1:2, 1:2] == [1 4; 2 5]
 @test testva[1:2, 1:2] == [1 4; 2 5]
@@ -26,8 +26,8 @@ mulX .= sqrt.(abs.(testva .* X))
 t = [1, 2, 3]
 diffeq = DiffEqArray(recs, t)
 @test Array(diffeq) == [1 4 7
-                        2 5 8
-                        3 6 9]
+    2 5 8
+    3 6 9]
 @test diffeq[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2

@@ -63,37 +63,61 @@ end
 struct AllObserved
 end
 
-function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
-                                                               A <: AbstractVector{
-                                                                              <:AbstractVector
-                                                                              }}
+function Base.Array(VA::AbstractVectorOfArray{
+    T,
+    N,
+    A,
+}) where {T, N,
+    A <: AbstractVector{
+        <:AbstractVector,
+    }}
     reduce(hcat, VA.u)
 end
-function Base.Array(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
-                                                               A <:
-                                                               AbstractVector{<:Number}}
+function Base.Array(VA::AbstractVectorOfArray{
+    T,
+    N,
+    A,
+}) where {T, N,
+    A <:
+    AbstractVector{<:Number}}
     VA.u
 end
-function Base.Matrix(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
-                                                                A <: AbstractVector{
-                                                                               <:AbstractVector
-                                                                               }}
+function Base.Matrix(VA::AbstractVectorOfArray{
+    T,
+    N,
+    A,
+}) where {T, N,
+    A <: AbstractVector{
+        <:AbstractVector,
+    }}
     reduce(hcat, VA.u)
 end
-function Base.Matrix(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
-                                                                A <:
-                                                                AbstractVector{<:Number}}
+function Base.Matrix(VA::AbstractVectorOfArray{
+    T,
+    N,
+    A,
+}) where {T, N,
+    A <:
+    AbstractVector{<:Number}}
     Matrix(VA.u)
 end
-function Base.Vector(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
-                                                                A <: AbstractVector{
-                                                                               <:AbstractVector
-                                                                               }}
+function Base.Vector(VA::AbstractVectorOfArray{
+    T,
+    N,
+    A,
+}) where {T, N,
+    A <: AbstractVector{
+        <:AbstractVector,
+    }}
     vec(reduce(hcat, VA.u))
 end
-function Base.Vector(VA::AbstractVectorOfArray{T, N, A}) where {T, N,
-                                                                A <:
-                                                                AbstractVector{<:Number}}
+function Base.Vector(VA::AbstractVectorOfArray{
+    T,
+    N,
+    A,
+}) where {T, N,
+    A <:
+    AbstractVector{<:Number}}
     VA.u
 end
 function Base.Array(VA::AbstractVectorOfArray)
@@ -114,22 +138,65 @@ function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray
     VectorOfArray{T, N + 1, typeof(vec)}(vec)
 end
 
-function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N, Int}, p = nothing, sys = nothing) where {T, N}
-    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec, ts, p, sys)
+function DiffEqArray(vec::AbstractVector{T},
+    ts,
+    ::NTuple{N, Int},
+    p = nothing,
+    sys = nothing) where {T, N}
+    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec,
+        ts,
+        p,
+        sys)
 end
 # Assume that the first element is representative of all other elements
 
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p = nothing, sys = nothing; variables = nothing, parameters = nothing, independent_variables = nothing)
-    sys = something(sys, SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, [])))
+function DiffEqArray(vec::AbstractVector,
+    ts::AbstractVector,
+    p = nothing,
+    sys = nothing;
+    variables = nothing,
+    parameters = nothing,
+    independent_variables = nothing)
+    sys = something(sys,
+        SymbolCache(something(variables, []),
+            something(parameters, []),
+            something(independent_variables, [])))
     _size = size(vec[1])
-    return DiffEqArray{eltype(eltype(vec)),length(_size),typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
+    return DiffEqArray{
+        eltype(eltype(vec)),
+        length(_size),
+        typeof(vec),
+        typeof(ts),
+        typeof(p),
+        typeof(sys),
+    }(vec,
+        ts,
+        p,
+        sys)
 end
 
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p = nothing, sys = nothing; variables = nothing, parameters = nothing, independent_variables = nothing) where {T,N,VT<:AbstractArray{T,N}}
-    sys = SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, []))
-    return DiffEqArray{eltype(eltype(vec)),N+1,typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
+function DiffEqArray(vec::AbstractVector{VT},
+    ts::AbstractVector,
+    p = nothing,
+    sys = nothing;
+    variables = nothing,
+    parameters = nothing,
+    independent_variables = nothing) where {T, N, VT <: AbstractArray{T, N}}
+    sys = SymbolCache(something(variables, []),
+        something(parameters, []),
+        something(independent_variables, []))
+    return DiffEqArray{
+        eltype(eltype(vec)),
+        N + 1,
+        typeof(vec),
+        typeof(ts),
+        typeof(p),
+        typeof(sys),
+    }(vec,
+        ts,
+        p,
+        sys)
 end
-
 
 # SymbolicIndexingInterface implementation for DiffEqArray
 # Just forward to A.sys
@@ -189,52 +256,52 @@ end
 # Linear indexing will be over the container elements, not the individual elements
 # unlike an true AbstractArray
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-                                                I::Int) where {T, N}
+    I::Int) where {T, N}
     VA.u[I]
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-                                                I::Colon) where {T, N}
+    I::Colon) where {T, N}
     VA.u[I]
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractDiffEqArray{T, N},
-                                                I::Colon) where {T, N}
+    I::Colon) where {T, N}
     VA.u[I]
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-                                                I::AbstractArray{Int}) where {T, N}
+    I::AbstractArray{Int}) where {T, N}
     VectorOfArray(VA.u[I])
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractDiffEqArray{T, N},
-                                                I::AbstractArray{Int}) where {T, N}
+    I::AbstractArray{Int}) where {T, N}
     DiffEqArray(VA.u[I], VA.t[I])
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-                                                I::Union{Int, AbstractArray{Int},
-                                                         CartesianIndex, Colon, BitArray,
-                                                         AbstractArray{Bool}}...) where {T,
-                                                                                         N}
+    I::Union{Int, AbstractArray{Int},
+        CartesianIndex, Colon, BitArray,
+        AbstractArray{Bool}}...) where {T,
+    N}
     RecursiveArrayTools.VectorOfArray(A.u)[I...]
 end
 
 __parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
-                                                I::Colon...) where {T, N}
+    I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
     vecs = vec.(A.u)
     return Adapt.adapt(__parameterless_type(T),
-                       reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
+        reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
-                                                I::AbstractArray{Bool},
-                                                J::Colon...) where {T, N}
+    I::AbstractArray{Bool},
+    J::Colon...) where {T, N}
     @assert length(J) == ndims(A.u[1]) + 1 - ndims(I)
     @assert size(I) == size(A)[1:(ndims(A) - length(J))]
     return A[ntuple(x -> Colon(), ndims(A))...][I, J...]
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, args...)
-    if last(args) isa Union{Integer,CartesianIndex}
+    if last(args) isa Union{Integer, CartesianIndex}
         return getindex(A.u[last(args)], Base.front(args)...)
     else
         return stack(getindex.(A.u[last(args)], tuple.(Base.front(args))...))
@@ -242,26 +309,26 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, args..
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,
-                                                ::Colon) where {T, N}
+    ::Colon) where {T, N}
     [A.u[j][i] for j in 1:length(A)]
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, ::Colon,
-                                                i::Int) where {T, N}
+    i::Int) where {T, N}
     A.u[i]
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,
-                                                II::AbstractArray{Int}) where {T, N}
+    II::AbstractArray{Int}) where {T, N}
     [A.u[j][i] for j in II]
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-                                                sym) where {T, N}
+    sym) where {T, N}
     if is_independent_variable(A, sym)
         return A.t
     elseif is_variable(A, sym)
         if constant_structure(A)
             return getindex.(A.u, variable_index(A, sym))
         else
-            return getindex.(A.u, variable_index.((A, ), (sym, ), eachindex(A.t)))
+            return getindex.(A.u, variable_index.((A,), (sym,), eachindex(A.t)))
         end
     elseif is_parameter(A, sym)
         return A.p[parameter_index(A, sym)]
@@ -279,7 +346,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
     return getindex.(A.u, sym)
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sym,
-                                                args...) where {T, N}
+    args...) where {T, N}
     A.sys === nothing && error("Cannot use symbolic indexing without a system")
 
     if is_independent_variable(A, sym)
@@ -288,24 +355,24 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sy
         if constant_structure(A)
             return A[sym][args...]
         else
-            return getindex.(A.u, variable_index.((A, ), (sym, ), A.t[args...]))
+            return getindex.(A.u, variable_index.((A,), (sym,), A.t[args...]))
         end
     elseif is_observed(A, sym)
         return observed(A, sym, args...)
     else
-        return reduce(vcat, map(s -> A[s, args...]' ,sym))
+        return reduce(vcat, map(s -> A[s, args...]', sym))
     end
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-                                                I::Int...) where {T, N}
+    I::Int...) where {T, N}
     A.u[I[end]][Base.front(I)...]
 end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-                                                i::Int) where {T, N}
+    i::Int) where {T, N}
     A.u[i]
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractDiffEqArray{T, N},
-                                                ii::CartesianIndex) where {T, N}
+    ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
     i = last(ti)
     jj = CartesianIndex(Base.front(ti))
@@ -323,37 +390,37 @@ function _observed(A::AbstractDiffEqArray{T, N}, sym, ::Colon) where {T, N}
 end
 
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,
-                                                ::Colon) where {T, N}
+    ::Colon) where {T, N}
     [VA.u[j][i] for j in 1:length(VA)]
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-                                                ii::CartesianIndex) where {T, N}
+    ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
     i = last(ti)
     jj = CartesianIndex(Base.front(ti))
     return VA.u[i][jj]
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
-                                                 I::Int) where {T, N}
+    I::Int) where {T, N}
     VA.u[I] = v
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
-                                                 I::Colon) where {T, N}
+    I::Colon) where {T, N}
     VA.u[I] = v
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
-                                                 I::AbstractArray{Int}) where {T, N}
+    I::AbstractArray{Int}) where {T, N}
     VA.u[I] = v
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v, i::Int,
-                                                 ::Colon) where {T, N}
+    ::Colon) where {T, N}
     for j in 1:length(VA)
         VA.u[j][i] = v[j]
     end
     return v
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, x,
-                                                 ii::CartesianIndex) where {T, N}
+    ii::CartesianIndex) where {T, N}
     ti = Tuple(ii)
     i = last(ti)
     jj = CartesianIndex(Base.front(ti))
@@ -365,15 +432,15 @@ end
 Base.axes(VA::AbstractVectorOfArray) = Base.OneTo.(size(VA))
 Base.axes(VA::AbstractVectorOfArray, d::Int) = Base.OneTo(size(VA)[d])
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-                                                I::Int...) where {T, N}
+    I::Int...) where {T, N}
     VA.u[I[end]][Base.front(I)...]
 end
 Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N}, ::Colon,
-                                                I::Int) where {T, N}
+    I::Int) where {T, N}
     VA.u[I]
 end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
-                                                 I::Int...) where {T, N}
+    I::Int...) where {T, N}
     VA.u[I[end]][Base.front(I)...] = v
 end
 
@@ -395,9 +462,9 @@ tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 # Growing the array simply adds to the container vector
 function Base.copy(VA::AbstractDiffEqArray)
     typeof(VA)(copy(VA.u),
-               copy(VA.t),
-               (VA.p === nothing) ? nothing : copy(VA.p),
-               (VA.sys === nothing) ? nothing : copy(VA.sys))
+        copy(VA.t),
+        (VA.p === nothing) ? nothing : copy(VA.p),
+        (VA.sys === nothing) ? nothing : copy(VA.sys))
 end
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
@@ -411,7 +478,7 @@ function Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractArray) wh
 end
 
 function Base.append!(VA::AbstractVectorOfArray{T, N},
-                      new_item::AbstractVectorOfArray{T, N}) where {T, N}
+    new_item::AbstractVectorOfArray{T, N}) where {T, N}
     for item in copy(new_item)
         push!(VA, item)
     end
@@ -419,7 +486,7 @@ function Base.append!(VA::AbstractVectorOfArray{T, N},
 end
 
 # AbstractArray methods
-Base.ndims(::AbstractVectorOfArray{T,N}) where {T,N} = N
+Base.ndims(::AbstractVectorOfArray{T, N}) where {T, N} = N
 function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
     if checkbounds(Bool, VA.u, last(idx))
         if last(idx) isa Integer
@@ -432,7 +499,9 @@ function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
 end
 
 # Operations
-function Base.isapprox(A::AbstractVectorOfArray, B::Union{AbstractVectorOfArray,AbstractArray}; kwargs...)
+function Base.isapprox(A::AbstractVectorOfArray,
+    B::Union{AbstractVectorOfArray, AbstractArray};
+    kwargs...)
     return all(isapprox.(A, B; kwargs...))
 end
 
@@ -441,7 +510,8 @@ function Base.isapprox(A::AbstractArray, B::AbstractVectorOfArray; kwargs...)
 end
 
 for op in [:(Base.:-), :(Base.:+)]
-    @eval function ($op)(A::AbstractVectorOfArray, B::Union{AbstractVectorOfArray,AbstractArray})
+    @eval function ($op)(A::AbstractVectorOfArray,
+        B::Union{AbstractVectorOfArray, AbstractArray})
         ($op).(A, B)
     end
     @eval function ($op)(A::AbstractArray, B::AbstractVectorOfArray)
@@ -470,7 +540,9 @@ Base.eltype(::VectorOfArray{T}) where {T} = T
 @inline function Base.similar(VA::VectorOfArray, dims::NTuple)
     similar(VA, eltype(VA), dims)
 end
-@inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA), dims = size(VA)) where {T}
+@inline function Base.similar(VA::VectorOfArray,
+    ::Type{T} = eltype(VA),
+    dims = size(VA)) where {T}
     VectorOfArray([similar(VA[i], T, Base.front(dims)) for i in 1:last(dims)])
 end
 recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
@@ -534,7 +606,7 @@ end
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray)
     (println(io, summary(x), ':'); show(io, m, x.u))
 end
-function Base.summary(A::AbstractVectorOfArray{T,N}) where {T,N}
+function Base.summary(A::AbstractVectorOfArray{T, N}) where {T, N}
     string("VectorOfArray{", T, ",", N, "}")
 end
 
@@ -570,15 +642,15 @@ VectorOfArrayStyle(::Val{N}) where {N} = VectorOfArrayStyle{N}()
 # The order is important here. We want to override Base.Broadcast.DefaultArrayStyle to return another Base.Broadcast.DefaultArrayStyle.
 Broadcast.BroadcastStyle(a::VectorOfArrayStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = a
 function Broadcast.BroadcastStyle(::VectorOfArrayStyle{N},
-                                  a::Base.Broadcast.DefaultArrayStyle{M}) where {M, N}
+    a::Base.Broadcast.DefaultArrayStyle{M}) where {M, N}
     Base.Broadcast.DefaultArrayStyle(Val(max(M, N)))
 end
 function Broadcast.BroadcastStyle(::VectorOfArrayStyle{N},
-                                  a::Base.Broadcast.AbstractArrayStyle{M}) where {M, N}
+    a::Base.Broadcast.AbstractArrayStyle{M}) where {M, N}
     typeof(a)(Val(max(M, N)))
 end
 function Broadcast.BroadcastStyle(::VectorOfArrayStyle{M},
-                                  ::VectorOfArrayStyle{N}) where {M, N}
+    ::VectorOfArrayStyle{N}) where {M, N}
     VectorOfArrayStyle(Val(max(M, N)))
 end
 function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N}
@@ -591,12 +663,12 @@ Broadcast.broadcastable(x::AbstractVectorOfArray) = x
     bc = Broadcast.flatten(bc)
     N = narrays(bc)
     VectorOfArray(map(1:N) do i
-                      copy(unpack_voa(bc, i))
-                  end)
+        copy(unpack_voa(bc, i))
+    end)
 end
 
 @inline function Base.copyto!(dest::AbstractVectorOfArray,
-                              bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
+    bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
     N = narrays(bc)
     @inbounds for i in 1:N

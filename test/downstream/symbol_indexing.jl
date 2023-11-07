@@ -7,18 +7,18 @@ include("../testutils.jl")
 D = Differential(t)
 @variables RHS(t)
 @named fol_separate = ODESystem([RHS ~ (1 - x) / τ,
-                                    D(x) ~ RHS])
+    D(x) ~ RHS])
 fol_simplified = structural_simplify(fol_separate)
 
 prob = ODEProblem(fol_simplified, [x => 0.0], (0.0, 10.0), [τ => 3.0])
 sol = solve(prob, Tsit5())
 
 sol_new = DiffEqArray(sol.u[1:10],
-                      sol.t[1:10],
-                      sol.prob.f.syms,
-                      sol.prob.f.indepsym,
-                      sol.prob.f.observed,
-                      sol.prob.p)
+    sol.t[1:10],
+    sol.prob.f.syms,
+    sol.prob.f.indepsym,
+    sol.prob.f.observed,
+    sol.prob.p)
 
 @test sol_new[RHS] ≈ (1 .- sol_new[x]) ./ 3.0
 @test sol_new[t] ≈ sol_new.t
@@ -31,14 +31,14 @@ test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], so
 @variables y(t)
 @parameters α β γ δ
 @named lv = ODESystem([D(x) ~ α * x - β * x * y,
-                          D(y) ~ δ * x * y - γ * x * y])
+    D(y) ~ δ * x * y - γ * x * y])
 
 prob = ODEProblem(lv, [x => 1.0, y => 1.0], (0.0, 10.0),
-                  [α => 1.5, β => 1.0, γ => 3.0, δ => 1.0])
+    [α => 1.5, β => 1.0, γ => 3.0, δ => 1.0])
 sol = solve(prob, Tsit5())
 
 ts = 0:0.5:10
 sol_ts = sol(ts)
 @assert sol_ts isa DiffEqArray
 test_tables_interface(sol_ts, [:timestamp, Symbol("x(t)"), Symbol("y(t)")],
-                      hcat(ts, Array(sol_ts)'))
+    hcat(ts, Array(sol_ts)'))

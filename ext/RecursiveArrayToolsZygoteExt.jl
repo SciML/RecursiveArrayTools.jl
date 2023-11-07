@@ -14,7 +14,7 @@ end
 ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
 function ChainRulesCore.rrule(T::Type{<:RecursiveArrayTools.GPUArraysCore.AbstractGPUArray},
-                              xs::AbstractVectorOfArray)
+    xs::AbstractVectorOfArray)
     T(xs), ȳ -> (ChainRulesCore.NoTangent(), ȳ)
 end
 
@@ -28,7 +28,7 @@ end
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray,
-                           i::Union{BitArray, AbstractArray{Bool}})
+    i::Union{BitArray, AbstractArray{Bool}})
     function AbstractVectorOfArray_getindex_adjoint(Δ)
         Δ′ = [(i[j] ? Δ[j] : FillArrays.Fill(zero(eltype(x)), size(x)))
               for (x, j) in zip(VA.u, 1:length(VA))]
@@ -48,7 +48,7 @@ end
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray,
-                           i::Union{Int, AbstractArray{Int}})
+    i::Union{Int, AbstractArray{Int}})
     function AbstractVectorOfArray_getindex_adjoint(Δ)
         Δ′ = [(i[j] ? Δ[j] : FillArrays.Fill(zero(eltype(x)), size(x)))
               for (x, j) in zip(VA.u, 1:length(VA))]
@@ -65,8 +65,8 @@ end
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Int,
-                           j::Union{Int, AbstractArray{Int}, CartesianIndex,
-                                    Colon, BitArray, AbstractArray{Bool}}...)
+    j::Union{Int, AbstractArray{Int}, CartesianIndex,
+        Colon, BitArray, AbstractArray{Bool}}...)
     function AbstractVectorOfArray_getindex_adjoint(Δ)
         Δ′ = VectorOfArray([zero(x) for (x, j) in zip(VA.u, 1:length(VA))])
         Δ′[i, j...] = Δ
@@ -76,11 +76,11 @@ end
 end
 
 @adjoint function ArrayPartition(x::S,
-                                 ::Type{Val{copy_x}} = Val{false}) where {
-                                                                          S <:
-                                                                          Tuple,
-                                                                          copy_x
-                                                                          }
+    ::Type{Val{copy_x}} = Val{false}) where {
+    S <:
+    Tuple,
+    copy_x,
+}
     function ArrayPartition_adjoint(_y)
         y = Array(_y)
         starts = vcat(0, cumsum(reduce(vcat, length.(x))))
@@ -93,14 +93,17 @@ end
 
 @adjoint function VectorOfArray(u)
     VectorOfArray(u),
-    y -> (VectorOfArray([y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
-                         for i in 1:size(y)[end]]),)
+    y -> begin
+        (VectorOfArray([y[].u[ntuple(x -> Colon(), ndims(y[].u) - 1)..., i]
+                        for i in 1:size(y[].u)[end]]),)
+    end
 end
 
 @adjoint function DiffEqArray(u, t)
     DiffEqArray(u, t),
-    y -> (DiffEqArray([y[ntuple(x -> Colon(), ndims(y) - 1)..., i] for i in 1:size(y)[end]],
-                      t), nothing)
+    y -> (DiffEqArray([y[].u[ntuple(x -> Colon(), ndims(y[].u) - 1)..., i]
+                       for i in 1:size(y[].u)[end]],
+            t), nothing)
 end
 
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})

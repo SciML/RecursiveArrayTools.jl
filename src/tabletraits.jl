@@ -36,7 +36,7 @@ struct AbstractDiffEqArrayRows{T, U}
 end
 function AbstractDiffEqArrayRows(names, types, t, u)
     AbstractDiffEqArrayRows(Symbol.(names), types,
-                            Dict(Symbol(nm) => i for (i, nm) in enumerate(names)), t, u)
+        Dict(Symbol(nm) => i for (i, nm) in enumerate(names)), t, u)
 end
 
 Base.length(x::AbstractDiffEqArrayRows) = length(x.u)
@@ -44,7 +44,7 @@ function Base.eltype(::Type{AbstractDiffEqArrayRows{T, U}}) where {T, U}
     AbstractDiffEqArrayRow{eltype(T), eltype(U)}
 end
 function Base.iterate(x::AbstractDiffEqArrayRows,
-                      (t_state, u_state) = (iterate(x.t), iterate(x.u)))
+    (t_state, u_state) = (iterate(x.t), iterate(x.u)))
     t_state === nothing && return nothing
     u_state === nothing && return nothing
     t, _t_state = t_state

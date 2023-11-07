@@ -4,7 +4,7 @@ using RecursiveArrayTools: Tables, IteratorInterfaceExtensions
 # Test Tables interface with row access + IteratorInterfaceExtensions for QueryVerse
 # (see https://tables.juliadata.org/stable/#Testing-Tables.jl-Implementations)
 function test_tables_interface(x::AbstractDiffEqArray, names::Vector{Symbol},
-                               values::Matrix)
+    values::Matrix)
     @assert length(names) == size(values, 2)
 
     # AbstractDiffEqArray is a table with row access

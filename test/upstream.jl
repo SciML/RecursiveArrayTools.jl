@@ -33,22 +33,22 @@ nlsolve(mymodel, u0)
 
 function dyn(u, p, t)
     ArrayPartition(ArrayPartition(zeros(1), [0.0]),
-                   ArrayPartition(zeros(1), [0.0]))
+        ArrayPartition(zeros(1), [0.0]))
 end
 
 @test solve(ODEProblem(dyn,
-                       ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
-                                      ArrayPartition(zeros(1), [0.75])),
-                       (0.0, 1.0)), AutoTsit5(Rodas5())).retcode == ReturnCode.Success
+        ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
+            ArrayPartition(zeros(1), [0.75])),
+        (0.0, 1.0)), AutoTsit5(Rodas5())).retcode == ReturnCode.Success
 
 if VERSION < v"1.7"
     @test solve(ODEProblem(dyn,
-                           ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
-                                          ArrayPartition(zeros(1), [0.75])),
-                           (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
+            ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
+                ArrayPartition(zeros(1), [0.75])),
+            (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
 else
     @test_broken solve(ODEProblem(dyn,
-                                  ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
-                                                 ArrayPartition(zeros(1), [0.75])),
-                                  (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
+            ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
+                ArrayPartition(zeros(1), [0.75])),
+            (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
 end
