@@ -126,7 +126,7 @@ function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p::Union{Nothing,A
 end
 
 function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing, sys = nothing; variables = nothing, parameters = nothing, independent_variables = nothing) where {T,N,VT<:AbstractArray{T,N}}
-    sys = something(sys, SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, [])))
+    sys = SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, []))
     return DiffEqArray{eltype(eltype(vec)),N+1,typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
 end
 
@@ -142,14 +142,26 @@ end
 function SymbolicIndexingInterface.variable_index(A::DiffEqArray, sym, t)
     return variable_index(A.sys, sym, t)
 end
+function SymbolicIndexingInterface.variable_symbols(A::DiffEqArray)
+    return variable_symbols(A.sys)
+end
+function SymbolicIndexingInterface.variable_symbols(A::DiffEqArray, i)
+    return variable_symbols(A.sys, i)
+end
 function SymbolicIndexingInterface.is_parameter(A::DiffEqArray, sym)
     return is_parameter(A.sys, sym)
 end
 function SymbolicIndexingInterface.parameter_index(A::DiffEqArray, sym)
     return parameter_index(A.sys, sym)
 end
+function SymbolicIndexingInterface.parameter_symbols(A::DiffEqArray)
+    return parameter_symbols(A.sys)
+end
 function SymbolicIndexingInterface.is_independent_variable(A::DiffEqArray, sym)
     return is_independent_variable(A.sys, sym)
+end
+function SymbolicIndexingInterface.independent_variable_symbols(A::DiffEqArray)
+    return independent_variable_symbols(A.sys)
 end
 function SymbolicIndexingInterface.is_observed(A::DiffEqArray, sym)
     return is_observed(A.sys, sym)
