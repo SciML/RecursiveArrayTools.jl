@@ -7,13 +7,15 @@ function Tables.rows(A::AbstractDiffEqArray)
         N = length(A.u[1])
         names = [
             :timestamp,
-             (Symbol("value", i) for i in 1:N)...,
+            (isempty(variable_symbols(A)) ?
+             (Symbol("value", i) for i in 1:N) :
+             Symbol.(variable_symbols(A)))...,
         ]
         types = Type[eltype(A.t), (eltype(A.u[1]) for _ in 1:N)...]
     else
         names = [
             :timestamp,
-            :value,
+            (isempty(variable_symbols(A)) ? :value : Symbol(variable_symbols(A)[1])),
         ]
         types = Type[eltype(A.t), VT]
     end

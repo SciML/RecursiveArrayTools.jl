@@ -547,8 +547,10 @@ end
     convert(Array, VA)
 end
 @recipe function f(VA::AbstractDiffEqArray)
-    xguide --> ""
-    label --> ""
+    xguide --> isempty(independent_variable_symbols(VA)) ? "" :
+    independent_variable_symbols(VA)[1]
+    label --> isempty(variable_symbols(VA)) ? "" :
+    reshape(string.(variable_symbols(VA)), 1, :)
     VA.t, VA'
 end
 @recipe function f(VA::DiffEqArray{T, 1}) where {T}
