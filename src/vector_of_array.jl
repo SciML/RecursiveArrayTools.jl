@@ -118,14 +118,15 @@ function DiffEqArray(vec::AbstractVector{T}, ts, ::NTuple{N, Int}, p = nothing, 
     DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys)}(vec, ts, p, sys)
 end
 # Assume that the first element is representative of all other elements
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing; variables = nothing, parameters = nothing, independent_variables = nothing)
-    sys = SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, []))
+
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing, sys = nothing; variables = nothing, parameters = nothing, independent_variables = nothing)
+    sys = something(sys, SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, [])))
     _size = size(vec[1])
     return DiffEqArray{eltype(eltype(vec)),length(_size),typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
 end
 
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing; variables = nothing, parameters = nothing, independent_variables = nothing) where {T,N,VT<:AbstractArray{T,N}}
-    sys = SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, []))
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::Union{Nothing,AbstractVector} = nothing, sys = nothing; variables = nothing, parameters = nothing, independent_variables = nothing) where {T,N,VT<:AbstractArray{T,N}}
+    sys = something(sys, SymbolCache(something(variables, []), something(parameters, []), something(independent_variables, [])))
     return DiffEqArray{eltype(eltype(vec)),N+1,typeof(vec),typeof(ts),typeof(p),typeof(sys)}(vec, ts, p, sys)
 end
 
