@@ -254,19 +254,14 @@ Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
 
+
 @deprecate Base.getindex(A::AbstractVectorOfArray, I::Int) Base.getindex(A, :, I) false
+
 @deprecate Base.getindex(A::AbstractVectorOfArray, I::AbstractArray{Int}) Base.getindex(A, :, I) false
+
 @deprecate Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) Base.getindex(A, :, I) false
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-    I::Union{Int, AbstractArray{Int},
-        CartesianIndex, Colon, BitArray,
-        AbstractArray{Bool}}...) where {T,
-    N}
-    if length(I) == 1
-        Base.depwarn("Linear indexing of `AbstractDiffEqArray` is deprecated", :getindex)
-    end
-    RecursiveArrayTools.VectorOfArray(A.u)[I...]
-end
+
+@deprecate Base.getindex(A::AbstractDiffEqArray, i::Int) Base.getindex(A, :, i) false
 
 __parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
@@ -285,34 +280,36 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
     return A[ntuple(x -> Colon(), ndims(A))...][I, J...]
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, args...)
-    if last(args) isa Union{Integer, CartesianIndex}
-        return getindex(A.u[last(args)], Base.front(args)...)
-    else
-        return stack(getindex.(A.u[last(args)], tuple.(Base.front(args))...))
+# Need two of each methods to avoid ambiguities
+for voa in [AbstractVectorOfArray, AbstractDiffEqArray]
+    @eval Base.@propagate_inbounds function Base.getindex(A::$(voa), ::Colon, I::Int)
+        A.u[I]
     end
+
+    @eval Base.@propagate_inbounds function Base.getindex(A::$(voa), I::Union{Int,AbstractArray{Int},AbstractArray{Bool},Colon}...)
+        if last(I) isa Int
+            A.u[last(I)][Base.front(I)...]
+        else
+            stack(getindex.(A.u[last(I)], tuple.(Base.front(I))...))
+        end
+    end
+    @eval Base.@propagate_inbounds function Base.getindex(VA::$(voa), ii::CartesianIndex)
+        ti = Tuple(ii)
+        i = last(ti)
+        jj = CartesianIndex(Base.front(ti))
+        return VA.u[i][jj]
+    end
+
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::Colon, I::AbstractArray{Int})
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
     VectorOfArray(A.u[I])
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, ::Colon, I::AbstractArray{Int}) where {T, N}
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
     DiffEqArray(A.u[I], A.t[I], A.p, A.sys)
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,
-    ::Colon) where {T, N}
-    [A.u[j][i] for j in 1:length(A.u)]
-end
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, ::Colon,
-    i::Int) where {T, N}
-    A.u[i]
-end
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, i::Int,
-    II::AbstractArray{Int}) where {T, N}
-    [A.u[j][i] for j in II]
-end
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
     sym) where {T, N}
     if is_independent_variable(A, sym)
@@ -338,6 +335,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
     end
     return getindex.(A.u, sym)
 end
+
 Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sym,
     args...) where {T, N}
     A.sys === nothing && error("Cannot use symbolic indexing without a system")
@@ -356,20 +354,6 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sy
         return reduce(vcat, map(s -> A[s, args...]', sym))
     end
 end
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-    I::Int...) where {T, N}
-    A.u[I[end]][Base.front(I)...]
-end
-
-@deprecate Base.getindex(A::AbstractDiffEqArray, i::Int) Base.getindex(A, :, i) false
-
-Base.@propagate_inbounds function Base.getindex(VA::AbstractDiffEqArray{T, N},
-    ii::CartesianIndex) where {T, N}
-    ti = Tuple(ii)
-    i = last(ti)
-    jj = CartesianIndex(Base.front(ti))
-    return VA.u[i][jj]
-end
 
 function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
     observed(A, sym)(A.u[i], A.p, A.t[i])
@@ -381,17 +365,6 @@ function _observed(A::AbstractDiffEqArray{T, N}, sym, ::Colon) where {T, N}
     observed(A, sym).(A.u, (A.p,), A.t)
 end
 
-Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N}, i::Int,
-    ::Colon) where {T, N}
-    [VA.u[j][i] for j in 1:length(VA.u)]
-end
-Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-    ii::CartesianIndex) where {T, N}
-    ti = Tuple(ii)
-    i = last(ti)
-    jj = CartesianIndex(Base.front(ti))
-    return VA.u[i][jj]
-end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
     ::Colon, I::Int) where {T, N}
     VA.u[I] = v
@@ -433,14 +406,6 @@ end
 Base.axes(VA::AbstractVectorOfArray) = Base.OneTo.(size(VA))
 Base.axes(VA::AbstractVectorOfArray, d::Int) = Base.OneTo(size(VA)[d])
 
-Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N},
-    I::Int...) where {T, N}
-    VA.u[I[end]][Base.front(I)...]
-end
-Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray{T, N}, ::Colon,
-    I::Int) where {T, N}
-    VA.u[I]
-end
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
     I::Int...) where {T, N}
     VA.u[I[end]][Base.front(I)...] = v
