@@ -107,9 +107,9 @@ recursivefill!(x, true)
 
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, true)
-    @test all(y_voa[n] == fill(ones(Vec3), n) for n in 1:4)
+    @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
 
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, ones(Vec3))
-    @test all(y_voa[n] == fill(ones(Vec3), n) for n in 1:4)
+    @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
 end
