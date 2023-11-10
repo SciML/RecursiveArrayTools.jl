@@ -248,12 +248,13 @@ end
 
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 
-@inline Base.length(VA::AbstractVectorOfArray) = prod(length.(VA.u))
+@inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
 @inline function Base.eachindex(VA::AbstractVectorOfArray)
     return Iterators.flatten((CartesianIndex(i, j) for i in eachindex(arr)) for (j, arr) in enumerate(VA.u))
 end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
-
+@inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
+@inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
 
 @deprecate Base.getindex(A::AbstractVectorOfArray, I::Int) Base.getindex(A, :, I) false
 
