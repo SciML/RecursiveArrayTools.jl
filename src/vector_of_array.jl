@@ -182,9 +182,9 @@ function DiffEqArray(vec::AbstractVector{VT},
     variables = nothing,
     parameters = nothing,
     independent_variables = nothing) where {T, N, VT <: AbstractArray{T, N}}
-    sys = SymbolCache(something(variables, []),
+    sys = something(sys, SymbolCache(something(variables, []),
         something(parameters, []),
-        something(independent_variables, []))
+        something(independent_variables, [])))
     return DiffEqArray{
         eltype(eltype(vec)),
         N + 1,
