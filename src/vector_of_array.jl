@@ -198,6 +198,10 @@ function DiffEqArray(vec::AbstractVector{VT},
         sys)
 end
 
+# AbstractDiffEqArray Interface
+parameter_values(A::AbstractDiffEqArray) = A.p
+symbolic_container(A::AbstractDiffEqArray) = A.sys
+
 # SymbolicIndexingInterface implementation for DiffEqArray
 # Just forward to A.sys
 function SymbolicIndexingInterface.is_variable(A::DiffEqArray, sym)
@@ -266,7 +270,7 @@ end
 
 __parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
-    I::Colon...) where {T, N}
+    ::NotSymbolic, I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
     vecs = vec.(A.u)
     return Adapt.adapt(__parameterless_type(T),
@@ -274,7 +278,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
-    I::AbstractArray{Bool},
+    ::NotSymbolic, I::AbstractArray{Bool},
     J::Colon...) where {T, N}
     @assert length(J) == ndims(A.u[1]) + 1 - ndims(I)
     @assert size(I) == size(A)[1:(ndims(A) - length(J))]
@@ -282,37 +286,34 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
 end
 
 # Need two of each methods to avoid ambiguities
-for voa in [AbstractVectorOfArray, AbstractDiffEqArray]
-    @eval Base.@propagate_inbounds function Base.getindex(A::$(voa), ::Colon, I::Int)
-        A.u[I]
-    end
-
-    @eval Base.@propagate_inbounds function Base.getindex(A::$(voa), I::Union{Int,AbstractArray{Int},AbstractArray{Bool},Colon}...)
-        if last(I) isa Int
-            A.u[last(I)][Base.front(I)...]
-        else
-            stack(getindex.(A.u[last(I)], tuple.(Base.front(I))...))
-        end
-    end
-    @eval Base.@propagate_inbounds function Base.getindex(VA::$(voa), ii::CartesianIndex)
-        ti = Tuple(ii)
-        i = last(ti)
-        jj = CartesianIndex(Base.front(ti))
-        return VA.u[i][jj]
-    end
-
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Int)
+    A.u[I]
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::NotSymbolic, I::Union{Int,AbstractArray{Int},AbstractArray{Bool},Colon}...)
+    if last(I) isa Int
+        A.u[last(I)][Base.front(I)...]
+    else
+        stack(getindex.(A.u[last(I)], tuple.(Base.front(I))...))
+    end
+end
+Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray, ::NotSymbolic, ii::CartesianIndex)
+    ti = Tuple(ii)
+    i = last(ti)
+    jj = CartesianIndex(Base.front(ti))
+    return VA.u[i][jj]
+end
+
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
     VectorOfArray(A.u[I])
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
-    DiffEqArray(A.u[I], A.t[I], A.p, A.sys)
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::NotSymbolic, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
+    DiffEqArray(A.u[I], A.t[I], parameter_values(A), symbolic_container(A))
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
-    sym) where {T, N}
+# Symbolic Indexing Methods
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym)
     if is_independent_variable(A, sym)
         return A.t
     elseif is_variable(A, sym)
@@ -322,37 +323,64 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N},
             return getindex.(A.u, variable_index.((A,), (sym,), eachindex(A.t)))
         end
     elseif is_parameter(A, sym)
-        return A.p[parameter_index(A, sym)]
+        return parameter_values(A)[parameter_index(A, sym)]
     elseif is_observed(A, sym)
-        return observed(A, sym, :)
-    elseif symbolic_type(sym) == ArraySymbolic()
-        return getindex(A, collect(sym))
-    elseif sym isa AbstractArray
-        if all(x -> is_parameter(A, x), collect(sym))
-            return getindex.((A,), sym)
-        else
-            return [getindex.((A,), sym, i) for i in eachindex(A.t)]
-        end
+        return observed(A, sym).(A.u, (parameter_values(A),), A.t)
+    else
+        # NOTE: this is basically just for LabelledArrays. It's better if this
+        # were an error. Should we make an extension for LabelledArrays handling
+        # this case?
+        return getindex.(A.u, sym)
     end
-    return getindex.(A.u, sym)
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray{T, N}, sym,
-    args...) where {T, N}
-    A.sys === nothing && error("Cannot use symbolic indexing without a system")
-
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym, args...)
     if is_independent_variable(A, sym)
         return A.t[args...]
-    elseif is_variable(A.sys, sym)
-        if constant_structure(A)
-            return A[sym][args...]
-        else
-            return getindex.(A.u, variable_index.((A,), (sym,), A.t[args...]))
-        end
+    elseif is_variable(A, sym)
+        return A[sym][args...]
     elseif is_observed(A, sym)
-        return observed(A, sym, args...)
+        u = A.u[args...]
+        t = A.t[args...]
+        observed_fn = observed(A, sym)
+        if t isa AbstractArray
+            return observed_fn.(u, (parameter_values(A),), t)
+        else
+            return observed_fn(u, parameter_values(A), t)
+        end
     else
-        return reduce(vcat, map(s -> A[s, args...]', sym))
+        # NOTE: this is basically just for LabelledArrays. It's better if this
+        # were an error. Should we make an extension for LabelledArrays handling
+        # this case?
+        return getindex.(A.u[args...], sym)
+    end
+end
+
+
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ArraySymbolic, sym, args...)
+    return getindex(A, collect(sym), args...)
+end
+
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray})
+    if all(x -> is_parameter(A, x), sym)
+        return getindex.((A,), sym)
+    else
+        return [getindex.((A,), sym, i) for i in eachindex(A.t)]
+    end
+end
+
+Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray}, args...)
+    return reduce(vcat, map(s -> A[s, args...]', sym))
+end
+
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, args...)
+    symtype = symbolic_type(_arg)
+    elsymtype = symbolic_type(eltype(_arg))
+
+    if symtype != NotSymbolic()
+        return Base.getindex(A, symtype, _arg, args...)
+    else
+        return Base.getindex(A, elsymtype, _arg, args...)
     end
 end
 
