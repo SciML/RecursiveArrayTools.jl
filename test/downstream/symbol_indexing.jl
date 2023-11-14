@@ -15,10 +15,8 @@ sol = solve(prob, Tsit5())
 
 sol_new = DiffEqArray(sol.u[1:10],
     sol.t[1:10],
-    sol.prob.f.syms,
-    sol.prob.f.indepsym,
-    sol.prob.f.observed,
-    sol.prob.p)
+    sol.prob.p,
+    sol)
 
 @test sol_new[RHS] ≈ (1 .- sol_new[x]) ./ 3.0
 @test sol_new[t] ≈ sol_new.t
