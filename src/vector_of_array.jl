@@ -259,6 +259,15 @@ end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
 @inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
 @inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
+function Base.firstindex(VA::AbstractVectorOfArray)
+    Base.depwarn("Linear indexing of `AbstractVectorOfArray` is deprecated", :firstindex)
+    return firstindex(VA.u)
+end
+
+function Base.lastindex(VA::AbstractVectorOfArray)
+    Base.depwarn("Linear indexing of `AbstractVectorOfArray` is deprecated", :lastindex)
+    return lastindex(VA.u)
+end
 
 @deprecate Base.getindex(A::AbstractVectorOfArray, I::Int) Base.getindex(A, :, I) false
 
