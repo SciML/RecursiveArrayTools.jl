@@ -250,6 +250,7 @@ function SymbolicIndexingInterface.constant_structure(A::DiffEqArray)
     return constant_structure(A.sys)
 end
 
+Base.IndexStyle(A::AbstractVectorOfArray) = Base.IndexStyle(typeof(A))
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
@@ -565,11 +566,7 @@ function Base.fill!(VA::AbstractVectorOfArray, x)
     return VA
 end
 
-function Base._reshape(parent::VectorOfArray, dims::Base.Dims)
-    n = prod(size(parent))
-    prod(dims) == n || Base._throw_dmrs(n, "size", dims)
-    Base.__reshape((parent, IndexStyle(parent)), dims)
-end
+Base.reshape(A::VectorOfArray, dims...) = Base.reshape(Array(A), dims...)
 
 # Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
 @inline Base.any(f, VA::AbstractVectorOfArray) = any(f, VA[i] for i in eachindex(VA))
