@@ -94,16 +94,20 @@ end
 @adjoint function VectorOfArray(u)
     VectorOfArray(u),
     y -> begin
-        (VectorOfArray([y[].u[ntuple(x -> Colon(), ndims(y[].u) - 1)..., i]
-                        for i in 1:size(y[].u)[end]]),)
+        y isa Ref && (y = VectorOfArray(y[].u))
+        (VectorOfArray([y[ntuple(x -> Colon(), ndims(y.u) - 1)..., i]
+                        for i in 1:size(y.u)[end]]),)
     end
 end
 
 @adjoint function DiffEqArray(u, t)
     DiffEqArray(u, t),
-    y -> (DiffEqArray([y[].u[ntuple(x -> Colon(), ndims(y[].u) - 1)..., i]
-                       for i in 1:size(y[].u)[end]],
+    y -> begin
+        y isa Ref && (y = VectorOfArray(y[].u))
+        (DiffEqArray([y[ntuple(x -> Colon(), ndims(y.u) - 1)..., i]
+                       for i in 1:size(y.u)[end]],
             t), nothing)
+    end
 end
 
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})
