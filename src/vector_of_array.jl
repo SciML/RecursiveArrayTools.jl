@@ -543,13 +543,11 @@ end
 
 # Tools for creating similar objects
 Base.eltype(::VectorOfArray{T}) where {T} = T
-@inline function Base.similar(VA::VectorOfArray, dims::NTuple)
-    similar(VA, eltype(VA), dims)
+@inline function Base.similar(VA::VectorOfArray, args...)
+    return Base.similar(ones(eltype(VA)), args...)
 end
-@inline function Base.similar(VA::VectorOfArray,
-    ::Type{T} = eltype(VA),
-    dims = size(VA)) where {T}
-    VectorOfArray([similar(VA[:, i], T, Base.front(dims)) for i in 1:last(dims)])
+@inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
+    VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
 end
 recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
 
