@@ -220,18 +220,6 @@ Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int)
 end
 
 """
-    getindex(A::ArrayPartition, i::Int, j...)
-
-Returns the entry at index `j...` of the `i`th partition of `A`.
-"""
-Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int, j...)
-    @boundscheck 0 < i <= length(A.x) || throw(BoundsError(A.x, i))
-    @inbounds b = A.x[i]
-    @boundscheck checkbounds(b, j...)
-    @inbounds return b[j...]
-end
-
-"""
     getindex(A::ArrayPartition, i::Colon, j...)
 
 Returns the entry at index `j...` of  every partition of `A`.
@@ -272,18 +260,6 @@ function Base._maybe_reshape(::IndexCartesian,
     A::ArrayPartition,
     I::Vararg{Union{Real, AbstractArray}, N}) where {N}
     Vector(A)
-end
-
-"""
-    setindex!(A::ArrayPartition, v, i::Int, j...)
-
-Set the entry at index `j...` of the `i`th partition of `A` to `v`.
-"""
-Base.@propagate_inbounds function Base.setindex!(A::ArrayPartition, v, i::Int, j...)
-    @boundscheck 0 < i <= length(A.x) || throw(BoundsError(A.x, i))
-    @inbounds b = A.x[i]
-    @boundscheck checkbounds(b, j...)
-    @inbounds b[j...] = v
 end
 
 ## recursive methods
