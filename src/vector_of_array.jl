@@ -199,56 +199,8 @@ function DiffEqArray(vec::AbstractVector{VT},
 end
 
 # AbstractDiffEqArray Interface
-parameter_values(A::AbstractDiffEqArray) = A.p
-symbolic_container(A::AbstractDiffEqArray) = A.sys
-
-# SymbolicIndexingInterface implementation for DiffEqArray
-# Just forward to A.sys
-function SymbolicIndexingInterface.is_variable(A::DiffEqArray, sym)
-    return is_variable(A.sys, sym)
-end
-function SymbolicIndexingInterface.variable_index(A::DiffEqArray, sym)
-    return variable_index(A.sys, sym)
-end
-function SymbolicIndexingInterface.variable_index(A::DiffEqArray, sym, t)
-    return variable_index(A.sys, sym, t)
-end
-function SymbolicIndexingInterface.variable_symbols(A::DiffEqArray)
-    return variable_symbols(A.sys)
-end
-function SymbolicIndexingInterface.variable_symbols(A::DiffEqArray, i)
-    return variable_symbols(A.sys, i)
-end
-function SymbolicIndexingInterface.is_parameter(A::DiffEqArray, sym)
-    return is_parameter(A.sys, sym)
-end
-function SymbolicIndexingInterface.parameter_index(A::DiffEqArray, sym)
-    return parameter_index(A.sys, sym)
-end
-function SymbolicIndexingInterface.parameter_symbols(A::DiffEqArray)
-    return parameter_symbols(A.sys)
-end
-function SymbolicIndexingInterface.is_independent_variable(A::DiffEqArray, sym)
-    return is_independent_variable(A.sys, sym)
-end
-function SymbolicIndexingInterface.independent_variable_symbols(A::DiffEqArray)
-    return independent_variable_symbols(A.sys)
-end
-function SymbolicIndexingInterface.is_observed(A::DiffEqArray, sym)
-    return is_observed(A.sys, sym)
-end
-function SymbolicIndexingInterface.observed(A::DiffEqArray, sym)
-    return observed(A.sys, sym)
-end
-function SymbolicIndexingInterface.observed(A::DiffEqArray, sym, symbolic_states)
-    return observed(A.sys, sym, symbolic_states)
-end
-function SymbolicIndexingInterface.is_time_dependent(A::DiffEqArray)
-    return is_time_dependent(A.sys)
-end
-function SymbolicIndexingInterface.constant_structure(A::DiffEqArray)
-    return constant_structure(A.sys)
-end
+SymbolicIndexingInterface.parameter_values(A::AbstractDiffEqArray) = A.p
+SymbolicIndexingInterface.symbolic_container(A::AbstractDiffEqArray) = A.sys
 
 Base.IndexStyle(A::AbstractVectorOfArray) = Base.IndexStyle(typeof(A))
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
