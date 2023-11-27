@@ -198,7 +198,14 @@ function DiffEqArray(vec::AbstractVector{VT},
         sys)
 end
 
-# AbstractDiffEqArray Interface
+function Base.getproperty(A::AbstractDiffEqArray, sym::Symbol)
+    if sym == SymbolicIndexingInterface.PARAMETER_INDEXING_PROXY_PROPERTY_NAME
+        return ParameterIndexingProxy(A)
+    else
+        return getfield(A, sym)
+    end
+end
+
 SymbolicIndexingInterface.parameter_values(A::AbstractDiffEqArray) = A.p
 SymbolicIndexingInterface.symbolic_container(A::AbstractDiffEqArray) = A.sys
 
@@ -285,7 +292,8 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::Scalar
             return getindex.(A.u, variable_index.((A,), (sym,), eachindex(A.t)))
         end
     elseif is_parameter(A, sym)
-        return parameter_values(A)[parameter_index(A, sym)]
+        Base.depwarn("Indexing with parameters is deprecated. Use `$(nameof(typeof(A))).$(SymbolicIndexingInterface.PARAMETER_INDEXING_PROXY_PROPERTY_NAME)[$sym]` for parameter indexing.", :parameter_getindex)
+        A.ps[sym]
     elseif is_observed(A, sym)
         return observed(A, sym).(A.u, (parameter_values(A),), A.t)
     else
