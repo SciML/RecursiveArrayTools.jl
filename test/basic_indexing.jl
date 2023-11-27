@@ -36,9 +36,33 @@ recs = [rand(8) for i in 1:10]
 testa = cat(recs..., dims = 2)
 testva = VectorOfArray(recs)
 
+# Array functions
+@test size(testva) == (8, 10)
+@test axes(testva) == Base.OneTo.((8, 10))
+@test ndims(testva) == 2
+@test eltype(testva) == eltype(eltype(recs))
+testvasim = similar(testva)
+@test size(testvasim) == size(testva)
+@test eltype(testvasim) == eltype(testva)
+testvasim = similar(testva, Float32)
+@test size(testvasim) == size(testva)
+@test eltype(testvasim) == Float32
+testvb = deepcopy(testva)
+@test testva == testvb == recs
+
+# Math operations
+@test testva + testvb == testva + recs == 2testva == 2 .* recs
+@test testva - testvb == testva - recs == 0 .* recs
+@test testva / 2 == recs ./ 2
+@test 2 .\ testva == 2 .\ recs
+
 # ## Linear indexing
 @test_deprecated testva[1]
 @test_deprecated testva[1:2]
+@test_deprecated testva[begin]
+@test_deprecated testva[end]
+@test testva[begin] == testva[:, begin] == first(testva)
+@test testva[end] == testva[:, end] == last(testva)
 @test testa[:, 1] == recs[1]
 @test testva.u == recs
 @test testva[: ,2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])

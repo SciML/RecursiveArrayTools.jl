@@ -21,6 +21,9 @@ sol_new = DiffEqArray(sol.u[1:10],
 @test sol_new[RHS] ≈ (1 .- sol_new[x]) ./ 3.0
 @test sol_new[t] ≈ sol_new.t
 @test sol_new[t, 1:5] ≈ sol_new.t[1:5]
+@test sol.ps[τ] == sol_new.ps[τ] == 3.0
+@test_deprecated sol[τ]
+@test_deprecated sol_new[τ]
 
 # Tables interface
 test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], sol_new[x]))
