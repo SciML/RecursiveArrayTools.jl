@@ -476,12 +476,17 @@ function Base.isapprox(A::AbstractArray, B::AbstractVectorOfArray; kwargs...)
 end
 
 for op in [:(Base.:-), :(Base.:+)]
-    @eval function ($op)(A::AbstractVectorOfArray,
-        B::Union{AbstractVectorOfArray, AbstractArray})
+    @eval function ($op)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
         ($op).(A, B)
     end
-    @eval function ($op)(A::AbstractArray, B::AbstractVectorOfArray)
-        ($op).(A, B)
+    @eval Base.@propagate_inbounds function ($op)(A::AbstractVectorOfArray,
+        B::AbstractArray)
+        @boundscheck length(A) == length(B)
+        VectorOfArray([($op).(a, b) for (a, b) in zip(A, B)])
+    end
+    @eval Base.@propagate_inbounds function ($op)(A::AbstractArray, B::AbstractVectorOfArray)
+        @boundscheck length(A) == length(B)
+        VectorOfArray([($op).(a, b) for (a, b) in zip(A, B)])
     end
 end
 
@@ -503,6 +508,7 @@ end
 
 # Tools for creating similar objects
 Base.eltype(::VectorOfArray{T}) where {T} = T
+# TODO: Is there a better way to do this?
 @inline function Base.similar(VA::VectorOfArray, args...)
     return Base.similar(ones(eltype(VA)), args...)
 end
