@@ -21,9 +21,11 @@ dx = DiffEqArray([[f(x), f2(x)] for x in t],
 @test dx[(:a, :b)] == [(f(x), f2(x)) for x in t]
 @test dx[[:a, :b], 3] ≈ [f(t[3]), f2(t[3])]
 @test dx[[:a, :b], 4:5] ≈ vcat(f.(t[4:5])', f2.(t[4:5])')
-@test dx.ps[[:p, :q]] == [1.0, 2.0]
-@test dx.ps[:p] == 1.0
-@test dx.ps[:q] == 2.0
+@test getp(dx, [:p, :q])(dx) == [1.0, 2.0]
+@test getp(dx, :p)(dx) == 1.0
+@test getp(dx, :q)(dx) == 2.0
+@test_deprecated dx[:p]
+@test_deprecated dx[[:p, :q]]
 @test dx[:t] == t
 
 @test symbolic_container(dx) isa SymbolCache
