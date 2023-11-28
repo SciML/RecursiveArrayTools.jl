@@ -28,6 +28,7 @@ end
     if GROUP == "Core" || GROUP == "All"
         @time @safetestset "Utils Tests" begin include("utils_test.jl") end
         @time @safetestset "Partitions Tests" begin include("partitions_test.jl") end
+        @time @safetestset "NamedArrayPartition Tests" begin include("named_array_partition_tests.jl") end
         @time @safetestset "VecOfArr Indexing Tests" begin include("basic_indexing.jl") end
         @time @safetestset "SymbolicIndexingInterface API test" begin include("symbolic_indexing_interface_test.jl") end
         @time @safetestset "VecOfArr Interface Tests" begin include("interface_tests.jl") end
