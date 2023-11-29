@@ -206,7 +206,7 @@ Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 
 @inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
 @inline function Base.eachindex(VA::AbstractVectorOfArray)
-    return Iterators.flatten((CartesianIndex(i, j) for i in eachindex(arr)) for (j, arr) in enumerate(VA.u))
+    return eachindex(VA.u)
 end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
 @inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
@@ -526,14 +526,8 @@ end
 Base.reshape(A::VectorOfArray, dims...) = Base.reshape(Array(A), dims...)
 
 # Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
-@inline Base.any(f, VA::AbstractVectorOfArray) = any(f, VA[i] for i in eachindex(VA))
-@inline Base.all(f, VA::AbstractVectorOfArray) = all(f, VA[i] for i in eachindex(VA))
-@inline function Base.any(f::Function, VA::AbstractVectorOfArray)
-    any(f, VA[i] for i in eachindex(VA))
-end
-@inline function Base.all(f::Function, VA::AbstractVectorOfArray)
-    all(f, VA[i] for i in eachindex(VA))
-end
+@inline Base.any(f, VA::AbstractVectorOfArray) = any(any(f, u) for u in VA.u)
+@inline Base.all(f, VA::AbstractVectorOfArray) = all(all(f, u) for u in VA.u)
 
 # conversion tools
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA[1])]
