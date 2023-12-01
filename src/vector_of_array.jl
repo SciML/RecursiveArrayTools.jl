@@ -445,6 +445,13 @@ function Base.append!(VA::AbstractVectorOfArray{T, N},
 end
 
 # AbstractArray methods
+function Base.view(A::AbstractVectorOfArray, I::Vararg{Any,M}) where {M}
+    @inline
+    J = map(i->Base.unalias(A,i), to_indices(A, I))
+    @boundscheck checkbounds(A, J...)
+    SubArray(IndexStyle(A), A, J, Base.index_dimsum(J...))
+end
+Base.check_parent_index_match(::RecursiveArrayTools.AbstractVectorOfArray{T,N}, ::NTuple{N,Bool}) where {T,N} = nothing
 Base.ndims(::AbstractVectorOfArray{T, N}) where {T, N} = N
 function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
     if checkbounds(Bool, VA.u, last(idx))
@@ -455,6 +462,9 @@ function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
         end
     end
     return false
+end
+function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
+    checkbounds(Bool, VA, idx...) || throw(BoundsError(VA, idx))
 end
 
 # Operations
@@ -502,8 +512,12 @@ end
 # Tools for creating similar objects
 Base.eltype(::VectorOfArray{T}) where {T} = T
 # TODO: Is there a better way to do this?
-@inline function Base.similar(VA::VectorOfArray, args...)
-    return Base.similar(ones(eltype(VA)), args...)
+@inline function Base.similar(VA::AbstractVectorOfArray, args...)
+    if args[end] isa Type
+        return Base.similar(eltype(VA)[], args..., size(VA))
+    else
+        return Base.similar(eltype(VA)[], args...)
+    end
 end
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
     VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
