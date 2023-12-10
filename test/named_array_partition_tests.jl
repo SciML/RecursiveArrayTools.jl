@@ -28,7 +28,3 @@
     @test typeof(map(x->x[1], x)) <: NamedArrayPartition
 end
 
-# x = NamedArrayPartition(a = ones(10), b = rand(20)) 
-# x_ap = ArrayPartition(x)
-# @btime @. x_ap * x_ap; #   498.836 ns (5 allocations: 2.77 KiB) 
-# @btime @. x * x;  # 2.032 μs (5 allocations: 2.84 KiB) - 5x slower than ArrayPartition
