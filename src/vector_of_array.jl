@@ -212,7 +212,7 @@ end
 @inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
 @inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
 function Base.firstindex(VA::AbstractVectorOfArray)
-    Base.depwarn("Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",, :firstindex)
+    Base.depwarn("Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ", :firstindex)
     return firstindex(VA.u)
 end
 
