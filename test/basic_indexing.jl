@@ -16,8 +16,8 @@ mulX .= sqrt.(abs.(testva .* X))
 @test mulX == ref
 
 @test Array(testva) == [1 4 7
-                        2 5 8
-                        3 6 9]
+    2 5 8
+    3 6 9]
 
 @test testa[1:2, 1:2] == [1 4; 2 5]
 @test testva[1:2, 1:2] == [1 4; 2 5]
@@ -26,8 +26,8 @@ mulX .= sqrt.(abs.(testva .* X))
 t = [1, 2, 3]
 diffeq = DiffEqArray(recs, t)
 @test Array(diffeq) == [1 4 7
-                        2 5 8
-                        3 6 9]
+    2 5 8
+    3 6 9]
 @test diffeq[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2
@@ -36,17 +36,44 @@ recs = [rand(8) for i in 1:10]
 testa = cat(recs..., dims = 2)
 testva = VectorOfArray(recs)
 
+# Array functions
+@test size(testva) == (8, 10)
+@test axes(testva) == Base.OneTo.((8, 10))
+@test ndims(testva) == 2
+@test eltype(testva) == eltype(eltype(recs))
+testvasim = similar(testva)
+@test size(testvasim) == size(testva)
+@test eltype(testvasim) == eltype(testva)
+testvasim = similar(testva, Float32)
+@test size(testvasim) == size(testva)
+@test eltype(testvasim) == Float32
+testvb = deepcopy(testva)
+@test testva == testvb == recs
+
+# Math operations
+@test testva + testvb == testva + recs == 2testva == 2 .* recs
+@test testva - testvb == testva - recs == 0 .* recs
+@test testva / 2 == recs ./ 2
+@test 2 .\ testva == 2 .\ recs
+
 # ## Linear indexing
-@test testva[1] == testa[:, 1]
-@test testva[:] == recs
-@test testva[end] == testa[:, end]
-@test testva[2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
+@test_deprecated testva[1]
+@test_deprecated testva[1:2]
+@test_deprecated testva[begin]
+@test_deprecated testva[end]
+@test testva[begin] == testva[:, begin] == first(testva)
+@test testva[end] == testva[:, end] == last(testva)
+@test testa[:, 1] == recs[1]
+@test testva.u == recs
+@test testva[: ,2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
 
 diffeq = DiffEqArray(recs, t)
-@test diffeq[1] == testa[:, 1]
-@test diffeq[:] == recs
-@test diffeq[end] == testa[:, end]
-@test diffeq[2:end] == DiffEqArray([recs[i] for i in 2:length(recs)], t)
+@test_deprecated diffeq[1]
+@test_deprecated diffeq[1:2]
+@test diffeq[:, 1] == testa[:, 1]
+@test diffeq.u == recs
+@test diffeq[:, end] == testa[:, end]
+@test diffeq[:, 2:end] == DiffEqArray([recs[i] for i in 2:length(recs)], t)
 
 # ## (Int, Int)
 @test testa[5, 4] == testva[5, 4]
@@ -139,10 +166,10 @@ v[CartesianIndex((2, 3, 2, 3))] = 1
 v = VectorOfArray([rand(20), rand(10, 10), rand(3, 3, 3)])
 w = v .* v
 @test w isa VectorOfArray
-@test w[1] isa Vector
-@test w[1] == v[1] .* v[1]
-@test w[2] == v[2] .* v[2]
-@test w[3] == v[3] .* v[3]
+@test w[:, 1] isa Vector
+@test w[:, 1] == v[:, 1] .* v[:, 1]
+@test w[:, 2] == v[:, 2] .* v[:, 2]
+@test w[:, 3] == v[:, 3] .* v[:, 3]
 x = copy(v)
 x .= v .* v
 @test x.u == w.u
@@ -153,10 +180,10 @@ w = v .+ 1
 v = DiffEqArray([rand(20), rand(10, 10), rand(3, 3, 3)], 1:3)
 w = v .* v
 @test_broken w isa DiffEqArray # FIXME
-@test w[1] isa Vector
-@test w[1] == v[1] .* v[1]
-@test w[2] == v[2] .* v[2]
-@test w[3] == v[3] .* v[3]
+@test w[:, 1] isa Vector
+@test w[:, 1] == v[:, 1] .* v[:, 1]
+@test w[:, 2] == v[:, 2] .* v[:, 2]
+@test w[:, 3] == v[:, 3] .* v[:, 3]
 x = copy(v)
 x .= v .* v
 @test x.u == w.u
