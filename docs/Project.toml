@@ -4,4 +4,4 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 
 [compat]
 Documenter = "1"
-RecursiveArrayTools = "2.32"
+RecursiveArrayTools = "2.32, 3"
