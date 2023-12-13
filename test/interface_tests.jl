@@ -5,11 +5,11 @@ testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], t)
 
 for (i, elem) in enumerate(testva)
-    @test elem == testva[i]
+    @test elem == testva[:, i]
 end
 
 for (i, elem) in enumerate(testda)
-    @test elem == testda[i]
+    @test elem == testda[:, i]
 end
 
 push!(testva, [10, 11, 12])
@@ -43,10 +43,10 @@ push!(testda, [-1, -2, -3, -4])
 @test_throws BoundsError testva[4:5, 5:6]
 @test_throws BoundsError testda[4:5, 5:6]
 
-@test testva[9] == [-1, -2, -3, -4]
-@test testva[end] == [-1, -2, -3, -4]
-@test testda[9] == [-1, -2, -3, -4]
-@test testda[end] == [-1, -2, -3, -4]
+@test testva[:, 9] == [-1, -2, -3, -4]
+@test testva[:, end] == [-1, -2, -3, -4]
+@test testda[:, 9] == [-1, -2, -3, -4]
+@test testda[:, end] == [-1, -2, -3, -4]
 
 # Currently we enforce the general shape, they can just be different lengths, ie we
 # can't do

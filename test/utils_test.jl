@@ -9,7 +9,7 @@ data = convert(Array, randomized)
 ## Test means
 A = [[1 2; 3 4], [1 3; 4 6], [5 6; 7 8]]
 @test recursive_mean(A) ≈ [2.33333333 3.666666666
-                           4.6666666666 6.0]
+    4.6666666666 6.0]
 
 A = zeros(5, 5)
 @test recursive_unitless_eltype(A) == Float64
@@ -67,10 +67,6 @@ function test_recursive_bottom_eltype()
 end
 test_recursive_bottom_eltype()
 
-using RecursiveArrayTools: issymbollike
-@test !issymbollike(1)
-@test issymbollike(:a)
-
 x = zeros(10)
 recursivefill!(x, 1.0)
 @test x == ones(10)
@@ -111,9 +107,9 @@ recursivefill!(x, true)
 
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, true)
-    @test all(y_voa[n] == fill(ones(Vec3), n) for n in 1:4)
+    @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
 
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, ones(Vec3))
-    @test all(y_voa[n] == fill(ones(Vec3), n) for n in 1:4)
+    @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
 end

@@ -165,7 +165,7 @@ Base.IndexStyle(::MyType) = IndexLinear()
 Base.BroadcastStyle(::Type{<:MyType}) = Broadcast.ArrayStyle{MyType}()
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyType}},
-                      ::Type{T}) where {T}
+    ::Type{T}) where {T}
     similar(find_mt(bc), T)
 end
 
@@ -196,20 +196,20 @@ up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
 @testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,
-                                                                                     2,
-                                                                                     false),
-                                                                                    ([
-                                                                                         1,
-                                                                                     ],
-                                                                                     2,
-                                                                                     false),
-                                                                                    ([
-                                                                                         1,
-                                                                                     ],
-                                                                                     [
-                                                                                         2,
-                                                                                     ],
-                                                                                     true))
+        2,
+        false),
+    ([
+            1,
+        ],
+        2,
+        false),
+    ([
+            1,
+        ],
+        [
+            2,
+        ],
+        true))
     @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
 end
 
@@ -231,12 +231,12 @@ begin
     @test_throws MethodError convert(new_type, ArrayPartition(view(b, :), c, c))
 end
 
-
 @testset "Copy and zero with type changing array" begin
     # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied 
     struct TypeChangingArray{T, N} <: AbstractArray{T, N} end
-    Base.copy(::TypeChangingArray{T, N}) where {T,N} = Array{T,N}(undef, ntuple(_ -> 0, N)) 
-    Base.zero(::TypeChangingArray{T, N}) where {T,N} = zeros(T, ntuple(_ -> 0, N)) 
+    Base.copy(::TypeChangingArray{T, N}) where {T, N} = Array{T, N}(undef,
+        ntuple(_ -> 0, N))
+    Base.zero(::TypeChangingArray{T, N}) where {T, N} = zeros(T, ntuple(_ -> 0, N))
 
     a = ArrayPartition(TypeChangingArray{Int, 2}(), TypeChangingArray{Float32, 2}())
     @test copy(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
@@ -245,5 +245,5 @@ end
 
 @test !iszero(ArrayPartition([2], [3, 4]))
 @testset "Cartesian indexing" begin
-    @test ArrayPartition([1,2], [3])[1:3,1] == [1, 2, 3]
+    @test ArrayPartition([1, 2], [3])[1:3, 1] == [1, 2, 3]
 end
