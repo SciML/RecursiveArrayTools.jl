@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test
+using RecursiveArrayTools, StaticArrays, Test
 
 t = 1:3
 testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])

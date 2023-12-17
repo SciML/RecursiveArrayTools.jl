@@ -51,7 +51,7 @@ end
         @time @safetestset "Upstream Tests" begin
             include("upstream.jl")
         end
-        # @time @safetestset "Adjoint Tests" begin include("adjoints.jl") end
+        @time @safetestset "Adjoint Tests" begin include("adjoints.jl") end
         @time @safetestset "Measurement Tests" begin
             include("measurements.jl")
         end
@@ -65,7 +65,7 @@ end
         @time @safetestset "Event Tests with ArrayPartition" begin
             include("downstream/downstream_events.jl")
         end
-        VERSION >= v"1.9" && @time @safetestset "Measurements and Units" begin
+        @time @safetestset "Measurements and Units" begin
             include("downstream/measurements_and_units.jl")
         end
         @time @safetestset "TrackerExt" begin
