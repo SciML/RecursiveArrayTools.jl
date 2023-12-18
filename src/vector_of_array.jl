@@ -426,11 +426,33 @@ function Base.copy(VA::AbstractDiffEqArray)
         (VA.sys === nothing) ? nothing : copy(VA.sys))
 end
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
+
+Base.zero(VA::VectorOfArray) = VectorOfArray(Base.zero.(VA.u))
+
+function Base.zero(VA::DiffEqArray)
+    u = Base.zero.(VA.u)
+    DiffEqArray(u, VA.t, VA.p, VA.sys)
+end
+
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
 
 Base.reverse!(VA::AbstractVectorOfArray) = reverse!(VA.u)
 Base.reverse(VA::VectorOfArray) = VectorOfArray(reverse(VA.u))
 Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.p, VA.sys)
+
+function Base.resize!(VA::AbstractVectorOfArray, i::Integer)
+    if Base.hasproperty(VA, :sys) && VA.sys !== nothing
+        error("resize! is not allowed on AbstractVectorOfArray with a sys")
+    end
+    Base.resize!(VA.u, i)
+    if Base.hasproperty(VA, :t) && VA.t !== nothing
+        Base.resize!(VA.t, i)
+    end
+end
+
+function Base.pointer(VA::AbstractVectorOfArray)
+    Base.pointer(VA.u)
+end
 
 function Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractArray) where {T, N}
     push!(VA.u, new_item)

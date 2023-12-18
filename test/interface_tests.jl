@@ -112,3 +112,8 @@ A = VectorOfArray(map(i -> rand(2, 4), 1:7))
 
 DA = DiffEqArray(map(i -> rand(2, 4), 1:7), 1:7)
 @test map(x -> maximum(x), DA) isa Vector
+
+u = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+@test typeof(zero(u)) <: typeof(u)
+resize!(u,3)
+@test pointer(u) === pointer(u.u)
