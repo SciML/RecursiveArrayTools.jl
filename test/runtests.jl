@@ -1,12 +1,7 @@
 using Pkg
 using RecursiveArrayTools
 using Test
-using Aqua
 using SafeTestsets
-
-if VERSION >= v"1.9"
-    Aqua.test_all(RecursiveArrayTools, ambiguities = false)
-end
 
 @test_broken isempty(Test.detect_ambiguities(RecursiveArrayTools))
 const GROUP = get(ENV, "GROUP", "All")
@@ -26,6 +21,9 @@ end
 
 @time begin
     if GROUP == "Core" || GROUP == "All"
+        @time @safetestset "Quality Assurance" begin
+            include("qa.jl")
+        end
         @time @safetestset "Utils Tests" begin
             include("utils_test.jl")
         end
