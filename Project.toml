@@ -1,7 +1,7 @@
 name = "RecursiveArrayTools"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "3.0.0"
+version = "3.1.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -42,7 +42,7 @@ Statistics = "1"
 SymbolicIndexingInterface = "0.3"
 Tables = "1"
 Zygote = "0.6.56"
-julia = "1.6"
+julia = "1.9"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
