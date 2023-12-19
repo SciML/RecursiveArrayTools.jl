@@ -139,7 +139,7 @@ function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray
 end
 
 function DiffEqArray(vec::AbstractVector{T},
-    ts,
+    ts::AbstractVector,
     ::NTuple{N, Int},
     p = nothing,
     sys = nothing) where {T, N}
@@ -532,7 +532,7 @@ function Base.CartesianIndices(VA::AbstractVectorOfArray)
 end
 
 # Tools for creating similar objects
-Base.eltype(::VectorOfArray{T}) where {T} = T
+Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
 # TODO: Is there a better way to do this?
 @inline function Base.similar(VA::AbstractVectorOfArray, args...)
     if args[end] isa Type

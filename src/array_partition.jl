@@ -176,14 +176,16 @@ Base.all(f, A::ArrayPartition) = all(f, (all(f, x) for x in A.x))
 Base.all(f::Function, A::ArrayPartition) = all((all(f, x) for x in A.x))
 Base.all(A::ArrayPartition) = all(identity, A)
 
-function Base.copyto!(dest::AbstractArray, A::ArrayPartition)
-    @assert length(dest) == length(A)
-    cur = 1
-    @inbounds for i in 1:length(A.x)
-        dest[cur:(cur + length(A.x[i]) - 1)] .= vec(A.x[i])
-        cur += length(A.x[i])
+for type in [AbstractArray, SparseArrays.AbstractCompressedVector, PermutedDimsArray]
+    @eval function Base.copyto!(dest::$(type), A::ArrayPartition)
+        @assert length(dest) == length(A)
+        cur = 1
+        @inbounds for i in 1:length(A.x)
+            dest[cur:(cur + length(A.x[i]) - 1)] .= vec(A.x[i])
+            cur += length(A.x[i])
+        end
+        dest
     end
-    dest
 end
 
 function Base.copyto!(A::ArrayPartition, src::ArrayPartition)
@@ -419,30 +421,38 @@ end
 
 ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
 
-function LinearAlgebra.ldiv!(A::Factorization, b::ArrayPartition)
+function __get_subtypes_in_module(mod, supertype; include_supertype = true, all=false, except=[])
+    return filter([getproperty(mod, name) for name in names(mod; all) if !in(name, except)]) do value
+            return value isa Type && (value <: supertype) && (include_supertype || value != supertype) && !in(value, except)
+        end
+end
+
+for factorization in vcat(__get_subtypes_in_module(LinearAlgebra, Factorization; include_supertype = false, all=true, except=[:LU, :LAPACKFactorizations]), LDLt{T,<:SymTridiagonal{T,V} where {V<:AbstractVector{T}}} where {T})
+    @eval function LinearAlgebra.ldiv!(A::T, b::ArrayPartition) where {T<:$factorization}
+        (x = ldiv!(A, Array(b)); copyto!(b, x))
+    end
+end
+
+function LinearAlgebra.ldiv!(A::LinearAlgebra.SVD{T, Tr, M},
+    b::ArrayPartition) where {Tr, T, M <: AbstractArray{T}}
     (x = ldiv!(A, Array(b)); copyto!(b, x))
 end
 
-@static if VERSION >= v"1.9"
-    function LinearAlgebra.ldiv!(A::LinearAlgebra.SVD{T, Tr, M},
-        b::ArrayPartition) where {Tr, T, M <: AbstractArray{T}}
-        (x = ldiv!(A, Array(b)); copyto!(b, x))
-    end
-
-    function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C},
-        b::ArrayPartition) where {
-        T <: Union{Float32, Float64, ComplexF64, ComplexF32},
-        M <: AbstractMatrix{T},
-        C <: AbstractMatrix{T},
-    }
-        (x = ldiv!(A, Array(b)); copyto!(b, x))
-    end
+function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C},
+    b::ArrayPartition) where {
+    T <: Union{Float32, Float64, ComplexF64, ComplexF32},
+    M <: AbstractMatrix{T},
+    C <: AbstractMatrix{T},
+}
+    (x = ldiv!(A, Array(b)); copyto!(b, x))
 end
 
-function LinearAlgebra.ldiv!(A::LU, b::ArrayPartition)
-    LinearAlgebra._ipiv_rows!(A, 1:length(A.ipiv), b)
-    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), b))
-    return b
+for type in [LU, LU{T,Tridiagonal{T,V}} where {T,V}]
+    @eval function LinearAlgebra.ldiv!(A::$type, b::ArrayPartition)
+        LinearAlgebra._ipiv_rows!(A, 1:length(A.ipiv), b)
+        ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), b))
+        return b
+    end
 end
 
 # block matrix indexing
@@ -458,78 +468,31 @@ end
 # [U11  U12  U13]   [ b1 ]
 # [ 0   U22  U23] \ [ b2 ]
 # [ 0    0   U33]   [ b3 ]
-function LinearAlgebra.ldiv!(A::UnitUpperTriangular, bb::ArrayPartition)
-    A = A.data
-    n = npartitions(bb)
-    b = bb.x
-    lens = map(length, b)
-    @inbounds for j in n:-1:1
-        Ajj = UnitUpperTriangular(getblock(A, lens, j, j))
-        xj = ldiv!(Ajj, vec(b[j]))
-        for i in (j - 1):-1:1
-            Aij = getblock(A, lens, i, j)
-            # bi = -Aij * xj + bi
-            mul!(vec(b[i]), Aij, xj, -1, true)
+for basetype in [UnitUpperTriangular, UpperTriangular, UnitLowerTriangular, LowerTriangular]
+    for type in [basetype, basetype{T, <:Adjoint{T}} where {T}, basetype{T, <:Transpose{T}} where {T}]
+        j_iter, i_iter = if basetype <: UnitUpperTriangular || basetype <: UpperTriangular
+            (:(n:-1:1), :(j-1:-1:1))
+        else
+            (:(1:n), :((j+1):n))
+        end
+        @eval function LinearAlgebra.ldiv!(A::$type, bb::ArrayPartition)
+            A = A.data
+            n = npartitions(bb)
+            b = bb.x
+            lens = map(length, b)
+            @inbounds for j in $j_iter
+                Ajj = $basetype(getblock(A, lens, j, j))
+                xj = ldiv!(Ajj, vec(b[j]))
+                for i in $i_iter
+                    Aij = getblock(A, lens, i, j)
+                    # bi = -Aij * xj + bi
+                    mul!(vec(b[i]), Aij, xj, -1, true)
+                end
+            end
+            return bb
         end
     end
-    return bb
 end
-
-function LinearAlgebra.ldiv!(A::UpperTriangular, bb::ArrayPartition)
-    A = A.data
-    n = npartitions(bb)
-    b = bb.x
-    lens = map(length, b)
-    @inbounds for j in n:-1:1
-        Ajj = UpperTriangular(getblock(A, lens, j, j))
-        xj = ldiv!(Ajj, vec(b[j]))
-        for i in (j - 1):-1:1
-            Aij = getblock(A, lens, i, j)
-            # bi = -Aij * xj + bi
-            mul!(vec(b[i]), Aij, xj, -1, true)
-        end
-    end
-    return bb
-end
-
-function LinearAlgebra.ldiv!(A::UnitLowerTriangular, bb::ArrayPartition)
-    A = A.data
-    n = npartitions(bb)
-    b = bb.x
-    lens = map(length, b)
-    @inbounds for j in 1:n
-        Ajj = UnitLowerTriangular(getblock(A, lens, j, j))
-        xj = ldiv!(Ajj, vec(b[j]))
-        for i in (j + 1):n
-            Aij = getblock(A, lens, i, j)
-            # bi = -Aij * xj + b[i]
-            mul!(vec(b[i]), Aij, xj, -1, true)
-        end
-    end
-    return bb
-end
-function _ldiv!(A::LowerTriangular, bb::ArrayPartition)
-    A = A.data
-    n = npartitions(bb)
-    b = bb.x
-    lens = map(length, b)
-    @inbounds for j in 1:n
-        Ajj = LowerTriangular(getblock(A, lens, j, j))
-        xj = ldiv!(Ajj, vec(b[j]))
-        for i in (j + 1):n
-            Aij = getblock(A, lens, i, j)
-            # bi = -Aij * xj + b[i]
-            mul!(vec(b[i]), Aij, xj, -1, true)
-        end
-    end
-    return bb
-end
-
-function LinearAlgebra.ldiv!(A::LowerTriangular{T, <:LinearAlgebra.Adjoint{T}},
-    bb::ArrayPartition) where {T}
-    _ldiv!(A, bb)
-end
-LinearAlgebra.ldiv!(A::LowerTriangular, bb::ArrayPartition) = _ldiv!(A, bb)
 
 # TODO: optimize
 function LinearAlgebra._ipiv_rows!(A::LU, order::OrdinalRange, B::ArrayPartition)

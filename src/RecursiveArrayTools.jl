@@ -8,6 +8,7 @@ using DocStringExtensions
 using RecipesBase, StaticArraysCore, Statistics,
     ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
+using SparseArrays
 
 import Adapt
 
