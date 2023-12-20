@@ -433,11 +433,6 @@ for factorization in vcat(__get_subtypes_in_module(LinearAlgebra, Factorization;
     end
 end
 
-function LinearAlgebra.ldiv!(A::LinearAlgebra.SVD{T, Tr, M},
-    b::ArrayPartition) where {Tr, T, M <: AbstractArray{T}}
-    (x = ldiv!(A, Array(b)); copyto!(b, x))
-end
-
 function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C},
     b::ArrayPartition) where {
     T <: Union{Float32, Float64, ComplexF64, ComplexF32},
