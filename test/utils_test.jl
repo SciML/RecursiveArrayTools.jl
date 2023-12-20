@@ -122,4 +122,12 @@ end
     @test u1.u[2] == [2.0,2.0]
     @test u1.u[1] isa MVector
     @test u1.u[2] isa MVector
+
+    u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+    u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+    recursivecopy!(u1,u2)
+    @test u1.u[1] == [4.0,4.0]
+    @test u1.u[2] == [2.0,2.0]
+    @test u1.u[1] isa SVector
+    @test u1.u[2] isa SVector
 end
