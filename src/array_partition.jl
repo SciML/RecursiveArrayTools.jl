@@ -423,7 +423,7 @@ ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(
 
 function __get_subtypes_in_module(mod, supertype; include_supertype = true, all=false, except=[])
     return filter([getproperty(mod, name) for name in names(mod; all) if !in(name, except)]) do value
-            return value isa Type && (value <: supertype) && (include_supertype || value != supertype) && !in(value, except)
+            return value != Union{} && value isa Type && (value <: supertype) && (include_supertype || value != supertype) && !in(value, except)
         end
 end
 
