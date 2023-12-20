@@ -661,7 +661,7 @@ end
     bc = Broadcast.flatten(bc)
     N = narrays(bc)
     @inbounds for i in 1:N
-        if dest[:, i] isa AbstractArray
+        if dest[:, i] isa AbstractArray && !isa(dest[:, i], StaticArraysCore.SArray)
             copyto!(dest[:, i], unpack_voa(bc, i))
         else
             dest[:, i] = copy(unpack_voa(bc, i))

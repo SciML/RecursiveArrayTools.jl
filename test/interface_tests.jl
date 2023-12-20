@@ -117,3 +117,11 @@ u = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
 @test typeof(zero(u)) <: typeof(u)
 resize!(u,3)
 @test pointer(u) === pointer(u.u)
+
+# Ensure broadcast (including assignment) works with StaticArrays
+x = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+y = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+z .= x .+ y
+
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
