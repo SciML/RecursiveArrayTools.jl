@@ -113,3 +113,13 @@ recursivefill!(x, true)
     recursivefill!(y_voa, ones(Vec3))
     @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
 end
+
+@testset "VectorOfArray recursivecopy!" begin
+    u1 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
+    u2 = VectorOfArray([fill(4, MVector{2, Float64}), 2 .* ones(MVector{2, Float64})])
+    recursivecopy!(u1,u2)
+    @test u1.u[1] == [4.0,4.0]
+    @test u1.u[2] == [2.0,2.0]
+    @test u1.u[1] isa MVector
+    @test u1.u[2] isa MVector
+end
