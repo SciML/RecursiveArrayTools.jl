@@ -488,6 +488,9 @@ end
 function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
     checkbounds(Bool, VA, idx...) || throw(BoundsError(VA, idx))
 end
+function Base.copyto!(dest::AbstractVectorOfArray{T,N}, src::AbstractVectorOfArray{T,N}) where {T,N}
+    copyto!.(dest.u, src.u)
+end
 
 # Operations
 function Base.isapprox(A::AbstractVectorOfArray,
@@ -544,7 +547,6 @@ end
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
     VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
 end
-recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
