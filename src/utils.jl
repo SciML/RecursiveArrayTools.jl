@@ -42,39 +42,47 @@ like `copy!` on arrays of scalars.
 """
 function recursivecopy! end
 
-for type in [AbstractArray, AbstractVectorOfArray]
-    @eval function recursivecopy!(b::$type{T, N},
-        a::$type{T2, N}) where {T <: StaticArraysCore.StaticArray,
-        T2 <: StaticArraysCore.StaticArray,
-        N}
-        @inbounds for i in eachindex(a)
-            # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
-            b[i] = copy(a[i])
-        end
+function recursivecopy!(b::AbstractArray{T, N},    a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
+    T2 <: StaticArraysCore.StaticArray,
+    N}
+    @inbounds for i in eachindex(a)
+        # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
+        b[i] = copy(a[i])
     end
+end
 
-    @eval function recursivecopy!(b::$type{T, N},
-        a::$type{T2, N}) where {T <: Enum, T2 <: Enum, N}
+function recursivecopy!(b::AbstractArray{T, N},
+    a::AbstractArray{T2, N}) where {T <: Enum, T2 <: Enum, N}
+    copyto!(b, a)
+end
+
+function recursivecopy!(b::AbstractArray{T, N},
+    a::AbstractArray{T2, N}) where {T <: Number, T2 <: Number, N}
+    copyto!(b, a)
+end
+
+function recursivecopy!(b::AbstractArray{T, N},
+    a::AbstractArray{T2, N}) where {T <: Union{AbstractArray, AbstractVectorOfArray},
+    T2 <: Union{AbstractArray, AbstractVectorOfArray}, N}
+    if ArrayInterface.ismutable(T)
+        @inbounds for i in eachindex(b, a)
+            recursivecopy!(b[i], a[i])
+        end
+    else
         copyto!(b, a)
     end
+    return b
+end
 
-    @eval function recursivecopy!(b::$type{T, N},
-        a::$type{T2, N}) where {T <: Number, T2 <: Number, N}
-        copyto!(b, a)
-    end
-
-    @eval function recursivecopy!(b::$type{T, N},
-        a::$type{T2, N}) where {T <: Union{AbstractArray, AbstractVectorOfArray},
-        T2 <: Union{AbstractArray, AbstractVectorOfArray}, N}
-        if ArrayInterface.ismutable(T)
-            @inbounds for i in eachindex(b, a)
-                recursivecopy!(b[i], a[i])
-            end
-        else
-            copyto!(b, a)
+function recursivecopy!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
+    if ArrayInterface.ismutable(eltype(b.u))
+        @inbounds for i in eachindex(b.u, a.u)
+            recursivecopy!(b.u[i], a.u[i])
         end
-        return b
+    else
+        copyto!(b.u, a.u)
     end
+    return b
 end
 
 """
