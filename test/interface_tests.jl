@@ -134,7 +134,7 @@ function f(u1,u2,u3)
     u3 .= u1 .+ u2
 end
 f(u1,u2,u3)
-@test @allocated f(u1,u2,u3) == 0 
+@test (@allocated f(u1,u2,u3)) == 0 
 
 yy = [2.0 1.0; 2.0 1.0]
 zz = x .+ yy
