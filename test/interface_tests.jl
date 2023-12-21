@@ -134,7 +134,7 @@ function f(u1,u2,u3)
     u3 .= u1 .+ u2
 end
 f(u1,u2,u3)
-@test@allocated f(u1,u2,u3) == 0 
+@test @allocated f(u1,u2,u3) == 0 
 
 yy = [2.0 1.0; 2.0 1.0]
 zz = x .+ yy
@@ -143,3 +143,9 @@ zz = x .+ yy
 z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
 z .= zz
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+
+function f!(z,zz)
+    z .= zz
+end
+f!(z,zz)
+@test @allocated f!(z,zz) == 0
