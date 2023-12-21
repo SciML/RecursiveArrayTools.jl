@@ -148,4 +148,4 @@ function f!(z,zz)
     z .= zz
 end
 f!(z,zz)
-@test @allocated f!(z,zz) == 0
+@test (@allocated f!(z,zz)) == 0
