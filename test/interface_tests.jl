@@ -125,3 +125,11 @@ z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
 z .= x .+ y
 
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+
+yy = [2.0 1.0; 2.0 1.0]
+zz = x .+ yy
+@test zz == [4.0 2.0; 4.0 2.0]
+
+z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+z .= zz
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
