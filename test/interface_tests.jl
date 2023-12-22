@@ -149,3 +149,6 @@ function f!(z,zz)
 end
 f!(z,zz)
 @test (@allocated f!(z,zz)) == 0
+
+z .= 0.1
+@test z == VectorOfArray([fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})])
