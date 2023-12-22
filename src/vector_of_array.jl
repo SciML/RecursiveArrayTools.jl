@@ -681,7 +681,12 @@ end
             copyto!(dest[:, i], unpack_voa(bc, i))
         else
             unpacked = unpack_voa(bc, i)
-            dest[:, i] = unpacked.f(unpacked.args...)
+            value = unpacked.f(unpacked.args...)
+            dest[:, i] = if value isa Number && dest[:, i] isa AbstractArray
+                fill(value, StaticArraysCore.similar_type(dest[:, i]))
+            else
+                value
+            end
         end
     end
     dest
