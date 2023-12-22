@@ -663,10 +663,25 @@ end
     bc = Broadcast.flatten(bc)
     N = narrays(bc)
     @inbounds for i in 1:N
-        if dest[:, i] isa AbstractArray && !isa(dest[:, i], StaticArraysCore.SArray)
+        if dest[:, i] isa AbstractArray && ArrayInterface.ismutable(dest[:, i])
             copyto!(dest[:, i], unpack_voa(bc, i))
         else
-            dest[:, i] = copy(unpack_voa(bc, i))
+            unpacked = unpack_voa(bc, i)
+            dest[:, i] = unpacked.f(unpacked.args...)
+        end
+    end
+    dest
+end
+
+@inline function Base.copyto!(dest::AbstractVectorOfArray,
+    bc::Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle})
+    bc = Broadcast.flatten(bc)
+    @inbounds for i in 1:length(dest.u)
+        if dest[:, i] isa AbstractArray && ArrayInterface.ismutable(dest[:, i])
+            copyto!(dest[:, i], unpack_voa(bc, i))
+        else
+            unpacked = unpack_voa(bc, i)
+            dest[:, i] = unpacked.f(unpacked.args...)
         end
     end
     dest

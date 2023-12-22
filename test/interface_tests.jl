@@ -125,3 +125,27 @@ z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
 z .= x .+ y
 
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+
+u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+u3 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+
+function f(u1,u2,u3)
+    u3 .= u1 .+ u2
+end
+f(u1,u2,u3)
+@test (@allocated f(u1,u2,u3)) == 0 
+
+yy = [2.0 1.0; 2.0 1.0]
+zz = x .+ yy
+@test zz == [4.0 2.0; 4.0 2.0]
+
+z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+z .= zz
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+
+function f!(z,zz)
+    z .= zz
+end
+f!(z,zz)
+@test (@allocated f!(z,zz)) == 0
