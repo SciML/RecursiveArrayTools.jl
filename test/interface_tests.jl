@@ -152,3 +152,9 @@ f!(z,zz)
 
 z .= 0.1
 @test z == VectorOfArray([fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})])
+
+function f2!(z)
+    z .= 0.1
+end
+f2!(z)
+@test (@allocated f2!(z)) == 0
