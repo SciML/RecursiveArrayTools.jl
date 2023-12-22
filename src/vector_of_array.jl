@@ -666,7 +666,8 @@ end
         if dest[:, i] isa AbstractArray && ArrayInterface.ismutable(dest[:, i])
             copyto!(dest[:, i], unpack_voa(bc, i))
         else
-            dest[:, i] = copy(unpack_voa(bc, i))
+            unpacked = unpack_voa(bc, i)
+            dest[:, i] = unpacked.f(unpacked.args...)
         end
     end
     dest
@@ -679,7 +680,8 @@ end
         if dest[:, i] isa AbstractArray && ArrayInterface.ismutable(dest[:, i])
             copyto!(dest[:, i], unpack_voa(bc, i))
         else
-            dest[:, i] = copy(unpack_voa(bc, i))
+            unpacked = unpack_voa(bc, i)
+            dest[:, i] = unpacked.f(unpacked.args...)
         end
     end
     dest
