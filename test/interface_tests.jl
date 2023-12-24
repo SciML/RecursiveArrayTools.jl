@@ -1,4 +1,5 @@
 using RecursiveArrayTools, StaticArrays, Test
+using FastBroadcast
 
 t = 1:3
 testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -158,3 +159,10 @@ function f2!(z)
 end
 f2!(z)
 @test (@allocated f2!(z)) == 0
+
+function f3!(z, zz)
+    @.. broadcast=false z = zz
+end
+f3!(z, zz)
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+@test (@allocated f3!(z, zz)) == 0

@@ -687,20 +687,6 @@ for (type, N_expr) in [
     end
 end
 
-# @inline function Base.copyto!(dest::AbstractVectorOfArray,
-#     bc::Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle})
-#     bc = Broadcast.flatten(bc)
-#     @inbounds for i in 1:length(dest.u)
-#         if dest[:, i] isa AbstractArray && ArrayInterface.ismutable(dest[:, i])
-#             copyto!(dest[:, i], unpack_voa(bc, i))
-#         else
-#             unpacked = unpack_voa(bc, i)
-#             dest[:, i] = StaticArraysCore.similar_type(dest[:, i])(unpacked[j] for j in eachindex(unpacked))
-#         end
-#     end
-#     dest
-# end
-
 ## broadcasting utils
 
 """
