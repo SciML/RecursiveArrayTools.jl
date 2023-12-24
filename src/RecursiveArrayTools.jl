@@ -9,7 +9,6 @@ using RecipesBase, StaticArraysCore, Statistics,
     ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
 using SparseArrays
-import Static # so it isn't a stale dep, used in FastBroadcastExt
 
 import Adapt
 
