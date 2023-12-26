@@ -347,6 +347,10 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     end
 end
 
+Base.@propagate_inbounds function Base.getindex(A::Adjoint{T,<:AbstractVectorOfArray}, idxs...) where {T}
+    return getindex(A.parent, reverse(to_indices(A, idxs))...)
+end
+
 function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
     observed(A, sym)(A.u[i], A.p, A.t[i])
 end
@@ -395,6 +399,9 @@ end
 
 # Interface for the two-dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
+@inline Base.size(VA::AbstractVectorOfArray, i) = size(VA)[i]
+@inline Base.size(A::Adjoint{T,<:AbstractVectorOfArray}) where {T} = reverse(size(A.parent))
+@inline Base.size(A::Adjoint{T,<:AbstractVectorOfArray}, i) where {T} = size(A)[i]
 Base.axes(VA::AbstractVectorOfArray) = Base.OneTo.(size(VA))
 Base.axes(VA::AbstractVectorOfArray, d::Int) = Base.OneTo(size(VA)[d])
 
@@ -592,6 +599,7 @@ end
 @inline Statistics.var(VA::AbstractVectorOfArray; kwargs...) = var(Array(VA); kwargs...)
 @inline Statistics.cov(VA::AbstractVectorOfArray; kwargs...) = cov(Array(VA); kwargs...)
 @inline Statistics.cor(VA::AbstractVectorOfArray; kwargs...) = cor(Array(VA); kwargs...)
+@inline Base.adjoint(VA::AbstractVectorOfArray) = Adjoint(VA)
 
 # make it show just like its data
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray)

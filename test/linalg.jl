@@ -48,3 +48,10 @@ for T in (Array{Float64}, Array{ComplexF64})
         @test d.x[i] == b.x[i] * c.x[i]
     end
 end
+
+va = VectorOfArray([i * ones(3) for i in 1:4])
+mat = Array(va)
+
+@test size(va') == (size(va', 1), size(va', 2)) == (size(va, 2), size(va, 1))
+@test all(va'[i] == mat'[i] for i in eachindex(mat'))
+@test Array(va') == mat'
