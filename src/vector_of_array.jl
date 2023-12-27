@@ -284,8 +284,7 @@ Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymb
             return getindex.(A.u, variable_index.((A,), (sym,), eachindex(A.t)))
         end
     elseif is_parameter(A, sym)
-        Base.depwarn("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.", :parameter_getindex)
-        return getp(A, sym)(A)
+        error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
     elseif is_observed(A, sym)
         return observed(A, sym).(A.u, (parameter_values(A),), A.t)
     else
@@ -325,8 +324,7 @@ end
 
 Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray})
     if all(x -> is_parameter(A, x), sym)
-        Base.depwarn("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.", :parameter_getindex)
-        return getp(A, sym)(A)
+        error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
     else
         return [getindex.((A,), sym, i) for i in eachindex(A.t)]
     end
@@ -334,6 +332,14 @@ end
 
 Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray}, args...)
     return reduce(vcat, map(s -> A[s, args...]', sym))
+end
+
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, ::SymbolicIndexingInterface.SolvedVariables, args...)
+    return getindex(A, variable_symbols(A), args...)
+end
+
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, ::SymbolicIndexingInterface.AllVariables, args...)
+    return getindex(A, all_variable_symbols(A), args...)
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, args...)
