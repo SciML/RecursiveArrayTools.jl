@@ -27,7 +27,7 @@ function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
 end
 
 import GPUArraysCore
-Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
+Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
 
 import Requires
 @static if !isdefined(Base, :get_extension)
