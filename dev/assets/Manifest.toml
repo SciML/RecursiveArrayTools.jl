@@ -348,9 +348,9 @@ uuid = "bea87d4a-7f5b-5778-9afe-8cc45184846c"
 version = "7.2.1+1"
 
 [[deps.SymbolicIndexingInterface]]
-git-tree-sha1 = "65f4ed0f9e3125e0836df12c231cea3dd98bb165"
+git-tree-sha1 = "be414bfd80c2c91197823890c66ef4b74f5bf5fe"
 uuid = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
-version = "0.3.0"
+version = "0.3.1"
 
 [[deps.TOML]]
 deps = ["Dates"]
