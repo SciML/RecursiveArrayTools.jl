@@ -22,8 +22,13 @@ sol_new = DiffEqArray(sol.u[1:10],
 @test sol_new[t] ≈ sol_new.t
 @test sol_new[t, 1:5] ≈ sol_new.t[1:5]
 @test getp(sol, τ)(sol) == getp(sol_new, τ)(sol_new) == 3.0
-@test_deprecated sol[τ]
-@test_deprecated sol_new[τ]
+@test variable_symbols(sol) == variable_symbols(sol_new) == [x]
+@test all_variable_symbols(sol) == all_variable_symbols(sol_new) == [x, RHS]
+@test all_symbols(sol) == all_symbols(sol_new) == [x, RHS, τ, t]
+@test sol[solvedvariables, 1:10] == sol_new[solvedvariables] == sol_new[[x]]
+@test sol[allvariables, 1:10] == sol_new[allvariables] == sol_new[[x, RHS]]
+@test_throws Exception sol[τ]
+@test_throws Exception sol_new[τ]
 
 # Tables interface
 test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], sol_new[x]))
