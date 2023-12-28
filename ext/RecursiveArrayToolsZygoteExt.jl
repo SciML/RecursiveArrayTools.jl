@@ -95,8 +95,8 @@ end
     VectorOfArray(u),
     y -> begin
         y isa Ref && (y = VectorOfArray(y[].u))
-        (VectorOfArray([y[ntuple(x -> Colon(), ndims(y.u) - 1)..., i]
-                        for i in 1:size(y.u)[end]]),)
+        (VectorOfArray([y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
+                        for i in 1:size(y)[end]]),)
     end
 end
 
@@ -104,8 +104,8 @@ end
     DiffEqArray(u, t),
     y -> begin
         y isa Ref && (y = VectorOfArray(y[].u))
-        (DiffEqArray([y[ntuple(x -> Colon(), ndims(y.u) - 1)..., i]
-                       for i in 1:size(y.u)[end]],
+        (DiffEqArray([y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
+                       for i in 1:size(y)[end]],
             t), nothing)
     end
 end
