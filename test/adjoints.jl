@@ -37,6 +37,11 @@ function loss6(x)
     sum(abs2, Array(_prob.u0))
 end
 
+function loss7(x)
+    _x = VectorOfArray([x .* i for i in 1:5])
+    return sum(abs2, x .- 1)
+end
+
 x = float.(6:10)
 loss(x)
 @test Zygote.gradient(loss, x)[1] == ForwardDiff.gradient(loss, x)
@@ -45,3 +50,4 @@ loss(x)
 @test Zygote.gradient(loss4, x)[1] == ForwardDiff.gradient(loss4, x)
 @test Zygote.gradient(loss5, x)[1] == ForwardDiff.gradient(loss5, x)
 @test Zygote.gradient(loss6, x)[1] == ForwardDiff.gradient(loss6, x)
+@test Zygote.gradient(loss7, x)[1] == ForwardDiff.gradient(loss7, x)
