@@ -22,11 +22,16 @@ sol_new = DiffEqArray(sol.u[1:10],
 @test sol_new[t] ≈ sol_new.t
 @test sol_new[t, 1:5] ≈ sol_new.t[1:5]
 @test getp(sol, τ)(sol) == getp(sol_new, τ)(sol_new) == 3.0
-@test variable_symbols(sol) == variable_symbols(sol_new) == [x]
-@test all_variable_symbols(sol) == all_variable_symbols(sol_new) == [x, RHS]
-@test all_symbols(sol) == all_symbols(sol_new) == [x, RHS, τ, t]
-@test sol[solvedvariables, 1:10] == sol_new[solvedvariables] == sol_new[[x]]
-@test sol[allvariables, 1:10] == sol_new[allvariables] == sol_new[[x, RHS]]
+@test all(isequal.(variable_symbols(sol), variable_symbols(sol_new)))
+@test all(isequal.(variable_symbols(sol), [x]))
+@test all(isequal.(all_variable_symbols(sol), all_variable_symbols(sol_new)))
+@test all(isequal.(all_variable_symbols(sol), [x, RHS]))
+@test all(isequal.(all_symbols(sol), all_symbols(sol_new)))
+@test all(isequal.(all_symbols(sol), [x, RHS, τ, t]))
+@test sol[solvedvariables] == sol[[x]]
+@test sol_new[solvedvariables] == sol_new[[x]]
+@test sol[allvariables] == sol[[x, RHS]]
+@test sol_new[allvariables] == sol_new[[x, RHS]]
 @test_throws Exception sol[τ]
 @test_throws Exception sol_new[τ]
 
