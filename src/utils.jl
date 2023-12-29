@@ -177,8 +177,8 @@ Calls `f` on each element of a vecvec `v`.
 function vecvecapply(f, v)
     sol = Vector{eltype(eltype(v))}()
     for i in eachindex(v)
-        for j in eachindex(v[i])
-            push!(sol, v[i][j])
+        for j in eachindex(v[:, i])
+            push!(sol, v[:, i][j])
         end
     end
     f(sol)
