@@ -14,6 +14,13 @@ A = [[1 2; 3 4], [1 3; 4 6], [5 6; 7 8]]
 A = zeros(5, 5)
 @test recursive_unitless_eltype(A) == Float64
 
+@test vecvecapply(x -> abs.(x), -1) == 1
+@test vecvecapply(x -> abs.(x), [-1, -2, 3, -4]) == [1, 2, 3, 4]
+v = [[-1 2; 3 -4], [5 -6; -7 -8]]
+vv = [1, 3, 2, 4, 5, 7, 6, 8]
+@test vecvecapply(x -> abs.(x), v) == vv
+@test vecvecapply(x -> abs.(x), VectorOfArray(v)) == vv
+
 using Unitful
 A = zeros(5, 5) * 1u"kg"
 @test recursive_unitless_eltype(A) == Float64

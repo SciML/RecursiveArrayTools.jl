@@ -174,15 +174,17 @@ vecvecapply(f::Base.Callable, v)
 
 Calls `f` on each element of a vecvec `v`.
 """
-function vecvecapply(f, v)
+function vecvecapply(f, v::AbstractArray{<:AbstractArray})
     sol = Vector{eltype(eltype(v))}()
     for i in eachindex(v)
-        for j in eachindex(v[:, i])
-            push!(sol, v[:, i][j])
+        for j in eachindex(v[i])
+            push!(sol, v[i][j])
         end
     end
     f(sol)
 end
+
+vecvecapply(f, v::AbstractVectorOfArray) = vecvecapply(f, v.u)
 
 function vecvecapply(f, v::Array{T}) where {T <: Number}
     f(v)
