@@ -198,6 +198,9 @@ function DiffEqArray(vec::AbstractVector{VT},
         sys)
 end
 
+SymbolicIndexingInterface.is_timeseries(::Type{<:AbstractVectorOfArray}) = Timeseries()
+SymbolicIndexingInterface.state_values(A::AbstractDiffEqArray) = A.u
+SymbolicIndexingInterface.current_time(A::AbstractDiffEqArray) = A.t
 SymbolicIndexingInterface.parameter_values(A::AbstractDiffEqArray) = A.p
 SymbolicIndexingInterface.symbolic_container(A::AbstractDiffEqArray) = A.sys
 
