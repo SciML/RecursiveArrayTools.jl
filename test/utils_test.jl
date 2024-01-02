@@ -14,6 +14,13 @@ A = [[1 2; 3 4], [1 3; 4 6], [5 6; 7 8]]
 A = zeros(5, 5)
 @test recursive_unitless_eltype(A) == Float64
 
+@test vecvecapply(x -> abs.(x), -1) == 1
+@test vecvecapply(x -> abs.(x), [-1, -2, 3, -4]) == [1, 2, 3, 4]
+v = [[-1 2; 3 -4], [5 -6; -7 -8]]
+vv = [1, 3, 2, 4, 5, 7, 6, 8]
+@test vecvecapply(x -> abs.(x), v) == vv
+@test vecvecapply(x -> abs.(x), VectorOfArray(v)) == vv
+
 using Unitful
 A = zeros(5, 5) * 1u"kg"
 @test recursive_unitless_eltype(A) == Float64
@@ -112,4 +119,22 @@ recursivefill!(x, true)
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, ones(Vec3))
     @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
+end
+
+@testset "VectorOfArray recursivecopy!" begin
+    u1 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
+    u2 = VectorOfArray([fill(4, MVector{2, Float64}), 2 .* ones(MVector{2, Float64})])
+    recursivecopy!(u1,u2)
+    @test u1.u[1] == [4.0,4.0]
+    @test u1.u[2] == [2.0,2.0]
+    @test u1.u[1] isa MVector
+    @test u1.u[2] isa MVector
+
+    u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+    u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+    recursivecopy!(u1,u2)
+    @test u1.u[1] == [4.0,4.0]
+    @test u1.u[2] == [2.0,2.0]
+    @test u1.u[1] isa SVector
+    @test u1.u[2] isa SVector
 end

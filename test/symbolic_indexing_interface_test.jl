@@ -21,11 +21,13 @@ dx = DiffEqArray([[f(x), f2(x)] for x in t],
 @test dx[(:a, :b)] == [(f(x), f2(x)) for x in t]
 @test dx[[:a, :b], 3] ≈ [f(t[3]), f2(t[3])]
 @test dx[[:a, :b], 4:5] ≈ vcat(f.(t[4:5])', f2.(t[4:5])')
+@test dx[solvedvariables] == dx[allvariables] == dx[[:a, :b]]
+@test dx[solvedvariables, 3] == dx[allvariables, 3] == dx[[:a, :b], 3]
 @test getp(dx, [:p, :q])(dx) == [1.0, 2.0]
 @test getp(dx, :p)(dx) == 1.0
 @test getp(dx, :q)(dx) == 2.0
-@test_deprecated dx[:p]
-@test_deprecated dx[[:p, :q]]
+@test_throws Exception dx[:p]
+@test_throws Exception dx[[:p, :q]]
 @test dx[:t] == t
 
 @test symbolic_container(dx) isa SymbolCache
@@ -35,11 +37,12 @@ dx = DiffEqArray([[f(x), f2(x)] for x in t],
 @test is_parameter.((dx,), [:a, :b, :p, :q, :t]) == [false, false, true, true, false]
 @test parameter_index.((dx,), [:a, :b, :p, :q, :t]) == [nothing, nothing, 1, 2, nothing]
 @test is_independent_variable.((dx,), [:a, :b, :p, :q, :t]) == [false, false, false, false, true]
-@test variable_symbols(dx) == [:a, :b]
+@test variable_symbols(dx) == all_variable_symbols(dx) == [:a, :b]
 @test parameter_symbols(dx) == [:p, :q]
 @test independent_variable_symbols(dx) == [:t]
 @test is_time_dependent(dx)
 @test constant_structure(dx)
+@test all_symbols(dx) == [:a, :b, :p, :q, :t]
 
 dx = DiffEqArray([[f(x), f2(x)] for x in t], t; variables = [:a, :b])
 @test_throws Exception dx[nothing] # make sure it isn't storing [nothing] as indepsym

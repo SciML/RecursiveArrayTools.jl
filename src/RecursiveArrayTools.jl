@@ -8,6 +8,7 @@ using DocStringExtensions
 using RecipesBase, StaticArraysCore, Statistics,
     ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
+using SparseArrays
 
 import Adapt
 
@@ -27,7 +28,8 @@ function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
 end
 
 import GPUArraysCore
-Base.convert(T::Type{<:GPUArraysCore.AbstractGPUArray}, VA::AbstractVectorOfArray) = T(VA)
+Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
+(T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray) = T(Array(VA))
 
 import Requires
 @static if !isdefined(Base, :get_extension)

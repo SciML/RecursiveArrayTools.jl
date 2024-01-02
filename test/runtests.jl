@@ -1,12 +1,7 @@
 using Pkg
 using RecursiveArrayTools
 using Test
-using Aqua
 using SafeTestsets
-
-if VERSION >= v"1.9"
-    Aqua.test_all(RecursiveArrayTools, ambiguities = false)
-end
 
 @test_broken isempty(Test.detect_ambiguities(RecursiveArrayTools))
 const GROUP = get(ENV, "GROUP", "All")
@@ -26,7 +21,9 @@ end
 
 @time begin
     if GROUP == "Core" || GROUP == "All"
-
+        @time @safetestset "Quality Assurance" begin
+            include("qa.jl")
+        end
         @time @safetestset "Utils Tests" begin
             include("utils_test.jl")
         end
@@ -57,7 +54,7 @@ end
         @time @safetestset "Upstream Tests" begin
             include("upstream.jl")
         end
-        # @time @safetestset "Adjoint Tests" begin include("adjoints.jl") end
+        @time @safetestset "Adjoint Tests" begin include("adjoints.jl") end
         @time @safetestset "Measurement Tests" begin
             include("measurements.jl")
         end
@@ -71,7 +68,7 @@ end
         @time @safetestset "Event Tests with ArrayPartition" begin
             include("downstream/downstream_events.jl")
         end
-        VERSION >= v"1.9" && @time @safetestset "Measurements and Units" begin
+        @time @safetestset "Measurements and Units" begin
             include("downstream/measurements_and_units.jl")
         end
         @time @safetestset "TrackerExt" begin

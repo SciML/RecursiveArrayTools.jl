@@ -139,7 +139,7 @@ function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray
 end
 
 function DiffEqArray(vec::AbstractVector{T},
-    ts,
+    ts::AbstractVector,
     ::NTuple{N, Int},
     p = nothing,
     sys = nothing) where {T, N}
@@ -230,7 +230,7 @@ end
 @deprecate Base.getindex(A::AbstractDiffEqArray, i::Int) Base.getindex(A, :, i) false
 
 __parameterless_type(T) = Base.typename(T).wrapper
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
+Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
     ::NotSymbolic, I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
     vecs = vec.(A.u)
@@ -238,7 +238,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
         reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
+Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
     ::NotSymbolic, I::AbstractArray{Bool},
     J::Colon...) where {T, N}
     @assert length(J) == ndims(A.u[1]) + 1 - ndims(I)
@@ -247,34 +247,34 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N},
 end
 
 # Need two of each methods to avoid ambiguities
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Int)
+Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Int)
     A.u[I]
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::NotSymbolic, I::Union{Int,AbstractArray{Int},AbstractArray{Bool},Colon}...)
+Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray, ::NotSymbolic, I::Union{Int,AbstractArray{Int},AbstractArray{Bool},Colon}...)
     if last(I) isa Int
         A.u[last(I)][Base.front(I)...]
     else
         stack(getindex.(A.u[last(I)], tuple.(Base.front(I))...))
     end
 end
-Base.@propagate_inbounds function Base.getindex(VA::AbstractVectorOfArray, ::NotSymbolic, ii::CartesianIndex)
+Base.@propagate_inbounds function _getindex(VA::AbstractVectorOfArray, ::NotSymbolic, ii::CartesianIndex)
     ti = Tuple(ii)
     i = last(ti)
     jj = CartesianIndex(Base.front(ti))
     return VA.u[i][jj]
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
+Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
     VectorOfArray(A.u[I])
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::NotSymbolic, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::NotSymbolic, ::Colon, I::Union{AbstractArray{Int},AbstractArray{Bool}})
     DiffEqArray(A.u[I], A.t[I], parameter_values(A), symbolic_container(A))
 end
 
 # Symbolic Indexing Methods
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym)
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym)
     if is_independent_variable(A, sym)
         return A.t
     elseif is_variable(A, sym)
@@ -284,8 +284,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::Scalar
             return getindex.(A.u, variable_index.((A,), (sym,), eachindex(A.t)))
         end
     elseif is_parameter(A, sym)
-        Base.depwarn("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.", :parameter_getindex)
-        return getp(A, sym)(A)
+        error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
     elseif is_observed(A, sym)
         return observed(A, sym).(A.u, (parameter_values(A),), A.t)
     else
@@ -296,7 +295,7 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::Scalar
     end
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym, args...)
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym, args...)
     if is_independent_variable(A, sym)
         return A.t[args...]
     elseif is_variable(A, sym)
@@ -319,21 +318,28 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::Scalar
 end
 
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ArraySymbolic, sym, args...)
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ArraySymbolic, sym, args...)
     return getindex(A, collect(sym), args...)
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray})
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray})
     if all(x -> is_parameter(A, x), sym)
-        Base.depwarn("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.", :parameter_getindex)
-        return getp(A, sym)(A)
+        error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
     else
         return [getindex.((A,), sym, i) for i in eachindex(A.t)]
     end
 end
 
-Base.@propagate_inbounds function Base.getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray}, args...)
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple,AbstractArray}, args...)
     return reduce(vcat, map(s -> A[s, args...]', sym))
+end
+
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, ::SymbolicIndexingInterface.SolvedVariables, args...)
+    return getindex(A, variable_symbols(A), args...)
+end
+
+Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, ::SymbolicIndexingInterface.AllVariables, args...)
+    return getindex(A, all_variable_symbols(A), args...)
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, args...)
@@ -341,10 +347,14 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     elsymtype = symbolic_type(eltype(_arg))
 
     if symtype != NotSymbolic()
-        return Base.getindex(A, symtype, _arg, args...)
+        return _getindex(A, symtype, _arg, args...)
     else
-        return Base.getindex(A, elsymtype, _arg, args...)
+        return _getindex(A, elsymtype, _arg, args...)
     end
+end
+
+Base.@propagate_inbounds function Base.getindex(A::Adjoint{T,<:AbstractVectorOfArray}, idxs...) where {T}
+    return getindex(A.parent, reverse(to_indices(A, idxs))...)
 end
 
 function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
@@ -395,6 +405,9 @@ end
 
 # Interface for the two-dimensional indexing, a more standard AbstractArray interface
 @inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
+@inline Base.size(VA::AbstractVectorOfArray, i) = size(VA)[i]
+@inline Base.size(A::Adjoint{T,<:AbstractVectorOfArray}) where {T} = reverse(size(A.parent))
+@inline Base.size(A::Adjoint{T,<:AbstractVectorOfArray}, i) where {T} = size(A)[i]
 Base.axes(VA::AbstractVectorOfArray) = Base.OneTo.(size(VA))
 Base.axes(VA::AbstractVectorOfArray, d::Int) = Base.OneTo(size(VA)[d])
 
@@ -426,11 +439,33 @@ function Base.copy(VA::AbstractDiffEqArray)
         (VA.sys === nothing) ? nothing : copy(VA.sys))
 end
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
+
+Base.zero(VA::VectorOfArray) = VectorOfArray(Base.zero.(VA.u))
+
+function Base.zero(VA::DiffEqArray)
+    u = Base.zero.(VA.u)
+    DiffEqArray(u, VA.t, VA.p, VA.sys)
+end
+
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
 
 Base.reverse!(VA::AbstractVectorOfArray) = reverse!(VA.u)
 Base.reverse(VA::VectorOfArray) = VectorOfArray(reverse(VA.u))
 Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.p, VA.sys)
+
+function Base.resize!(VA::AbstractVectorOfArray, i::Integer)
+    if Base.hasproperty(VA, :sys) && VA.sys !== nothing
+        error("resize! is not allowed on AbstractVectorOfArray with a sys")
+    end
+    Base.resize!(VA.u, i)
+    if Base.hasproperty(VA, :t) && VA.t !== nothing
+        Base.resize!(VA.t, i)
+    end
+end
+
+function Base.pointer(VA::AbstractVectorOfArray)
+    Base.pointer(VA.u)
+end
 
 function Base.push!(VA::AbstractVectorOfArray{T, N}, new_item::AbstractArray) where {T, N}
     push!(VA.u, new_item)
@@ -465,6 +500,9 @@ function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
 end
 function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
     checkbounds(Bool, VA, idx...) || throw(BoundsError(VA, idx))
+end
+function Base.copyto!(dest::AbstractVectorOfArray{T,N}, src::AbstractVectorOfArray{T,N}) where {T,N}
+    copyto!.(dest.u, src.u)
 end
 
 # Operations
@@ -510,7 +548,7 @@ function Base.CartesianIndices(VA::AbstractVectorOfArray)
 end
 
 # Tools for creating similar objects
-Base.eltype(::VectorOfArray{T}) where {T} = T
+Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
 # TODO: Is there a better way to do this?
 @inline function Base.similar(VA::AbstractVectorOfArray, args...)
     if args[end] isa Type
@@ -522,7 +560,6 @@ end
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
     VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
 end
-recursivecopy(VA::VectorOfArray) = VectorOfArray(copy.(VA.u))
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
@@ -568,6 +605,7 @@ end
 @inline Statistics.var(VA::AbstractVectorOfArray; kwargs...) = var(Array(VA); kwargs...)
 @inline Statistics.cov(VA::AbstractVectorOfArray; kwargs...) = cov(Array(VA); kwargs...)
 @inline Statistics.cor(VA::AbstractVectorOfArray; kwargs...) = cor(Array(VA); kwargs...)
+@inline Base.adjoint(VA::AbstractVectorOfArray) = Adjoint(VA)
 
 # make it show just like its data
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray)
@@ -634,18 +672,33 @@ Broadcast.broadcastable(x::AbstractVectorOfArray) = x
     end)
 end
 
-@inline function Base.copyto!(dest::AbstractVectorOfArray,
-    bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
-    bc = Broadcast.flatten(bc)
-    N = narrays(bc)
-    @inbounds for i in 1:N
-        if dest[:, i] isa AbstractArray
-            copyto!(dest[:, i], unpack_voa(bc, i))
-        else
-            dest[:, i] = copy(unpack_voa(bc, i))
+for (type, N_expr) in [
+        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
+        (Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle}, :(length(dest.u)))
+    ]
+    @eval @inline function Base.copyto!(dest::AbstractVectorOfArray,
+        bc::$type)
+        bc = Broadcast.flatten(bc)
+        N = $N_expr
+        @inbounds for i in 1:N
+            if dest[:, i] isa AbstractArray
+                if ArrayInterface.ismutable(dest[:, i])
+                    copyto!(dest[:, i], unpack_voa(bc, i))
+                else
+                    unpacked = unpack_voa(bc, i)
+                    arr_type = StaticArraysCore.similar_type(dest[:, i])
+                    dest[:, i] = if length(unpacked) == 1
+                        fill(copy(unpacked), arr_type)
+                    else
+                        arr_type(unpacked[j] for j in eachindex(unpacked))
+                    end
+                end
+            else
+                dest[:, i] = copy(unpack_voa(bc, i))
+            end
         end
+        dest
     end
-    dest
 end
 
 ## broadcasting utils

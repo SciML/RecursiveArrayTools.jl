@@ -1,6 +1,6 @@
 """
 ```julia
-recursivecopy(b::AbstractArray{T, N}, a::AbstractArray{T, N})
+recursivecopy(a::Union{AbstractArray{T, N}, AbstractVectorOfArray{T,N}})
 ```
 
 A recursive `copy` function. Acts like a `deepcopy` on arrays of arrays, but
@@ -26,6 +26,12 @@ function recursivecopy(a::AbstractArray{T, N}) where {T <: AbstractArray, N}
     end
 end
 
+function recursivecopy(a::AbstractVectorOfArray)
+    b = copy(a)
+    b.u = recursivecopy.(a.u)
+    return b
+end
+
 """
 ```julia
 recursivecopy!(b::AbstractArray{T, N}, a::AbstractArray{T, N})
@@ -36,8 +42,7 @@ like `copy!` on arrays of scalars.
 """
 function recursivecopy! end
 
-function recursivecopy!(b::AbstractArray{T, N},
-    a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
+function recursivecopy!(b::AbstractArray{T, N},    a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
     T2 <: StaticArraysCore.StaticArray,
     N}
     @inbounds for i in eachindex(a)
@@ -57,14 +62,25 @@ function recursivecopy!(b::AbstractArray{T, N},
 end
 
 function recursivecopy!(b::AbstractArray{T, N},
-    a::AbstractArray{T2, N}) where {T <: AbstractArray,
-    T2 <: AbstractArray, N}
+    a::AbstractArray{T2, N}) where {T <: Union{AbstractArray, AbstractVectorOfArray},
+    T2 <: Union{AbstractArray, AbstractVectorOfArray}, N}
     if ArrayInterface.ismutable(T)
         @inbounds for i in eachindex(b, a)
             recursivecopy!(b[i], a[i])
         end
     else
         copyto!(b, a)
+    end
+    return b
+end
+
+function recursivecopy!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
+    if ArrayInterface.ismutable(eltype(b.u))
+        @inbounds for i in eachindex(b.u, a.u)
+            recursivecopy!(b.u[i], a.u[i])
+        end
+    else
+        copyto!(b.u, a.u)
     end
     return b
 end
@@ -110,32 +126,36 @@ function recursivefill!(bs::AbstractVectorOfArray{T, N},
     end
 end
 
-function recursivefill!(b::AbstractArray{T, N}, a::T2) where {T <: Enum, T2 <: Enum, N}
-    fill!(b, a)
-end
+for type in [AbstractArray, AbstractVectorOfArray]
+    @eval function recursivefill!(b::$type{T, N}, a::T2) where {T <: Enum, T2 <: Enum, N}
+        fill!(b, a)
+    end
 
-function recursivefill!(b::AbstractArray{T, N},
-    a::T2) where {T <: Union{Number, Bool}, T2 <: Union{Number, Bool}, N
-}
-    fill!(b, a)
-end
+    @eval function recursivefill!(b::$type{T, N},
+        a::T2) where {T <: Union{Number, Bool}, T2 <: Union{Number, Bool}, N
+    }
+        fill!(b, a)
+    end
 
-function recursivefill!(b::AbstractArray{T, N}, a) where {T <: StaticArraysCore.MArray, N}
-    @inbounds for i in eachindex(b)
-        if isassigned(b, i)
-            recursivefill!(b[i], a)
-        else
-            b[i] = zero(eltype(b))
-            recursivefill!(b[i], a)
+    for type2 in [Any, StaticArraysCore.StaticArray]
+        @eval function recursivefill!(b::$type{T, N}, a::$type2) where {T <: StaticArraysCore.MArray, N}
+            @inbounds for i in eachindex(b)
+                if isassigned(b, i)
+                    recursivefill!(b[i], a)
+                else
+                    b[i] = zero(eltype(b))
+                    recursivefill!(b[i], a)
+                end
+            end
         end
     end
-end
-
-function recursivefill!(b::AbstractArray{T, N}, a) where {T <: AbstractArray, N}
-    @inbounds for i in eachindex(b)
-        recursivefill!(b[i], a)
+    
+    @eval function recursivefill!(b::$type{T, N}, a) where {T <: AbstractArray, N}
+        @inbounds for i in eachindex(b)
+            recursivefill!(b[i], a)
+        end
+        return b
     end
-    return b
 end
 
 # Deprecated
@@ -154,7 +174,7 @@ vecvecapply(f::Base.Callable, v)
 
 Calls `f` on each element of a vecvec `v`.
 """
-function vecvecapply(f, v)
+function vecvecapply(f, v::AbstractArray{<:AbstractArray})
     sol = Vector{eltype(eltype(v))}()
     for i in eachindex(v)
         for j in eachindex(v[i])
@@ -163,6 +183,8 @@ function vecvecapply(f, v)
     end
     f(sol)
 end
+
+vecvecapply(f, v::AbstractVectorOfArray) = vecvecapply(f, v.u)
 
 function vecvecapply(f, v::Array{T}) where {T <: Number}
     f(v)

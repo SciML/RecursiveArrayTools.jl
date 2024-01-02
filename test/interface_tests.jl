@@ -1,4 +1,5 @@
-using RecursiveArrayTools, Test
+using RecursiveArrayTools, StaticArrays, Test
+using FastBroadcast
 
 t = 1:3
 testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -112,3 +113,56 @@ A = VectorOfArray(map(i -> rand(2, 4), 1:7))
 
 DA = DiffEqArray(map(i -> rand(2, 4), 1:7), 1:7)
 @test map(x -> maximum(x), DA) isa Vector
+
+u = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+@test typeof(zero(u)) <: typeof(u)
+resize!(u,3)
+@test pointer(u) === pointer(u.u)
+
+# Ensure broadcast (including assignment) works with StaticArrays
+x = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+y = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+z .= x .+ y
+
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+
+u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
+u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+u3 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+
+function f(u1,u2,u3)
+    u3 .= u1 .+ u2
+end
+f(u1,u2,u3)
+@test (@allocated f(u1,u2,u3)) == 0 
+
+yy = [2.0 1.0; 2.0 1.0]
+zz = x .+ yy
+@test zz == [4.0 2.0; 4.0 2.0]
+
+z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+z .= zz
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+
+function f!(z,zz)
+    z .= zz
+end
+f!(z,zz)
+@test (@allocated f!(z,zz)) == 0
+
+z .= 0.1
+@test z == VectorOfArray([fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})])
+
+function f2!(z)
+    z .= 0.1
+end
+f2!(z)
+@test (@allocated f2!(z)) == 0
+
+function f3!(z, zz)
+    @.. broadcast=false z = zz
+end
+f3!(z, zz)
+@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+@test (@allocated f3!(z, zz)) == 0
