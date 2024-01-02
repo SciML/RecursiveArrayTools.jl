@@ -29,6 +29,12 @@ dx = DiffEqArray([[f(x), f2(x)] for x in t],
 @test_throws Exception dx[:p]
 @test_throws Exception dx[[:p, :q]]
 @test dx[:t] == t
+geta = getu(dx, :a)
+get_arr = getu(dx, [:a, :b])
+get_tuple = getu(dx, (:a, :b))
+@test geta(dx) == dx[1, :]
+@test get_arr(dx) == vcat.(dx[1, :], dx[2, :])
+@test get_tuple(dx) == tuple.(dx[1, :], dx[2, :])
 
 @test symbolic_container(dx) isa SymbolCache
 @test parameter_values(dx) == [1.0, 2.0]
