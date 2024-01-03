@@ -1,3 +1,5 @@
+using RecursiveArrayTools, Test
+
 @testset "NamedArrayPartition tests" begin
     x = NamedArrayPartition(a = ones(10), b = rand(20))
     @test typeof(@. sin(x * x^2 / x - 1)) <: NamedArrayPartition
