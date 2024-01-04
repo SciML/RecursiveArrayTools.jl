@@ -18,7 +18,9 @@ using RecursiveArrayTools, Test
 
     x = NamedArrayPartition(a = ones(1), b = 2*ones(1))
     @test Base.summary(x) == string(typeof(x), " with arrays:")
-    @test (@capture_out Base.show(stdout, MIME"text/plain"(), x)) == "(a = [1.0], b = [2.0])"
+    io = IOBuffer()
+    Base.show(io, MIME"text/plain"(), x)
+    @test String(take!(io)) == "(a = [1.0], b = [2.0])"
 
     using StructArrays
     using StaticArrays: SVector
