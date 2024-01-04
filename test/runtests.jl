@@ -25,9 +25,12 @@ end
         @time @safetestset "Utils Tests" begin
             include("utils_test.jl")
         end
+        @time @safetestset "NamedArrayPartition Tests" begin 
+            include("named_array_partition_tests.jl") 
+        end
         @time @safetestset "Partitions Tests" begin
             include("partitions_test.jl")
-        end
+        end   
         @time @safetestset "VecOfArr Indexing Tests" begin
             include("basic_indexing.jl")
         end

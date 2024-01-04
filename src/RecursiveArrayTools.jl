@@ -21,6 +21,7 @@ include("utils.jl")
 include("vector_of_array.jl")
 include("tabletraits.jl")
 include("array_partition.jl")
+include("named_array_partition.jl")
 
 function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
     invoke(show, Tuple{typeof(io), Any}, io, x)
@@ -37,6 +38,6 @@ export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_pus
     vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
     recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
-export ArrayPartition
+export ArrayPartition, NamedArrayPartition
 
 end # module
