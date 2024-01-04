@@ -3,9 +3,7 @@ using RecursiveArrayTools
 using Test
 using SafeTestsets
 
-@test_broken isempty(Test.detect_ambiguities(RecursiveArrayTools))
 const GROUP = get(ENV, "GROUP", "All")
-const is_APPVEYOR = (Sys.iswindows() && haskey(ENV, "APPVEYOR"))
 
 function activate_downstream_env()
     Pkg.activate("downstream")
@@ -57,7 +55,7 @@ end
         end
     end
 
-    if !is_APPVEYOR && GROUP == "Downstream"
+    if GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "DiffEqArray Indexing Tests" begin
             include("downstream/symbol_indexing.jl")
@@ -73,7 +71,7 @@ end
         end
     end
 
-    if !is_APPVEYOR && GROUP == "GPU"
+    if GROUP == "GPU"
         activate_gpu_env()
         @time @safetestset "VectorOfArray GPU" begin
             include("gpu/vectorofarray_gpu.jl")
