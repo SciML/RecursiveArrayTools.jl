@@ -13,4 +13,5 @@ mapping and iteration functions, and more.
 VectorOfArray
 DiffEqArray
 ArrayPartition
+NamedArrayPartition
 ```
