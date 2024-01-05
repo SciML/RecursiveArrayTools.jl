@@ -104,6 +104,14 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @inferred recursive_one(x)
 @inferred recursive_bottom_eltype(x)
 
+# mapreduce
+@inferred Union{Int, Float64} sum(x)
+@inferred sum(ArrayPartition(ArrayPartition(zeros(4,4))))
+@inferred sum(ArrayPartition(ArrayPartition(zeros(4))))
+@inferred sum(ArrayPartition(zeros(4,4)))
+@inferred mapreduce(string, *, x)
+@test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
+
 # broadcasting
 _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
