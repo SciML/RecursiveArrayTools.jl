@@ -39,7 +39,27 @@ end
 
 function loss7(x)
     _x = VectorOfArray([x .* i for i in 1:5])
-    return sum(abs2, x .- 1)
+    return sum(abs2, _x .- 1)
+end
+
+# use a bunch of broadcasts to test all the adjoints
+function loss8(x)
+    _x = VectorOfArray([x .* i for i in 1:5])
+    res = copy(_x)
+    res = res .+ _x
+    res = res .+ 1
+    res = res .* _x
+    res = res .* 2.0
+    res = res .* res
+    res = res ./ 2.0
+    res = res ./ _x
+    res = 3.0 .- res
+    res = .-res
+    res = identity.(Base.literal_pow.(^, res, Val(2)))
+    res = tanh.(res)
+    res = res .+ im .* res
+    res = conj.(res) .+ real.(res) .+ imag.(res) .+ abs2.(res)
+    return sum(abs2, res)
 end
 
 x = float.(6:10)
@@ -51,3 +71,4 @@ loss(x)
 @test Zygote.gradient(loss5, x)[1] == ForwardDiff.gradient(loss5, x)
 @test Zygote.gradient(loss6, x)[1] == ForwardDiff.gradient(loss6, x)
 @test Zygote.gradient(loss7, x)[1] == ForwardDiff.gradient(loss7, x)
+@test Zygote.gradient(loss8, x)[1] == ForwardDiff.gradient(loss8, x)
