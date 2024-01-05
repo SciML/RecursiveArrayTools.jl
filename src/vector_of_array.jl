@@ -133,7 +133,16 @@ function VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N}
     VectorOfArray{eltype(T), N, typeof(vec)}(vec)
 end
 # Assume that the first element is representative of all other elements
-VectorOfArray(vec::AbstractVector) = VectorOfArray(vec, (size(vec[1])..., length(vec)))
+function VectorOfArray(vec::AbstractVector)
+    T = eltype(vec[1])
+    N = ndims(vec[1])
+    if all(x isa Union{<:AbstractArray, <:AbstractVectorOfArray} for x in vec)
+        A = Vector{Union{typeof.(vec)...}}
+    else
+        A = typeof(vec)
+    end
+    VectorOfArray{T, N + 1, A}(vec)
+end
 function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray{T, N}}
     VectorOfArray{T, N + 1, typeof(vec)}(vec)
 end
@@ -482,6 +491,10 @@ function Base.append!(VA::AbstractVectorOfArray{T, N},
     return VA
 end
 
+function Base.stack(VA::AbstractVectorOfArray; dims = :)
+    stack(VA.u; dims)
+end
+
 # AbstractArray methods
 function Base.view(A::AbstractVectorOfArray, I::Vararg{Any,M}) where {M}
     @inline
@@ -489,14 +502,19 @@ function Base.view(A::AbstractVectorOfArray, I::Vararg{Any,M}) where {M}
     @boundscheck checkbounds(A, J...)
     SubArray(IndexStyle(A), A, J, Base.index_dimsum(J...))
 end
+function Base.SubArray(parent::AbstractVectorOfArray, indices::Tuple)
+    @inline
+    SubArray(IndexStyle(Base.viewindexing(indices), IndexStyle(parent)), parent, Base.ensure_indexable(indices), Base.index_dimsum(indices...))
+end
+Base.isassigned(VA::AbstractVectorOfArray, idxs...) = checkbounds(Bool, VA, idxs...)
 Base.check_parent_index_match(::RecursiveArrayTools.AbstractVectorOfArray{T,N}, ::NTuple{N,Bool}) where {T,N} = nothing
 Base.ndims(::AbstractVectorOfArray{T, N}) where {T, N} = N
 function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
     if checkbounds(Bool, VA.u, last(idx))
         if last(idx) isa Integer
-            return all(checkbounds.(Bool, (VA.u[last(idx)],), Base.front(idx)))
+            return all(checkbounds.(Bool, (VA.u[last(idx)],), Base.front(idx)...))
         else
-            return all(checkbounds.(Bool, VA.u[last(idx)], Base.front(idx)))
+            return all(checkbounds.(Bool, VA.u[last(idx)], tuple.(Base.front(idx))...))
         end
     end
     return false
@@ -595,10 +613,14 @@ function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
 end
 
 # statistics
-@inline Base.sum(f, VA::AbstractVectorOfArray) = sum(f, Array(VA))
-@inline Base.sum(VA::AbstractVectorOfArray; kwargs...) = sum(Array(VA); kwargs...)
-@inline Base.prod(f, VA::AbstractVectorOfArray) = prod(f, Array(VA))
-@inline Base.prod(VA::AbstractVectorOfArray; kwargs...) = prod(Array(VA); kwargs...)
+@inline Base.sum(VA::AbstractVectorOfArray; kwargs...) = sum(identity, VA; kwargs...)
+@inline function Base.sum(f, VA::AbstractVectorOfArray; kwargs...)
+    mapreduce(f, Base.add_sum, VA; kwargs...)
+end
+@inline Base.prod(VA::AbstractVectorOfArray; kwargs...) = prod(identity, VA; kwargs...)
+@inline function Base.prod(f, VA::AbstractVectorOfArray; kwargs...)
+    mapreduce(f, Base.mul_prod, VA; kwargs...)
+end
 
 @inline Statistics.mean(VA::AbstractVectorOfArray; kwargs...) = mean(Array(VA); kwargs...)
 @inline function Statistics.median(VA::AbstractVectorOfArray; kwargs...)
@@ -638,8 +660,12 @@ end
 end
 
 Base.map(f, A::RecursiveArrayTools.AbstractVectorOfArray) = map(f, A.u)
-function Base.mapreduce(f, op, A::AbstractVectorOfArray)
-    mapreduce(f, op, (mapreduce(f, op, x) for x in A.u))
+
+function Base.mapreduce(f, op, A::AbstractVectorOfArray; kwargs...)
+    mapreduce(f, op, view(A, ntuple(_ -> :, ndims(A))...); kwargs...)
+end
+function Base.mapreduce(f, op, A::AbstractVectorOfArray{T,1,<:AbstractVector{T}}; kwargs...) where {T}
+    mapreduce(f, op, A.u; kwargs...)
 end
 
 ## broadcasting
