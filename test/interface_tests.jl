@@ -91,6 +91,20 @@ for idxs in [(2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, : ,:), (
     @test all(arr_view .== voa_view)
 end
 
+testvc = VectorOfArray(collect(1:10))
+arrvc = Array(testvc)
+for (voaidx, arridx) in [
+    ((:,), (:,)),
+    ((3:5,), (3:5,)),
+    ((:, 3:5), (3:5,)),
+    ((1, 3:5), (3:5,)),
+]
+    arr_view = view(arrvc, arridx...)
+    voa_view = view(testvc, voaidx...)
+    @test size(arr_view) == size(voa_view)
+    @test all(arr_view .== voa_view)
+end
+
 # test stack
 @test stack(testva) == [1 4 7; 2 5 8; 3 6 9]
 @test stack(testva; dims = 1) == [1 2 3; 4 5 6; 7 8 9]

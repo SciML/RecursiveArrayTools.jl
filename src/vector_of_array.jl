@@ -220,6 +220,9 @@ Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 @inline function Base.eachindex(VA::AbstractVectorOfArray)
     return eachindex(VA.u)
 end
+@inline function Base.eachindex(::IndexLinear, VA::AbstractVectorOfArray{T,N,<:AbstractVector{T}}) where {T, N}
+    return eachindex(IndexLinear(), VA.u)
+end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
 @inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
 @inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
@@ -245,7 +248,11 @@ __parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
     ::NotSymbolic, I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
-    vecs = vec.(A.u)
+    vecs = if N == 1
+        A.u
+    else
+        vec.(A.u)
+    end
     return Adapt.adapt(__parameterless_type(T),
         reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
 end
@@ -496,6 +503,16 @@ function Base.stack(VA::AbstractVectorOfArray; dims = :)
 end
 
 # AbstractArray methods
+function Base.view(A::AbstractVectorOfArray{T,N,<:AbstractVector{T}}, I::Vararg{Any, M}) where {T,N,M}
+    @inline
+    if length(I) == 1
+        J = map(i->Base.unalias(A,i), to_indices(A, I))
+    elseif length(I) == 2 && (I[1] == Colon() || I[1] == 1)
+        J = map(i->Base.unalias(A,i), to_indices(A, Base.tail(I)))
+    end
+    @boundscheck checkbounds(A, J...)
+    SubArray(IndexStyle(A), A, J, Base.index_dimsum(J...))
+end
 function Base.view(A::AbstractVectorOfArray, I::Vararg{Any,M}) where {M}
     @inline
     J = map(i->Base.unalias(A,i), to_indices(A, I))
@@ -509,6 +526,13 @@ end
 Base.isassigned(VA::AbstractVectorOfArray, idxs...) = checkbounds(Bool, VA, idxs...)
 Base.check_parent_index_match(::RecursiveArrayTools.AbstractVectorOfArray{T,N}, ::NTuple{N,Bool}) where {T,N} = nothing
 Base.ndims(::AbstractVectorOfArray{T, N}) where {T, N} = N
+
+function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray{T, N, <:AbstractVector{T}}, idxs...) where {T, N}
+    if length(idxs) == 2 && (idxs[1] == Colon() || idxs[1] == 1)
+        return checkbounds(Bool, VA.u, idxs[2])
+    end
+    return checkbounds(Bool, VA.u, idxs...)
+end
 function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
     if checkbounds(Bool, VA.u, last(idx))
         if last(idx) isa Integer
