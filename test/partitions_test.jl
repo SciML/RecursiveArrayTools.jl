@@ -58,6 +58,7 @@ copyto!(p, c)
 ## inference tests
 
 x = ArrayPartition([1, 2], [3.0, 4.0])
+y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 @test x[:, 1] == (1, 3.0)
 
 # similar partitions
@@ -68,6 +69,13 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @test similar(x, Int, (4,)) isa ArrayPartition{Int}
 @test (@inferred similar(x, Int, (2, 2))) isa AbstractMatrix{Int}
 # @inferred similar(x, Int, Float64)
+
+@inferred similar(y)
+@test similar(y, (4,)) isa ArrayPartition{Float64}
+@test (@inferred similar(y, (2, 2))) isa AbstractMatrix{Float64}
+@inferred similar(y, Int)
+@test similar(y, Int, (4,)) isa ArrayPartition{Int}
+@test (@inferred similar(y, Int, (2, 2))) isa AbstractMatrix{Int}
 
 # Copy
 @inferred copy(x)
@@ -95,6 +103,17 @@ x = ArrayPartition([1, 2], [3.0, 4.0])
 @inferred x + x
 @inferred x - x
 
+@inferred y + 5
+@inferred 5 + y
+@inferred y - 5
+@inferred 5 - y
+@inferred y * 5
+@inferred 5 * y
+@inferred y / 5
+@inferred 5 \ y
+@inferred y + y
+@inferred y - y
+
 # indexing
 @inferred first(x)
 @inferred last(x)
@@ -118,6 +137,7 @@ _scalar_op(y) = y + 1
 _broadcast_wrapper(y) = _scalar_op.(y)
 # Issue #8
 @inferred _broadcast_wrapper(x)
+@test_broken @inferred _broadcast_wrapper(y)
 
 # Testing map
 @test map(x -> x^2, x) == ArrayPartition(x.x[1] .^ 2, x.x[2] .^ 2)
@@ -151,11 +171,11 @@ function foo(y, x)
 end
 foo(xcde0, xce0)
 #@test 0 == @allocated foo(xcde0, xce0)
-function foo(y, x)
+function foo2(y, x)
     y .= y .+ 2 .* x
     nothing
 end
-foo(xcde0, xce0)
+foo2(xcde0, xce0)
 #@test 0 == @allocated foo(xcde0, xce0)
 
 # Custom AbstractArray types broadcasting

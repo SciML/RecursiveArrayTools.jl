@@ -109,6 +109,9 @@ end
 @test stack(testva) == [1 4 7; 2 5 8; 3 6 9]
 @test stack(testva; dims = 1) == [1 2 3; 4 5 6; 7 8 9]
 
+testva = VectorOfArray([VectorOfArray([ones(2,2), 2ones(2, 2)]), 3ones(2, 2, 2)])
+@test stack(testva) == [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
+
 # convert array from VectorOfArray/DiffEqArray
 t = 1:8
 recs = [rand(10, 7) for i in 1:8]

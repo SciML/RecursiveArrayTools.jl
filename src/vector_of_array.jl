@@ -499,7 +499,7 @@ function Base.append!(VA::AbstractVectorOfArray{T, N},
 end
 
 function Base.stack(VA::AbstractVectorOfArray; dims = :)
-    stack(VA.u; dims)
+    stack(stack.(VA.u); dims)
 end
 
 # AbstractArray methods
@@ -633,7 +633,7 @@ function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
     if !allequal(size.(VA.u))
         error("Can only convert non-ragged VectorOfArray to Array")
     end
-    return stack(VA.u)
+    return stack(VA)
 end
 
 # statistics
