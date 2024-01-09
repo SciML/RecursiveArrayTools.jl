@@ -191,6 +191,32 @@ w = v .+ 1
 @test_broken w isa DiffEqArray # FIXME
 @test w.u == map(x -> x .+ 1, v.u)
 
+# setindex!
+testva = VectorOfArray([i * ones(3, 3) for i in 1:5])
+testva[:, 2] = 7ones(3, 3)
+@test testva[:, 2] == 7ones(3, 3)
+testva[:, :] = [2i * ones(3, 3) for i in 1:5]
+for i in 1:5
+    @test testva[:, i] == 2i * ones(3, 3)
+end
+testva[:, 1:2:5] = [5i * ones(3, 3) for i in 1:2:5]
+for i in 1:2:5
+    @test testva[:, i] == 5i * ones(3, 3)
+end
+testva[CartesianIndex(3, 3, 5)] = 64.0
+@test testva[:, 5][3, 3] == 64.0
+@test_throws ArgumentError testva[2, 1:2, :] = 108.0
+testva[2, 1:2, :] .= 108.0
+for i in 1:5
+    @test all(testva[:, i][2, 1:2] .== 108.0)
+end
+testva[:, 3, :] = [3i / 7j for i in 1:3, j in 1:5]
+for j in 1:5
+    for i in 1:3
+        @test testva[i, 3, j] == 3i / 7j
+    end
+end
+
 # edges cases
 x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 testva = DiffEqArray(x, x)
