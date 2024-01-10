@@ -128,6 +128,9 @@ function Base.Array{U}(VA::AbstractVectorOfArray) where {U}
     vecs = vec.(VA.u)
     Array(reshape(reduce(hcat, vecs), size(VA.u[1])..., length(VA.u)))
 end
+function Adapt.adapt_structure(to, VA::AbstractVectorOfArray)
+    Adapt.adapt(to, Array(VA))
+end
 
 function VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N}
     VectorOfArray{eltype(T), N, typeof(vec)}(vec)
