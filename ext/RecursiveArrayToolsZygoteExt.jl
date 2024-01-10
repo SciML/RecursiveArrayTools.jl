@@ -18,15 +18,6 @@ function ChainRulesCore.rrule(T::Type{<:RecursiveArrayTools.GPUArraysCore.Abstra
     T(xs), ȳ -> (ChainRulesCore.NoTangent(), ȳ)
 end
 
-@adjoint function getindex(VA::AbstractVectorOfArray, i::Int)
-    function AbstractVectorOfArray_getindex_adjoint(Δ)
-        Δ′ = [(i == j ? Δ : FillArrays.Fill(zero(eltype(x)), size(x)))
-              for (x, j) in zip(VA.u, 1:length(VA))]
-        (VectorOfArray(Δ′), nothing)
-    end
-    VA[i], AbstractVectorOfArray_getindex_adjoint
-end
-
 @adjoint function getindex(VA::AbstractVectorOfArray,
     i::Union{BitArray, AbstractArray{Bool}})
     function AbstractVectorOfArray_getindex_adjoint(Δ)
@@ -34,7 +25,7 @@ end
               for (x, j) in zip(VA.u, 1:length(VA))]
         (VectorOfArray(Δ′), nothing)
     end
-    VA[i], AbstractVectorOfArray_getindex_adjoint
+    VA[:, i], AbstractVectorOfArray_getindex_adjoint
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::AbstractArray{Int})
@@ -44,24 +35,14 @@ end
               for (x, j) in zip(VA.u, 1:length(VA))]
         (VectorOfArray(Δ′), nothing)
     end
-    VA[i], AbstractVectorOfArray_getindex_adjoint
-end
-
-@adjoint function getindex(VA::AbstractVectorOfArray,
-    i::Union{Int, AbstractArray{Int}})
-    function AbstractVectorOfArray_getindex_adjoint(Δ)
-        Δ′ = [(i[j] ? Δ[j] : FillArrays.Fill(zero(eltype(x)), size(x)))
-              for (x, j) in zip(VA.u, 1:length(VA))]
-        (VectorOfArray(Δ′), nothing)
-    end
-    VA[i], AbstractVectorOfArray_getindex_adjoint
+    VA[:, i], AbstractVectorOfArray_getindex_adjoint
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Colon)
     function AbstractVectorOfArray_getindex_adjoint(Δ)
         (VectorOfArray(Δ), nothing)
     end
-    VA[i], AbstractVectorOfArray_getindex_adjoint
+    VA.u[i], AbstractVectorOfArray_getindex_adjoint
 end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::Int,
