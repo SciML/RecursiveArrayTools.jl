@@ -474,18 +474,20 @@ function Base.copy(VA::AbstractDiffEqArray)
 end
 Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
 
-Base.zero(VA::VectorOfArray) = VectorOfArray(Base.zero.(VA.u))
+Base.zero(VA::AbstractVectorOfArray) = VectorOfArray(Base.zero.(VA.u))
 
-function Base.zero(VA::DiffEqArray)
+function Base.zero(VA::AbstractDiffEqArray)
     u = Base.zero.(VA.u)
-    DiffEqArray(u, VA.t, VA.p, VA.sys)
+    DiffEqArray(u, VA.t, parameter_values(VA), symbolic_container(VA))
 end
 
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
 
 Base.reverse!(VA::AbstractVectorOfArray) = reverse!(VA.u)
-Base.reverse(VA::VectorOfArray) = VectorOfArray(reverse(VA.u))
-Base.reverse(VA::DiffEqArray) = DiffEqArray(reverse(VA.u), VA.t, VA.p, VA.sys)
+Base.reverse(VA::AbstractVectorOfArray) = VectorOfArray(reverse(VA.u))
+function Base.reverse(VA::AbstractDiffEqArray)
+    DiffEqArray(reverse(VA.u), VA.t, parameter_values(VA), symbolic_container(VA))
+end
 
 function Base.resize!(VA::AbstractVectorOfArray, i::Integer)
     if Base.hasproperty(VA, :sys) && VA.sys !== nothing
