@@ -84,7 +84,7 @@ arrvb = Array(testvb)
 # view
 testvc = VectorOfArray([rand(1:10, 3, 3) for _ in 1:3])
 arrvc = Array(testvc)
-for idxs in [(2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, : ,:), (:, :, :)]
+for idxs in [(2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, : ,:), (:, :, :), (1:2, 1:2, Bool[1, 0, 1]), (1:2, Bool[1, 0, 1], 1:2), (Bool[1, 0, 1], 1:2, 1:2)]
     arr_view = view(arrvc, idxs...)
     voa_view = view(testvc, idxs...)
     @test size(arr_view) == size(voa_view)
@@ -93,11 +93,13 @@ end
 
 testvc = VectorOfArray(collect(1:10))
 arrvc = Array(testvc)
+bool_idx = rand(Bool, 10)
 for (voaidx, arridx) in [
     ((:,), (:,)),
     ((3:5,), (3:5,)),
     ((:, 3:5), (3:5,)),
     ((1, 3:5), (3:5,)),
+    ((:, bool_idx), (bool_idx,))
 ]
     arr_view = view(arrvc, arridx...)
     voa_view = view(testvc, voaidx...)

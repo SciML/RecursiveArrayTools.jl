@@ -528,13 +528,13 @@ function Base.view(A::AbstractVectorOfArray{T,N,<:AbstractVector{T}}, I::Vararg{
         J = map(i->Base.unalias(A,i), to_indices(A, Base.tail(I)))
     end
     @boundscheck checkbounds(A, J...)
-    SubArray(IndexStyle(A), A, J, Base.index_dimsum(J...))
+    SubArray(A, J)
 end
 function Base.view(A::AbstractVectorOfArray, I::Vararg{Any,M}) where {M}
     @inline
     J = map(i->Base.unalias(A,i), to_indices(A, I))
     @boundscheck checkbounds(A, J...)
-    SubArray(IndexStyle(A), A, J, Base.index_dimsum(J...))
+    SubArray(A, J)
 end
 function Base.SubArray(parent::AbstractVectorOfArray, indices::Tuple)
     @inline
