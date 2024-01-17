@@ -160,6 +160,24 @@ function DiffEqArray(vec::AbstractVector{T},
         p,
         sys)
 end
+
+# ambiguity resolution
+function DiffEqArray(vec::AbstractVector{VT},
+    ts::AbstractVector,
+    ::NTuple{N, Int}) where {T, N, VT <: AbstractArray{T, N}}
+    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), Nothing, Nothing}(vec,
+        ts,
+        nothing,
+        nothing)
+end
+function DiffEqArray(vec::AbstractVector{VT},
+    ts::AbstractVector,
+    ::NTuple{N, Int}, p) where {T, N, VT <: AbstractArray{T, N}}
+    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), Nothing}(vec,
+        ts,
+        p,
+        nothing)
+end
 # Assume that the first element is representative of all other elements
 
 function DiffEqArray(vec::AbstractVector,
@@ -174,9 +192,10 @@ function DiffEqArray(vec::AbstractVector,
             something(parameters, []),
             something(independent_variables, [])))
     _size = size(vec[1])
+    T = eltype(vec[1])
     return DiffEqArray{
-        eltype(eltype(vec)),
-        length(_size),
+        T,
+        length(_size) + 1,
         typeof(vec),
         typeof(ts),
         typeof(p),
@@ -466,19 +485,25 @@ end
 tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 
 # Growing the array simply adds to the container vector
-function Base.copy(VA::AbstractDiffEqArray)
-    typeof(VA)(copy(VA.u),
-        copy(VA.t),
-        (VA.p === nothing) ? nothing : copy(VA.p),
-        (VA.sys === nothing) ? nothing : copy(VA.sys))
+function _copyfield(VA, fname)
+    if fname == :u
+        copy(VA.u)
+    elseif fname == :t
+        copy(VA.t)
+    else
+        getfield(VA, fname)
+    end
 end
-Base.copy(VA::AbstractVectorOfArray) = typeof(VA)(copy(VA.u))
+function Base.copy(VA::AbstractVectorOfArray)
+    typeof(VA)((_copyfield(VA, fname) for fname in fieldnames(typeof(VA)))...)
+end
 
-Base.zero(VA::AbstractVectorOfArray) = VectorOfArray(Base.zero.(VA.u))
-
-function Base.zero(VA::AbstractDiffEqArray)
-    u = Base.zero.(VA.u)
-    DiffEqArray(u, VA.t, parameter_values(VA), symbolic_container(VA))
+function Base.zero(VA::AbstractVectorOfArray)
+    val = copy(VA)
+    for i in eachindex(VA.u)
+        val.u[i] = zero(VA.u[i])
+    end
+    return val
 end
 
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
@@ -562,6 +587,16 @@ function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
 end
 function Base.copyto!(dest::AbstractVectorOfArray{T,N}, src::AbstractVectorOfArray{T,N}) where {T,N}
     copyto!.(dest.u, src.u)
+end
+function Base.copyto!(dest::AbstractVectorOfArray{T, N}, src::AbstractArray{T, N}) where {T, N}
+    for (i, slice) in enumerate(eachslice(src, dims = ndims(src)))
+        copyto!(dest.u[i], slice)
+    end
+    dest
+end
+function Base.copyto!(dest::AbstractVectorOfArray{T, N, <:AbstractVector{T}}, src::AbstractVector{T}) where {T, N}
+    copyto!(dest.u, src)
+    dest
 end
 # Required for broadcasted setindex! when slicing across subarrays
 # E.g. if `va = VectorOfArray([rand(3, 3) for i in 1:5])`
