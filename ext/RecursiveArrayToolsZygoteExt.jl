@@ -50,7 +50,11 @@ end
         Colon, BitArray, AbstractArray{Bool}}...)
     function AbstractVectorOfArray_getindex_adjoint(Δ)
         Δ′ = VectorOfArray([zero(x) for (x, j) in zip(VA.u, 1:length(VA))])
-        Δ′[i, j...] = Δ
+        if isempty(j)
+            Δ′.u[i] = Δ
+        else
+            Δ′[i, j...] = Δ
+        end
         (Δ′, nothing, map(_ -> nothing, j)...)
     end
     VA[i, j...], AbstractVectorOfArray_getindex_adjoint
@@ -104,13 +108,25 @@ end
 end
 
 @adjoint function Base.Array(VA::AbstractVectorOfArray)
-    Array(VA),
-    y -> (Array(y),)
+    adj = let VA=VA
+        function Array_adjoint(y)
+            VA = copy(VA)
+            copyto!(VA, y)
+            return (VA,)
+        end
+    end
+    Array(VA), adj
 end
 
 @adjoint function Base.view(A::AbstractVectorOfArray, I...)
-    view(A, I...),
-    y -> (view(y, I...), ntuple(_ -> nothing, length(I))...)
+    adj = let A = A, I = I
+        function view_adjoint(y)
+            A = zero(A)
+            view(A, I...) .= y
+            return (A, map(_ -> nothing, I)...)
+        end
+    end
+    view(A, I...), adj
 end
 
 ChainRulesCore.ProjectTo(a::AbstractVectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}((sz = size(a)))

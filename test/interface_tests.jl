@@ -1,5 +1,6 @@
 using RecursiveArrayTools, StaticArrays, Test
 using FastBroadcast
+using SymbolicIndexingInterface: SymbolCache
 
 t = 1:3
 testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
@@ -148,6 +149,42 @@ testts = rand(Float64, size(testva.u))
 testda = DiffEqArray(recursivecopy(testva.u), testts)
 fill!(testda, testval)
 @test all(x -> (x == testval), testda)
+
+# copyto!
+testva = VectorOfArray(collect(0.1:0.1:1.0))
+arr = 0.2:0.2:2.0
+copyto!(testva, arr)
+@test Array(testva) == arr
+testva = VectorOfArray([i * ones(3, 2) for i in 1:4])
+arr = rand(3, 2, 4)
+copyto!(testva, arr)
+@test Array(testva) == arr
+testva = VectorOfArray([
+    ones(3, 2, 2),
+    VectorOfArray([
+        2ones(3, 2),
+        VectorOfArray([3ones(3), 4ones(3)])
+    ]),
+    DiffEqArray([
+        5ones(3, 2),
+        VectorOfArray([
+            6ones(3),
+            7ones(3),
+        ]),
+    ], [0.1, 0.2], [100.0, 200.0], SymbolCache([:x, :y], [:a, :b], :t))
+])
+arr = rand(3, 2, 2, 3)
+copyto!(testva, arr)
+@test Array(testva) == arr
+# ensure structure and fields are maintained
+@test testva.u[1] isa Array
+@test testva.u[2] isa VectorOfArray
+@test testva.u[2].u[2] isa VectorOfArray
+@test testva.u[3] isa DiffEqArray
+@test testva.u[3].u[2] isa VectorOfArray
+@test testva.u[3].t == [0.1, 0.2]
+@test testva.u[3].p == [100.0, 200.0]
+@test testva.u[3].sys isa SymbolCache
 
 # check any
 recs = [collect(1:5), collect(6:10), collect(11:15)]
