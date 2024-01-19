@@ -110,7 +110,7 @@ end
 @adjoint function Base.Array(VA::AbstractVectorOfArray)
     adj = let VA=VA
         function Array_adjoint(y)
-            VA = copy(VA)
+            VA = recursivecopy(VA)
             copyto!(VA, y)
             return (VA,)
         end
