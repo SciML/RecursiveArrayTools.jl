@@ -25,6 +25,11 @@ jobs:
           - {user: SciML, repo: OrdinaryDiffEq.jl, group: Core}
           - {user: SciML, repo: OrdinaryDiffEq.jl, group: Interface}
           - {user: SciML, repo: DelayDiffEq.jl, group: Interface}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core1}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core2}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core3}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
+          - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v1
