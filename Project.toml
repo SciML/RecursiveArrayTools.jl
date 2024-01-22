@@ -23,11 +23,13 @@ Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 MonteCarloMeasurements = "0987c9cc-fe09-11e8-30f0-b96dd679fdca"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
 
 [extensions]
 RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
 RecursiveArrayToolsMeasurementsExt = "Measurements"
 RecursiveArrayToolsMonteCarloMeasurementsExt = "MonteCarloMeasurements"
+RecursiveArrayToolsReverseDiffExt = ["ReverseDiff", "Zygote"]
 RecursiveArrayToolsTrackerExt = "Tracker"
 RecursiveArrayToolsZygoteExt = "Zygote"
 
@@ -49,6 +51,7 @@ OrdinaryDiffEq = "6.62"
 Pkg = "1"
 Random = "1"
 RecipesBase = "1.1"
+ReverseDiff = "1.15"
 SafeTestsets = "0.1"
 SparseArrays = "1.10"
 StaticArrays = "1.6"
