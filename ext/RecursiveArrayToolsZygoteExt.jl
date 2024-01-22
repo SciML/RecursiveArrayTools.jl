@@ -118,15 +118,21 @@ end
     Array(VA), adj
 end
 
-@adjoint function Base.view(A::AbstractVectorOfArray, I...)
-    adj = let A = A, I = I
-        function view_adjoint(y)
-            A = zero(A)
-            view(A, I...) .= y
-            return (A, map(_ -> nothing, I)...)
-        end
+@adjoint function Base.view(A::AbstractVectorOfArray, I::Colon...)
+    function adjoint(y)
+        (recursivecopy(parent(y)), map(_ -> nothing, I)...)
     end
-    view(A, I...), adj
+    return view(A, I...), adjoint
+end
+
+@adjoint function Base.view(A::AbstractVectorOfArray, I...)
+    function view_adjoint(y)
+        A = recursivecopy(parent(y))
+        recursivefill!(A, zero(eltype(A)))
+        A[I...] .= y
+        return (A, map(_ -> nothing, I)...)
+    end
+    view(A, I...), view_adjoint
 end
 
 ChainRulesCore.ProjectTo(a::AbstractVectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}((sz = size(a)))
