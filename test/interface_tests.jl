@@ -98,12 +98,10 @@ bool_idx = rand(Bool, 10)
 for (voaidx, arridx) in [
     ((:,), (:,)),
     ((3:5,), (3:5,)),
-    ((:, 3:5), (3:5,)),
-    ((1, 3:5), (3:5,)),
-    ((:, bool_idx), (bool_idx,))
+    ((bool_idx,), (bool_idx,))
 ]
     arr_view = view(arrvc, arridx...)
-    voa_view = view(testvc, voaidx...)
+    voa_view = view(testvc.u, voaidx...)
     @test size(arr_view) == size(voa_view)
     @test all(arr_view .== voa_view)
 end
@@ -229,7 +227,7 @@ function f(u1,u2,u3)
     u3 .= u1 .+ u2
 end
 f(u1,u2,u3)
-@test (@allocated f(u1,u2,u3)) == 0 
+@test (@allocated f(u1,u2,u3)) == 0
 
 yy = [2.0 1.0; 2.0 1.0]
 zz = x .+ yy

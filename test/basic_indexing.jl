@@ -61,8 +61,8 @@ testvb = deepcopy(testva)
 @test_deprecated testva[1:2]
 @test_deprecated testva[begin]
 @test_deprecated testva[end]
-@test testva[begin] == testva[:, begin] == first(testva)
-@test testva[end] == testva[:, end] == last(testva)
+@test testva[:, begin] == first(testva)
+@test testva[:, end] == last(testva)
 @test testa[:, 1] == recs[1]
 @test testva.u == recs
 @test testva[: ,2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
