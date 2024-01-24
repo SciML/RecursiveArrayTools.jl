@@ -585,16 +585,26 @@ end
 function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
     checkbounds(Bool, VA, idx...) || throw(BoundsError(VA, idx))
 end
-function Base.copyto!(dest::AbstractVectorOfArray{T,N}, src::AbstractVectorOfArray{T,N}) where {T,N}
-    copyto!.(dest.u, src.u)
+function Base.copyto!(dest::AbstractVectorOfArray{T,N}, src::AbstractVectorOfArray{T2,N}) where {T, T2, N}
+    for (i, j) in zip(eachindex(dest.u), eachindex(src.u))
+        if ArrayInterface.ismutable(dest.u[i]) || dest.u[i] isa AbstractVectorOfArray
+            copyto!(dest.u[i], src.u[j])
+        else
+            dest.u[i] = StaticArraysCore.similar_type(dest.u[i])(src.u[j])
+        end
+    end
 end
-function Base.copyto!(dest::AbstractVectorOfArray{T, N}, src::AbstractArray{T, N}) where {T, N}
-    for (i, slice) in enumerate(eachslice(src, dims = ndims(src)))
-        copyto!(dest.u[i], slice)
+function Base.copyto!(dest::AbstractVectorOfArray{T, N}, src::AbstractArray{T2, N}) where {T, T2, N}
+    for (i, slice) in zip(eachindex(dest.u), eachslice(src, dims = ndims(src)))
+        if ArrayInterface.ismutable(dest.u[i]) || dest.u[i] isa AbstractVectorOfArray
+            copyto!(dest.u[i], slice)
+        else
+            dest.u[i] = StaticArraysCore.similar_type(dest.u[i])(slice)
+        end
     end
     dest
 end
-function Base.copyto!(dest::AbstractVectorOfArray{T, N, <:AbstractVector{T}}, src::AbstractVector{T}) where {T, N}
+function Base.copyto!(dest::AbstractVectorOfArray{T, N, <:AbstractVector{T}}, src::AbstractVector{T2}) where {T, T2, N}
     copyto!(dest.u, src)
     dest
 end

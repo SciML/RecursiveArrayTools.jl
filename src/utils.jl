@@ -28,7 +28,7 @@ end
 
 function recursivecopy(a::AbstractVectorOfArray)
     b = copy(a)
-    b.u = recursivecopy.(a.u)
+    b.u .= recursivecopy.(a.u)
     return b
 end
 
