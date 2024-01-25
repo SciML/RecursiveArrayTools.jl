@@ -11,7 +11,7 @@ act like it's a higher-dimensional vector, and easily convert it to different fo
 structure is:
 
 ```julia
-A[i] # Returns the ith array in the vector of arrays
+A.u[i] # Returns the ith array in the vector of arrays
 A[j, i] # Returns the jth component in the ith array
 A[j1, ..., jN, i] # Returns the (j1,...,jN) component of the ith array
 ```
