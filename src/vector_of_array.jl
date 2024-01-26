@@ -691,7 +691,7 @@ Base.reshape(A::AbstractVectorOfArray, dims...) = Base.reshape(Array(A), dims...
 @inline Base.all(f, VA::AbstractVectorOfArray) = all(all(f, u) for u in VA.u)
 
 # conversion tools
-vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA[1])]
+vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u[1])]
 Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array, VA)) # Allocates
 # stack non-ragged arrays to convert them
 function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
