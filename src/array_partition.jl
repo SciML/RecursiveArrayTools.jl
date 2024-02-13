@@ -219,6 +219,7 @@ Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int)
             return A.x[j][length(A.x[j]) + i]
         end
     end
+    throw(BoundsError(A, i))
 end
 
 """
