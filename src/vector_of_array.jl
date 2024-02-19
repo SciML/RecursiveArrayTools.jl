@@ -296,13 +296,7 @@ __parameterless_type(T) = Base.typename(T).wrapper
 Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
         ::NotSymbolic, I::Colon...) where {T, N}
     @assert length(I) == ndims(A.u[1]) + 1
-    vecs = if N == 1
-        A.u
-    else
-        vec.(A.u)
-    end
-    return Adapt.adapt(__parameterless_type(T),
-        reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
+    return Array(A)
 end
 
 Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
