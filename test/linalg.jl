@@ -18,7 +18,7 @@ for T in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriang
     @test B * Array(bbb) ≈ b
 end
 
-for ff in (lu, svd, qr)
+for ff in (lu, svd, qr, Base.Fix2(qr, ColumnNorm()))
     FF = ff(A)
     @test A * (FF \ b) ≈ b
     bbb = copy(b)
