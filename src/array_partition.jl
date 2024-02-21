@@ -425,6 +425,13 @@ for factorization in vcat(__get_subtypes_in_module(LinearAlgebra, Factorization;
     end
 end
 
+function LinearAlgebra.ldiv!(
+    A::LinearAlgebra.QRPivoted{T, <: StridedMatrix{T}, <: AbstractVector{T}},
+    b::ArrayPartition{T}) where {T <: Union{Float32, Float64, ComplexF64, ComplexF32}}
+    x = ldiv!(A, Array(b))
+    copyto!(b, x)
+end
+
 function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C},
     b::ArrayPartition) where {
     T <: Union{Float32, Float64, ComplexF64, ComplexF32},
