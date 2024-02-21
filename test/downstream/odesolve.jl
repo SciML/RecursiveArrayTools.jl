@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface
+using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface, StaticArrays
 function lorenz(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
