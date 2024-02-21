@@ -16,8 +16,8 @@ mulX .= sqrt.(abs.(testva .* X))
 @test mulX == ref
 
 @test Array(testva) == [1 4 7
-    2 5 8
-    3 6 9]
+                        2 5 8
+                        3 6 9]
 
 @test testa[1:2, 1:2] == [1 4; 2 5]
 @test testva[1:2, 1:2] == [1 4; 2 5]
@@ -26,8 +26,8 @@ mulX .= sqrt.(abs.(testva .* X))
 t = [1, 2, 3]
 diffeq = DiffEqArray(recs, t)
 @test Array(diffeq) == [1 4 7
-    2 5 8
-    3 6 9]
+                        2 5 8
+                        3 6 9]
 @test diffeq[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2
@@ -65,7 +65,7 @@ testvb = deepcopy(testva)
 @test testva[:, end] == last(testva)
 @test testa[:, 1] == recs[1]
 @test testva.u == recs
-@test testva[: ,2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
+@test testva[:, 2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
 
 diffeq = DiffEqArray(recs, t)
 @test_deprecated diffeq[1]
@@ -205,7 +205,7 @@ for i in 1:2:5
 end
 testva[CartesianIndex(3, 3, 5)] = 64.0
 @test testva[:, 5][3, 3] == 64.0
-@test_throws ArgumentError testva[2, 1:2, :] = 108.0
+@test_throws ArgumentError testva[2, 1:2, :]=108.0
 testva[2, 1:2, :] .= 108.0
 for i in 1:5
     @test all(testva[:, i][2, 1:2] .== 108.0)

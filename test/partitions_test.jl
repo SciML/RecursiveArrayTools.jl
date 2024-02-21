@@ -126,9 +126,9 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 
 # mapreduce
 @inferred Union{Int, Float64} sum(x)
-@inferred sum(ArrayPartition(ArrayPartition(zeros(4,4))))
+@inferred sum(ArrayPartition(ArrayPartition(zeros(4, 4))))
 @inferred sum(ArrayPartition(ArrayPartition(zeros(4))))
-@inferred sum(ArrayPartition(zeros(4,4)))
+@inferred sum(ArrayPartition(zeros(4, 4)))
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
@@ -150,7 +150,7 @@ _broadcast_wrapper(y) = _scalar_op.(y)
 S = [
     ((1,), (2,)) => ((1,), (2,)),
     ((3, 2), (2,)) => ((3, 2), (2,)),
-    ((3, 2), (2,)) => ((3,), (3,), (2,)),
+    ((3, 2), (2,)) => ((3,), (3,), (2,))
 ]
 
 for sizes in S
@@ -194,7 +194,7 @@ Base.IndexStyle(::MyType) = IndexLinear()
 Base.BroadcastStyle(::Type{<:MyType}) = Broadcast.ArrayStyle{MyType}()
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyType}},
-    ::Type{T}) where {T}
+        ::Type{T}) where {T}
     similar(find_mt(bc), T)
 end
 
@@ -224,19 +224,20 @@ up = ap .+ 1
 up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
-@testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in ((1,
+@testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in (
+    (1,
         2,
         false),
     ([
-            1,
+            1
         ],
         2,
         false),
     ([
-            1,
+            1
         ],
         [
-            2,
+            2
         ],
         true))
     @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r

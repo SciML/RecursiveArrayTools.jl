@@ -3,5 +3,5 @@
 pages = [
     "Home" => "index.md",
     "array_types.md",
-    "recursive_array_functions.md",
+    "recursive_array_functions.md"
 ]

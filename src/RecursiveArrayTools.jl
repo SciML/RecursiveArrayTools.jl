@@ -6,7 +6,7 @@ module RecursiveArrayTools
 
 using DocStringExtensions
 using RecipesBase, StaticArraysCore, Statistics,
-    ArrayInterface, LinearAlgebra
+      ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
 using SparseArrays
 
@@ -32,11 +32,11 @@ Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = 
 (T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray) = T(Array(VA))
 
 export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
-    AllObserved, vecarr_to_vectors, tuples
+       AllObserved, vecarr_to_vectors, tuples
 
 export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_push!,
-    vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
-    recursive_unitless_bottom_eltype, recursive_unitless_eltype
+       vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
+       recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
 export ArrayPartition, NamedArrayPartition
 

@@ -42,7 +42,8 @@ get_tuple = getu(dx, (:a, :b))
 @test variable_index.((dx,), [:a, :b, :p, :q, :t]) == [1, 2, nothing, nothing, nothing]
 @test is_parameter.((dx,), [:a, :b, :p, :q, :t]) == [false, false, true, true, false]
 @test parameter_index.((dx,), [:a, :b, :p, :q, :t]) == [nothing, nothing, 1, 2, nothing]
-@test is_independent_variable.((dx,), [:a, :b, :p, :q, :t]) == [false, false, false, false, true]
+@test is_independent_variable.((dx,), [:a, :b, :p, :q, :t]) ==
+      [false, false, false, false, true]
 @test variable_symbols(dx) == all_variable_symbols(dx) == [:a, :b]
 @test parameter_symbols(dx) == [:p, :q]
 @test independent_variable_symbols(dx) == [:t]
@@ -57,4 +58,3 @@ ABC = @SLVector (:a, :b, :c);
 A = ABC(1, 2, 3);
 B = RecursiveArrayTools.DiffEqArray([A, A], [0.0, 2.0]);
 @test getindex(B, :a) == [1, 1]
-

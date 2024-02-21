@@ -36,12 +36,16 @@ function dyn(u, p, t)
         ArrayPartition(zeros(1), [0.0]))
 end
 
-@test solve(ODEProblem(dyn,
+@test solve(
+    ODEProblem(dyn,
         ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
             ArrayPartition(zeros(1), [0.75])),
-        (0.0, 1.0)), AutoTsit5(Rodas5())).retcode == ReturnCode.Success
+        (0.0, 1.0)),
+    AutoTsit5(Rodas5())).retcode == ReturnCode.Success
 
-@test_broken solve(ODEProblem(dyn,
+@test_broken solve(
+    ODEProblem(dyn,
         ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
             ArrayPartition(zeros(1), [0.75])),
-        (0.0, 1.0)), Rodas5()).retcode == ReturnCode.Success
+        (0.0, 1.0)),
+    Rodas5()).retcode == ReturnCode.Success

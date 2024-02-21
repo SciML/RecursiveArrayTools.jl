@@ -10,7 +10,7 @@ function recursivecopy(a)
     deepcopy(a)
 end
 function recursivecopy(a::Union{StaticArraysCore.SVector, StaticArraysCore.SMatrix,
-    StaticArraysCore.SArray, Number})
+        StaticArraysCore.SArray, Number})
     copy(a)
 end
 function recursivecopy(a::AbstractArray{T, N}) where {T <: Number, N}
@@ -42,9 +42,10 @@ like `copy!` on arrays of scalars.
 """
 function recursivecopy! end
 
-function recursivecopy!(b::AbstractArray{T, N},    a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
-    T2 <: StaticArraysCore.StaticArray,
-    N}
+function recursivecopy!(b::AbstractArray{T, N},
+        a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
+        T2 <: StaticArraysCore.StaticArray,
+        N}
     @inbounds for i in eachindex(a)
         # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
         b[i] = copy(a[i])
@@ -52,18 +53,18 @@ function recursivecopy!(b::AbstractArray{T, N},    a::AbstractArray{T2, N}) wher
 end
 
 function recursivecopy!(b::AbstractArray{T, N},
-    a::AbstractArray{T2, N}) where {T <: Enum, T2 <: Enum, N}
+        a::AbstractArray{T2, N}) where {T <: Enum, T2 <: Enum, N}
     copyto!(b, a)
 end
 
 function recursivecopy!(b::AbstractArray{T, N},
-    a::AbstractArray{T2, N}) where {T <: Number, T2 <: Number, N}
+        a::AbstractArray{T2, N}) where {T <: Number, T2 <: Number, N}
     copyto!(b, a)
 end
 
 function recursivecopy!(b::AbstractArray{T, N},
-    a::AbstractArray{T2, N}) where {T <: Union{AbstractArray, AbstractVectorOfArray},
-    T2 <: Union{AbstractArray, AbstractVectorOfArray}, N}
+        a::AbstractArray{T2, N}) where {T <: Union{AbstractArray, AbstractVectorOfArray},
+        T2 <: Union{AbstractArray, AbstractVectorOfArray}, N}
     if ArrayInterface.ismutable(T)
         @inbounds for i in eachindex(b, a)
             recursivecopy!(b[i], a[i])
@@ -95,32 +96,32 @@ A recursive `fill!` function.
 function recursivefill! end
 
 function recursivefill!(b::AbstractArray{T, N},
-    a::T2) where {T <: StaticArraysCore.StaticArray,
-    T2 <: StaticArraysCore.StaticArray, N}
+        a::T2) where {T <: StaticArraysCore.StaticArray,
+        T2 <: StaticArraysCore.StaticArray, N}
     @inbounds for i in eachindex(b)
         b[i] = copy(a)
     end
 end
 
 function recursivefill!(bs::AbstractVectorOfArray{T, N},
-    a::T2) where {T <: StaticArraysCore.StaticArray,
-    T2 <: StaticArraysCore.StaticArray, N}
+        a::T2) where {T <: StaticArraysCore.StaticArray,
+        T2 <: StaticArraysCore.StaticArray, N}
     @inbounds for b in bs, i in eachindex(b)
         b[i] = copy(a)
     end
 end
 
 function recursivefill!(b::AbstractArray{T, N},
-    a::T2) where {T <: StaticArraysCore.SArray,
-    T2 <: Union{Number, Bool}, N}
+        a::T2) where {T <: StaticArraysCore.SArray,
+        T2 <: Union{Number, Bool}, N}
     @inbounds for i in eachindex(b)
         b[i] = fill(a, typeof(b[i]))
     end
 end
 
 function recursivefill!(bs::AbstractVectorOfArray{T, N},
-    a::T2) where {T <: StaticArraysCore.SArray,
-    T2 <: Union{Number, Bool}, N}
+        a::T2) where {T <: StaticArraysCore.SArray,
+        T2 <: Union{Number, Bool}, N}
     @inbounds for b in bs, i in eachindex(b)
         b[i] = fill(a, typeof(b[i]))
     end
@@ -132,13 +133,14 @@ for type in [AbstractArray, AbstractVectorOfArray]
     end
 
     @eval function recursivefill!(b::$type{T, N},
-        a::T2) where {T <: Union{Number, Bool}, T2 <: Union{Number, Bool}, N
+            a::T2) where {T <: Union{Number, Bool}, T2 <: Union{Number, Bool}, N
     }
         fill!(b, a)
     end
 
     for type2 in [Any, StaticArraysCore.StaticArray]
-        @eval function recursivefill!(b::$type{T, N}, a::$type2) where {T <: StaticArraysCore.MArray, N}
+        @eval function recursivefill!(
+                b::$type{T, N}, a::$type2) where {T <: StaticArraysCore.MArray, N}
             @inbounds for i in eachindex(b)
                 if isassigned(b, i)
                     recursivefill!(b[i], a)
@@ -149,7 +151,7 @@ for type in [AbstractArray, AbstractVectorOfArray]
             end
         end
     end
-    
+
     @eval function recursivefill!(b::$type{T, N}, a) where {T <: AbstractArray, N}
         @inbounds for i in eachindex(b)
             recursivefill!(b[i], a)
@@ -226,7 +228,7 @@ function copyat_or_push!(a::AbstractVector{T}, i::Int, x, perform_copy = true) w
 end
 
 function copyat_or_push!(a::AbstractVector{T}, i::Int, x,
-    nc::Type{Val{perform_copy}}) where {T, perform_copy}
+        nc::Type{Val{perform_copy}}) where {T, perform_copy}
     copyat_or_push!(a, i, x, perform_copy)
 end
 

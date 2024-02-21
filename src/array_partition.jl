@@ -92,13 +92,13 @@ Base.zero(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = zero(A)
 
 Base.Array(A::ArrayPartition) = reduce(vcat, Array.(A.x))
 function Base.Array(VA::AbstractVectorOfArray{
-    T,
-    N,
-    A,
+        T,
+        N,
+        A
 }) where {T, N,
-    A <: AbstractVector{
-        <:ArrayPartition,
-    }}
+        A <: AbstractVector{
+            <:ArrayPartition,
+        }}
     reduce(hcat, Array.(VA.u))
 end
 
@@ -251,7 +251,7 @@ end
 
 # workaround for https://github.com/SciML/RecursiveArrayTools.jl/issues/49
 function Base._unsafe_getindex(::IndexStyle, A::ArrayPartition,
-    I::Vararg{Union{Real, AbstractArray}, N}) where {N}
+        I::Vararg{Union{Real, AbstractArray}, N}) where {N}
     # This is specifically not inlined to prevent excessive allocations in type unstable code
     shape = Base.index_shape(I...)
     dest = similar(A.x[1], shape)
@@ -260,8 +260,8 @@ function Base._unsafe_getindex(::IndexStyle, A::ArrayPartition,
 end
 
 function Base._maybe_reshape(::IndexCartesian,
-    A::ArrayPartition,
-    I::Vararg{Union{Real, AbstractArray}, N}) where {N}
+        A::ArrayPartition,
+        I::Vararg{Union{Real, AbstractArray}, N}) where {N}
     Vector(A)
 end
 
@@ -308,25 +308,27 @@ end
 
 # promotion rules
 @inline function Broadcast.BroadcastStyle(::ArrayPartitionStyle{AStyle},
-    ::ArrayPartitionStyle{BStyle}) where {AStyle,
-    BStyle}
+        ::ArrayPartitionStyle{BStyle}) where {AStyle,
+        BStyle}
     ArrayPartitionStyle(Broadcast.BroadcastStyle(AStyle(), BStyle()))
 end
 function Broadcast.BroadcastStyle(::ArrayPartitionStyle{Style},
-    ::Broadcast.DefaultArrayStyle{0}) where {
-    Style <:
-    Broadcast.BroadcastStyle,
+        ::Broadcast.DefaultArrayStyle{0}) where {
+        Style <:
+        Broadcast.BroadcastStyle,
 }
     ArrayPartitionStyle{Style}()
 end
 function Broadcast.BroadcastStyle(::ArrayPartitionStyle,
-    ::Broadcast.DefaultArrayStyle{N}) where {N}
+        ::Broadcast.DefaultArrayStyle{N}) where {N}
     Broadcast.DefaultArrayStyle{N}()
 end
 
 combine_styles(::Type{Tuple{}}) = Broadcast.DefaultArrayStyle{0}()
-combine_styles(::Type{T}) where {T} = Broadcast.result_style(Broadcast.BroadcastStyle(T.parameters[1]), combine_styles(Tuple{Base.tail((T.parameters...,))...}))
-
+function combine_styles(::Type{T}) where {T}
+    Broadcast.result_style(Broadcast.BroadcastStyle(T.parameters[1]),
+        combine_styles(Tuple{Base.tail((T.parameters...,))...}))
+end
 
 function Broadcast.BroadcastStyle(::Type{ArrayPartition{T, S}}) where {T, S}
     Style = combine_styles(S)
@@ -334,9 +336,9 @@ function Broadcast.BroadcastStyle(::Type{ArrayPartition{T, S}}) where {T, S}
 end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{
-    ArrayPartitionStyle{Style},
+        ArrayPartitionStyle{Style},
 }) where {
-    Style,
+        Style,
 }
     N = npartitions(bc)
     @inline function f(i)
@@ -346,8 +348,8 @@ end
 end
 
 @inline function Base.copyto!(dest::ArrayPartition,
-    bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
-    Style,
+        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
+        Style,
 }
     N = npartitions(dest, bc)
     @inline function f(i)
@@ -381,15 +383,15 @@ _npartitions(args::Tuple{}) = 0
     Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
 end
 @inline function unpack(bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}},
-    i) where {Style}
+        i) where {Style}
     Broadcast.Broadcasted(bc.f, unpack_args(i, bc.args))
 end
 @inline function unpack(bc::Broadcast.Broadcasted{Style},
-    i) where {Style <: Broadcast.DefaultArrayStyle}
+        i) where {Style <: Broadcast.DefaultArrayStyle}
     Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 end
 @inline function unpack(bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}},
-    i) where {Style <: Broadcast.DefaultArrayStyle}
+        i) where {Style <: Broadcast.DefaultArrayStyle}
     Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 end
 unpack(x, ::Any) = x
@@ -413,35 +415,40 @@ end
 
 ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
 
-function __get_subtypes_in_module(mod, supertype; include_supertype = true, all=false, except=[])
+function __get_subtypes_in_module(
+        mod, supertype; include_supertype = true, all = false, except = [])
     return filter([getproperty(mod, name) for name in names(mod; all) if !in(name, except)]) do value
-            return value != Union{} && value isa Type && (value <: supertype) && (include_supertype || value != supertype) && !in(value, except)
-        end
+        return value != Union{} && value isa Type && (value <: supertype) &&
+               (include_supertype || value != supertype) && !in(value, except)
+    end
 end
 
-for factorization in vcat(__get_subtypes_in_module(LinearAlgebra, Factorization; include_supertype = false, all=true, except=[:LU, :LAPACKFactorizations]), LDLt{T,<:SymTridiagonal{T,V} where {V<:AbstractVector{T}}} where {T})
-    @eval function LinearAlgebra.ldiv!(A::T, b::ArrayPartition) where {T<:$factorization}
+for factorization in vcat(
+    __get_subtypes_in_module(LinearAlgebra, Factorization; include_supertype = false,
+        all = true, except = [:LU, :LAPACKFactorizations]),
+    LDLt{T, <:SymTridiagonal{T, V} where {V <: AbstractVector{T}}} where {T})
+    @eval function LinearAlgebra.ldiv!(A::T, b::ArrayPartition) where {T <: $factorization}
         (x = ldiv!(A, Array(b)); copyto!(b, x))
     end
 end
 
 function LinearAlgebra.ldiv!(
-    A::LinearAlgebra.QRPivoted{T, <: StridedMatrix{T}, <: AbstractVector{T}},
-    b::ArrayPartition{T}) where {T <: Union{Float32, Float64, ComplexF64, ComplexF32}}
+        A::LinearAlgebra.QRPivoted{T, <:StridedMatrix{T}, <:AbstractVector{T}},
+        b::ArrayPartition{T}) where {T <: Union{Float32, Float64, ComplexF64, ComplexF32}}
     x = ldiv!(A, Array(b))
     copyto!(b, x)
 end
 
 function LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T, M, C},
-    b::ArrayPartition) where {
-    T <: Union{Float32, Float64, ComplexF64, ComplexF32},
-    M <: AbstractMatrix{T},
-    C <: AbstractMatrix{T},
+        b::ArrayPartition) where {
+        T <: Union{Float32, Float64, ComplexF64, ComplexF32},
+        M <: AbstractMatrix{T},
+        C <: AbstractMatrix{T}
 }
     (x = ldiv!(A, Array(b)); copyto!(b, x))
 end
 
-for type in [LU, LU{T,Tridiagonal{T,V}} where {T,V}]
+for type in [LU, LU{T, Tridiagonal{T, V}} where {T, V}]
     @eval function LinearAlgebra.ldiv!(A::$type, b::ArrayPartition)
         LinearAlgebra._ipiv_rows!(A, 1:length(A.ipiv), b)
         ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), b))
@@ -463,11 +470,12 @@ end
 # [ 0   U22  U23] \ [ b2 ]
 # [ 0    0   U33]   [ b3 ]
 for basetype in [UnitUpperTriangular, UpperTriangular, UnitLowerTriangular, LowerTriangular]
-    for type in [basetype, basetype{T, <:Adjoint{T}} where {T}, basetype{T, <:Transpose{T}} where {T}]
+    for type in [basetype, basetype{T, <:Adjoint{T}} where {T},
+        basetype{T, <:Transpose{T}} where {T}]
         j_iter, i_iter = if basetype <: UnitUpperTriangular || basetype <: UpperTriangular
-            (:(n:-1:1), :(j-1:-1:1))
+            (:(n:-1:1), :((j - 1):-1:1))
         else
-            (:(1:n), :((j+1):n))
+            (:(1:n), :((j + 1):n))
         end
         @eval function LinearAlgebra.ldiv!(A::$type, bb::ArrayPartition)
             A = A.data
@@ -529,19 +537,19 @@ function LinearAlgebra.mul!(C::ArrayPartition, A::ArrayPartition, B::ArrayPartit
 end
 
 function Base.convert(::Type{ArrayPartition{T, S}},
-    A::ArrayPartition{<:Any, <:NTuple{N, Any}}) where {N, T,
-    S <:
-    NTuple{N, Any}}
+        A::ArrayPartition{<:Any, <:NTuple{N, Any}}) where {N, T,
+        S <:
+        NTuple{N, Any}}
     return ArrayPartition{T, S}(ntuple((@inline i -> convert(S.parameters[i], A.x[i])),
         Val(N)))
 end
 
 @generated function Base.length(::Type{
-    <:ArrayPartition{F, T},
+        <:ArrayPartition{F, T},
 }) where {F, N,
-    T <: NTuple{N,
-        StaticArraysCore.StaticArray,
-    }}
+        T <: NTuple{N,
+            StaticArraysCore.StaticArray
+        }}
     sum_expr = Expr(:call, :+)
     for param in T.parameters
         push!(sum_expr.args, :(length($param)))

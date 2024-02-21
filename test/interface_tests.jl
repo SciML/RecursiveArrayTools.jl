@@ -60,7 +60,7 @@ push!(testda, [-1, -2, -3, -4])
 
 # Type inference
 @inferred sum(testva)
-@inferred sum(VectorOfArray([VectorOfArray([zeros(4,4)])]))
+@inferred sum(VectorOfArray([VectorOfArray([zeros(4, 4)])]))
 @inferred mapreduce(string, *, testva)
 
 # mapreduce
@@ -70,9 +70,9 @@ testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 testvb = VectorOfArray([rand(1:10, 3, 3, 3) for _ in 1:4])
 arrvb = Array(testvb)
 for i in 1:ndims(arrvb)
-    @test sum(arrvb; dims=i) == sum(testvb; dims=i)
-    @test prod(arrvb; dims=i) == prod(testvb; dims=i)
-    @test mapreduce(string, *, arrvb; dims=i) == mapreduce(string, *, testvb; dims=i)
+    @test sum(arrvb; dims = i) == sum(testvb; dims = i)
+    @test prod(arrvb; dims = i) == prod(testvb; dims = i)
+    @test mapreduce(string, *, arrvb; dims = i) == mapreduce(string, *, testvb; dims = i)
 end
 
 # Test when ndims == 1
@@ -85,7 +85,8 @@ arrvb = Array(testvb)
 # view
 testvc = VectorOfArray([rand(1:10, 3, 3) for _ in 1:3])
 arrvc = Array(testvc)
-for idxs in [(2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, : ,:), (:, :, :), (1:2, 1:2, Bool[1, 0, 1]), (1:2, Bool[1, 0, 1], 1:2), (Bool[1, 0, 1], 1:2, 1:2)]
+for idxs in [(2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, :, :), (:, :, :),
+    (1:2, 1:2, Bool[1, 0, 1]), (1:2, Bool[1, 0, 1], 1:2), (Bool[1, 0, 1], 1:2, 1:2)]
     arr_view = view(arrvc, idxs...)
     voa_view = view(testvc, idxs...)
     @test size(arr_view) == size(voa_view)
@@ -110,8 +111,9 @@ end
 @test stack(testva) == [1 4 7; 2 5 8; 3 6 9]
 @test stack(testva; dims = 1) == [1 2 3; 4 5 6; 7 8 9]
 
-testva = VectorOfArray([VectorOfArray([ones(2,2), 2ones(2, 2)]), 3ones(2, 2, 2)])
-@test stack(testva) == [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
+testva = VectorOfArray([VectorOfArray([ones(2, 2), 2ones(2, 2)]), 3ones(2, 2, 2)])
+@test stack(testva) ==
+      [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
 
 # convert array from VectorOfArray/DiffEqArray
 t = 1:8
@@ -164,12 +166,13 @@ testva = VectorOfArray([
         VectorOfArray([3ones(3), 4ones(3)])
     ]),
     DiffEqArray([
-        5ones(3, 2),
-        VectorOfArray([
-            6ones(3),
-            7ones(3),
-        ]),
-    ], [0.1, 0.2], [100.0, 200.0], SymbolCache([:x, :y], [:a, :b], :t))
+            5ones(3, 2),
+            VectorOfArray([
+                6ones(3),
+                7ones(3)
+            ])
+        ], [0.1, 0.2],
+        [100.0, 200.0], SymbolCache([:x, :y], [:a, :b], :t))
 ])
 arr = rand(3, 2, 2, 3)
 copyto!(testva, arr)
@@ -208,7 +211,7 @@ DA = DiffEqArray(map(i -> rand(2, 4), 1:7), 1:7)
 
 u = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
 @test typeof(zero(u)) <: typeof(u)
-resize!(u,3)
+resize!(u, 3)
 @test pointer(u) === pointer(u.u)
 
 # Ensure broadcast (including assignment) works with StaticArrays
@@ -223,11 +226,11 @@ u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
 u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
 u3 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
 
-function f(u1,u2,u3)
+function f(u1, u2, u3)
     u3 .= u1 .+ u2
 end
-f(u1,u2,u3)
-@test (@allocated f(u1,u2,u3)) == 0
+f(u1, u2, u3)
+@test (@allocated f(u1, u2, u3)) == 0
 
 yy = [2.0 1.0; 2.0 1.0]
 zz = x .+ yy
@@ -237,11 +240,11 @@ z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
 z .= zz
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
 
-function f!(z,zz)
+function f!(z, zz)
     z .= zz
 end
-f!(z,zz)
-@test (@allocated f!(z,zz)) == 0
+f!(z, zz)
+@test (@allocated f!(z, zz)) == 0
 
 z .= 0.1
 @test z == VectorOfArray([fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})])
@@ -253,7 +256,7 @@ f2!(z)
 @test (@allocated f2!(z)) == 0
 
 function f3!(z, zz)
-    @.. broadcast=false z = zz
+    @.. broadcast=false z=zz
 end
 f3!(z, zz)
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])

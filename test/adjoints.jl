@@ -63,7 +63,7 @@ function loss8(x)
 end
 
 function loss9(x)
-    return VectorOfArray([collect(3i:3i+3) .* x for i in 1:5])
+    return VectorOfArray([collect((3i):(3i + 3)) .* x for i in 1:5])
 end
 
 x = float.(6:10)
@@ -76,4 +76,5 @@ loss(x)
 @test Zygote.gradient(loss6, x)[1] == ForwardDiff.gradient(loss6, x)
 @test Zygote.gradient(loss7, x)[1] == ForwardDiff.gradient(loss7, x)
 @test Zygote.gradient(loss8, x)[1] == ForwardDiff.gradient(loss8, x)
-@test ForwardDiff.derivative(loss9, 0.0) == VectorOfArray([collect(3i:3i+3) for i in 1:5])
+@test ForwardDiff.derivative(loss9, 0.0) ==
+      VectorOfArray([collect((3i):(3i + 3)) for i in 1:5])
