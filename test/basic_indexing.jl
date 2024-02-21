@@ -232,3 +232,24 @@ mulX .= sqrt.(abs.(testva .* testvb))
 a = ArrayPartition(1:5, 1:6)
 a[1:8]
 a[[1, 3, 8]]
+
+####################################################################
+# test when VectorOfArray is constructed from a linearly indexed 
+# multidimensional array of arrays
+####################################################################
+
+u_matrix = VectorOfArray(fill([1, 2], 2, 3))
+u_vector = VectorOfArray(vec(u_matrix.u))
+
+# test broadcasting 
+function foo!(u)
+    @. u += 2 * u * abs(u)
+    return u
+end
+foo!(u_matrix)
+foo!(u_vector)
+@test u_matrix ≈ u_vector
+
+# test efficiency 
+num_allocs = @allocations foo!(u_matrix)
+@test num_allocs == 0

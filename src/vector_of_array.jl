@@ -27,6 +27,12 @@ Additionally, the `convert(Array,VA::AbstractVectorOfArray)` function is provide
 the `VectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractVectorOfArray)`
 returns a vector of the series for each component, that is, `A[i,:]` for each `i`.
 A plot recipe is provided, which plots the `A[i,:]` series.
+
+There is also support for `VectorOfArray` with constructed from multi-dimensional arrays
+```julia
+VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
+```
+where `IndexStyle(typeof(u)) isa IndexLinear`. 
 """
 mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
     u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
@@ -148,6 +154,13 @@ function VectorOfArray(vec::AbstractVector)
 end
 function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray{T, N}}
     VectorOfArray{T, N + 1, typeof(vec)}(vec)
+end
+
+# allow multi-dimensional arrays as long as they're linearly indexed 
+function VectorOfArray(array::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
+    @assert IndexStyle(typeof(array)) isa IndexLinear
+
+    return VectorOfArray{T, N + 1, typeof(array)}(array)
 end
 
 function DiffEqArray(vec::AbstractVector{T},
