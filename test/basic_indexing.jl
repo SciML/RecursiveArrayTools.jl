@@ -242,8 +242,8 @@ u_matrix = VectorOfArray(fill([1, 2], 2, 3))
 u_vector = VectorOfArray(vec(u_matrix.u))
 
 # test broadcasting 
-function foo!(u) 
-    @. u += 2 * u * abs(u) 
+function foo!(u)
+    @. u += 2 * u * abs(u)
     return u
 end
 foo!(u_matrix)
