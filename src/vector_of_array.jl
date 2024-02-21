@@ -725,7 +725,7 @@ end
 end
 
 # for VectorOfArray with multi-dimensional parent arrays of arrays where all elements are the same type
-@inline function Base.similar(vec::VectorOfArray{
+function Base.similar(vec::VectorOfArray{
         T, N, AT}) where {T, N, AT <: AbstractArray{<:AbstractArray{T}}}
     return VectorOfArray(similar(Base.parent(vec)))
 end
