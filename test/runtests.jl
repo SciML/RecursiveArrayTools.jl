@@ -19,67 +19,31 @@ end
 
 @time begin
     if GROUP == "Core" || GROUP == "All"
-        @time @safetestset "Quality Assurance" begin
-            include("qa.jl")
-        end
-        @time @safetestset "Utils Tests" begin
-            include("utils_test.jl")
-        end
-        @time @safetestset "NamedArrayPartition Tests" begin
-            include("named_array_partition_tests.jl")
-        end
-        @time @safetestset "Partitions Tests" begin
-            include("partitions_test.jl")
-        end
-        @time @safetestset "VecOfArr Indexing Tests" begin
-            include("basic_indexing.jl")
-        end
-        @time @safetestset "SymbolicIndexingInterface API test" begin
-            include("symbolic_indexing_interface_test.jl")
-        end
-        @time @safetestset "VecOfArr Interface Tests" begin
-            include("interface_tests.jl")
-        end
-        @time @safetestset "Table traits" begin
-            include("tabletraits.jl")
-        end
-        @time @safetestset "StaticArrays Tests" begin
-            include("copy_static_array_test.jl")
-        end
-        @time @safetestset "Linear Algebra Tests" begin
-            include("linalg.jl")
-        end
-        @time @safetestset "Upstream Tests" begin
-            include("upstream.jl")
-        end
-        @time @safetestset "Adjoint Tests" begin
-            include("adjoints.jl")
-        end
-        @time @safetestset "Measurement Tests" begin
-            include("measurements.jl")
-        end
+        @time @safetestset "Quality Assurance" include("qa.jl")
+        @time @safetestset "Utils Tests" include("utils_test.jl")
+        @time @safetestset "NamedArrayPartition Tests" include("named_array_partition_tests.jl")
+        @time @safetestset "Partitions Tests" include("partitions_test.jl")
+        @time @safetestset "VecOfArr Indexing Tests" include("basic_indexing.jl")
+        @time @safetestset "SymbolicIndexingInterface API test" include("symbolic_indexing_interface_test.jl")
+        @time @safetestset "VecOfArr Interface Tests" include("interface_tests.jl")
+        @time @safetestset "Table traits" include("tabletraits.jl")
+        @time @safetestset "StaticArrays Tests" include("copy_static_array_test.jl")
+        @time @safetestset "Linear Algebra Tests" include("linalg.jl")
+        @time @safetestset "Adjoint Tests" include("adjoints.jl")
+        @time @safetestset "Measurement Tests" include("measurements.jl")
     end
 
     if GROUP == "Downstream"
         activate_downstream_env()
-        @time @safetestset "DiffEqArray Indexing Tests" begin
-            include("downstream/symbol_indexing.jl")
-        end
-        @time @safetestset "Event Tests with ArrayPartition" begin
-            include("downstream/downstream_events.jl")
-        end
-        @time @safetestset "Measurements and Units" begin
-            include("downstream/measurements_and_units.jl")
-        end
-        @time @safetestset "TrackerExt" begin
-            include("downstream/TrackerExt.jl")
-        end
+        @time @safetestset "DiffEqArray Indexing Tests" include("downstream/symbol_indexing.jl")
+        @time @safetestset "ODE Solve Tests" include("downstream/odesolve.jl")
+        @time @safetestset "Event Tests with ArrayPartition" include("downstream/downstream_events.jl")
+        @time @safetestset "Measurements and Units" include("downstream/measurements_and_units.jl")
+        @time @safetestset "TrackerExt" include("downstream/TrackerExt.jl")
     end
 
     if GROUP == "GPU"
         activate_gpu_env()
-        @time @safetestset "VectorOfArray GPU" begin
-            include("gpu/vectorofarray_gpu.jl")
-        end
+        @time @safetestset "VectorOfArray GPU" include("gpu/vectorofarray_gpu.jl")
     end
 end
