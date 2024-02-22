@@ -250,6 +250,10 @@ foo!(u_matrix)
 foo!(u_vector)
 @test u_matrix ≈ u_vector
 
+# test that, for VectorOfArray with multi-dimensional parent arrays,
+# `similar` preserves the structure of the parent array
+@test typeof(parent(similar(u_matrix))) == typeof(parent(u_matrix))
+
 # test efficiency 
 num_allocs = @allocations foo!(u_matrix)
 @test num_allocs == 0

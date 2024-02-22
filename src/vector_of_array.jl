@@ -156,12 +156,15 @@ function VectorOfArray(vec::AbstractVector{VT}) where {T, N, VT <: AbstractArray
     VectorOfArray{T, N + 1, typeof(vec)}(vec)
 end
 
-# allow multi-dimensional arrays as long as they're linearly indexed 
+# allow multi-dimensional arrays as long as they're linearly indexed. 
+# currently restricted to arrays whose elements are all the same type
 function VectorOfArray(array::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
     @assert IndexStyle(typeof(array)) isa IndexLinear
 
     return VectorOfArray{T, N + 1, typeof(array)}(array)
 end
+
+Base.parent(vec::VectorOfArray) = vec.u
 
 function DiffEqArray(vec::AbstractVector{T},
         ts::AbstractVector,
@@ -719,6 +722,18 @@ Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
 end
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
     VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
+end
+
+# for VectorOfArray with multi-dimensional parent arrays of arrays where all elements are the same type
+function Base.similar(vec::VectorOfArray{
+        T, N, AT}) where {T, N, AT <: AbstractArray{<:AbstractArray{T}}}
+    return VectorOfArray(similar(Base.parent(vec)))
+end
+
+# special-case when the multi-dimensional parent array is just an AbstractVector (call the old method)
+function Base.similar(vec::VectorOfArray{
+        T, N, AT}) where {T, N, AT <: AbstractVector{<:AbstractArray{T}}}
+    return Base.similar(vec, eltype(vec))
 end
 
 # fill!

@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface
+using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface, StaticArrays
 function lorenz(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
@@ -49,3 +49,14 @@ end
             ArrayPartition(zeros(1), [0.75])),
         (0.0, 1.0)),
     Rodas5()).retcode == ReturnCode.Success
+
+function rhs!(duu::VectorOfArray, uu::VectorOfArray, p, t)
+    du = parent(duu)
+    u = parent(uu)
+    du .= u
+end
+
+u = fill(SVector{2}(ones(2)), 2, 3)
+ode = ODEProblem(rhs!, VectorOfArray(u), (0.0, 1.0))
+sol = solve(ode, Tsit5())
+@test SciMLBase.successful_retcode(sol)
