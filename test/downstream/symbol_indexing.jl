@@ -40,7 +40,7 @@ test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], so
 # Two components
 @variables y(t)
 @parameters α β γ δ
-@named lv = ODESystem([D(x) ~ α * x - β * x * y,
+@mtkbuild lv = ODESystem([D(x) ~ α * x - β * x * y,
     D(y) ~ δ * x * y - γ * x * y],t)
 
 prob = ODEProblem(lv, [x => 1.0, y => 1.0], (0.0, 10.0),
