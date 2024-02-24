@@ -1,16 +1,15 @@
 using RecursiveArrayTools, ModelingToolkit, OrdinaryDiffEq, SymbolicIndexingInterface, Test
+using ModelingToolkit: t_nounits as t, D_nounits as D
 
 include("../testutils.jl")
 
-@variables t x(t)
+@variables x(t)
 @parameters τ
-D = Differential(t)
 @variables RHS(t)
-@named fol_separate = ODESystem([RHS ~ (1 - x) / τ,
+@mtkbuild fol_separate = ODESystem([RHS ~ (1 - x) / τ,
     D(x) ~ RHS])
-fol_simplified = structural_simplify(fol_separate)
 
-prob = ODEProblem(fol_simplified, [x => 0.0], (0.0, 10.0), [τ => 3.0])
+prob = ODEProblem(fol_separate, [x => 0.0], (0.0, 10.0), [τ => 3.0])
 sol = solve(prob, Tsit5())
 
 sol_new = DiffEqArray(sol.u[1:10],
