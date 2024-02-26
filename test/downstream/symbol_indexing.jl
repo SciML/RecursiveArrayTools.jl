@@ -7,7 +7,7 @@ include("../testutils.jl")
 @parameters τ
 @variables RHS(t)
 @mtkbuild fol_separate = ODESystem([RHS ~ (1 - x) / τ,
-    D(x) ~ RHS],t)
+        D(x) ~ RHS], t)
 
 prob = ODEProblem(fol_separate, [x => 0.0], (0.0, 10.0), [τ => 3.0])
 sol = solve(prob, Tsit5())
@@ -41,7 +41,7 @@ test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], so
 @variables y(t)
 @parameters α β γ δ
 @mtkbuild lv = ODESystem([D(x) ~ α * x - β * x * y,
-    D(y) ~ δ * x * y - γ * x * y],t)
+        D(y) ~ δ * x * y - γ * x * y], t)
 
 prob = ODEProblem(lv, [x => 1.0, y => 1.0], (0.0, 10.0),
     [α => 1.5, β => 1.0, γ => 3.0, δ => 1.0])

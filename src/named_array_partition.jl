@@ -2,9 +2,9 @@
     NamedArrayPartition(; kwargs...)
     NamedArrayPartition(x::NamedTuple) 
 
-Similar to an `ArrayPartition` but the individual arrays can be accessed via the 
-constructor-specified names. However, unlike `ArrayPartition`, each individual array 
-must have the same element type. 
+Similar to an `ArrayPartition` but the individual arrays can be accessed via the
+constructor-specified names. However, unlike `ArrayPartition`, each individual array
+must have the same element type.
 """
 struct NamedArrayPartition{T, A <: ArrayPartition{T}, NT <: NamedTuple} <: AbstractVector{T}
     array_partition::A
