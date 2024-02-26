@@ -29,10 +29,12 @@ returns a vector of the series for each component, that is, `A[i,:]` for each `i
 A plot recipe is provided, which plots the `A[i,:]` series.
 
 There is also support for `VectorOfArray` with constructed from multi-dimensional arrays
+
 ```julia
 VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 ```
-where `IndexStyle(typeof(u)) isa IndexLinear`. 
+
+where `IndexStyle(typeof(u)) isa IndexLinear`.
 """
 mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
     u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
