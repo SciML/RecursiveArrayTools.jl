@@ -257,3 +257,6 @@ foo!(u_vector)
 # test efficiency 
 num_allocs = @allocations foo!(u_matrix)
 @test num_allocs == 0
+
+# issue 354
+@test VectorOfArray(ones(1))[:] == ones(1)
