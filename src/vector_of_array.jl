@@ -304,6 +304,11 @@ Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
     return Adapt.adapt(__parameterless_type(T),
         reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
 end
+Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
+    ::NotSymbolic, I::Colon...) where {T <: Number, N}
+    @assert length(I) == ndims(A.u)
+    return A.u[I...]
+end
 
 Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
         ::NotSymbolic, I::AbstractArray{Bool},
