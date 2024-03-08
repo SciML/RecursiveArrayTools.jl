@@ -1,4 +1,8 @@
 using RecursiveArrayTools, Test, Statistics, ArrayInterface
+
+@test length(ArrayPartition()) == 0
+@test isempty(ArrayPartition())
+
 A = (rand(5), rand(5))
 p = ArrayPartition(A)
 @inferred p[1]
