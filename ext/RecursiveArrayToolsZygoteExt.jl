@@ -275,7 +275,6 @@ end
 ȳ -> (nothing, Zygote._project(x, ȳ))
 
 function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
-    @show x̄
     N = ndims(x̄)
     if length(x) == length(x̄)
         Zygote._project(x, x̄)  # ProjectTo handles reshape, offsets, structured matrices, row vectors
