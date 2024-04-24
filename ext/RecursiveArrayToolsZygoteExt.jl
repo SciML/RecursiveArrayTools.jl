@@ -31,6 +31,7 @@ end
 
 @adjoint function getindex(VA::AbstractVectorOfArray, i::AbstractArray{Int})
     function AbstractVectorOfArray_getindex_adjoint(Δ)
+	@show "in hete at vecint"
         iter = 0
         Δ′ = [(j ∈ i ? Δ[iter += 1] : FillArrays.Fill(zero(eltype(x)), size(x)))
               for (x, j) in zip(VA.u, 1:length(VA))]
@@ -77,14 +78,14 @@ end
     ArrayPartition(x, Val{copy_x}), ArrayPartition_adjoint
 end
 
-@adjoint function VectorOfArray(u)
-    VectorOfArray(u),
-    y -> begin
-        y isa Ref && (y = VectorOfArray(y[].u))
-        (VectorOfArray([y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
-                        for i in 1:size(y)[end]]),)
-    end
-end
+# @adjoint function VectorOfArray(u)
+#     VectorOfArray(u),
+#     y -> begin
+#         y isa Ref && (y = VectorOfArray(y[].u))
+#         (VectorOfArray([y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
+#                         for i in 1:size(y)[end]]),)
+#     end
+# end
 
 @adjoint function Base.copy(u::VectorOfArray)
     copy(u),
@@ -145,8 +146,12 @@ end
 
 function (p::ChainRulesCore.ProjectTo{VectorOfArray})(x::Union{
         AbstractArray, AbstractVectorOfArray})
-    arr = reshape(x, p.sz)
-    return VectorOfArray([arr[:, i] for i in 1:p.sz[end]])
+    if eltype(x) <: Number
+        arr = reshape(x, p.sz)
+        return VectorOfArray([arr[:, i] for i in 1:p.sz[end]])
+    elseif eltype(x) <: AbstractArray
+        return VectorOfArray(x)
+    end
 end
 
 @adjoint function Broadcast.broadcasted(::typeof(+), x::AbstractVectorOfArray,
@@ -271,6 +276,7 @@ end
 ȳ -> (nothing, Zygote._project(x, ȳ))
 
 function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
+    @show x̄
     N = ndims(x̄)
     if length(x) == length(x̄)
         Zygote._project(x, x̄)  # ProjectTo handles reshape, offsets, structured matrices, row vectors
