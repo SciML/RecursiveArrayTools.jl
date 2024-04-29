@@ -406,13 +406,20 @@ Base.@propagate_inbounds function _getindex(
     if all(x -> is_parameter(A, x), sym)
         error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
     else
-        return [getindex.((A,), sym, i) for i in eachindex(A.t)]
+        return A[sym, eachindex(A.t)]
     end
 end
 
 Base.@propagate_inbounds function _getindex(
         A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple, AbstractArray}, args...)
-    return reduce(vcat, map(s -> A[s, args...]', sym))
+    u = A.u[args...]
+    t = A.t[args...]
+    observed_fn = observed(A, sym)
+    if t isa AbstractArray
+        return observed_fn.(u, (parameter_values(A),), t)
+    else
+        return observed_fn(u, parameter_values(A), t)
+    end
 end
 
 Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic,

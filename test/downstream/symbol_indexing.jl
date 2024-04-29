@@ -35,7 +35,7 @@ sol_new = DiffEqArray(sol.u[1:10],
 @test_throws Exception sol_new[τ]
 
 gs, = Zygote.gradient(sol) do sol
-	sum(sol[fol_separate.x])
+    sum(sol[fol_separate.x])
 end
 
 @test "Symbolic Indexing ADjoint" all(all.(isone, gs.u))
