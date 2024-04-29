@@ -34,6 +34,12 @@ sol_new = DiffEqArray(sol.u[1:10],
 @test_throws Exception sol[τ]
 @test_throws Exception sol_new[τ]
 
+gs, = Zygote.gradient(sol) do sol
+	sum(sol[fol_separate.x])
+end
+
+@test "Symbolic Indexing ADjoint" all(all.(isone, gs.u))
+
 # Tables interface
 test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], sol_new[x]))
 

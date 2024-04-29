@@ -145,8 +145,12 @@ end
 
 function (p::ChainRulesCore.ProjectTo{VectorOfArray})(x::Union{
         AbstractArray, AbstractVectorOfArray})
-    arr = reshape(x, p.sz)
-    return VectorOfArray([arr[:, i] for i in 1:p.sz[end]])
+    if eltype(x) <: Number
+        arr = reshape(x, p.sz)
+        return VectorOfArray([arr[:, i] for i in 1:p.sz[end]])
+    elseif eltype(x) <: AbstractArray
+        return VectorOfArray(x)
+    end
 end
 
 @adjoint function Broadcast.broadcasted(::typeof(+), x::AbstractVectorOfArray,
