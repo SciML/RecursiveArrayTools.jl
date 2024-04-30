@@ -352,73 +352,27 @@ Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::NotSymboli
 end
 
 # Symbolic Indexing Methods
-Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic, sym)
-    if is_independent_variable(A, sym)
-        return A.t
-    elseif is_variable(A, sym)
-        if constant_structure(A)
-            return getindex.(A.u, variable_index(A, sym))
-        else
-            return getindex.(A.u, variable_index.((A,), (sym,), eachindex(A.t)))
+for symtype in [ScalarSymbolic, ArraySymbolic]
+    paramcheck = quote
+        if is_parameter(A, sym) || (sym isa AbstractArray && symbolic_type(eltype(sym)) !== NotSymbolic() || sym isa Tuple) && all(x -> is_parameter(A, x), sym)
+            error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
         end
-    elseif is_parameter(A, sym)
-        error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
-    elseif is_observed(A, sym)
-        return observed(A, sym).(A.u, (parameter_values(A),), A.t)
-    else
-        # NOTE: this is basically just for LabelledArrays. It's better if this
-        # were an error. Should we make an extension for LabelledArrays handling
-        # this case?
-        return getindex.(A.u, sym)
     end
-end
-
-Base.@propagate_inbounds function _getindex(
-        A::AbstractDiffEqArray, ::ScalarSymbolic, sym, args...)
-    if is_independent_variable(A, sym)
-        return A.t[args...]
-    elseif is_variable(A, sym)
-        return A[sym][args...]
-    elseif is_observed(A, sym)
-        u = A.u[args...]
-        t = A.t[args...]
-        observed_fn = observed(A, sym)
-        if t isa AbstractArray
-            return observed_fn.(u, (parameter_values(A),), t)
-        else
-            return observed_fn(u, parameter_values(A), t)
-        end
-    else
-        # NOTE: this is basically just for LabelledArrays. It's better if this
-        # were an error. Should we make an extension for LabelledArrays handling
-        # this case?
-        return getindex.(A.u[args...], sym)
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym)
+        $paramcheck
+        getu(A, sym)(A)
     end
-end
-
-Base.@propagate_inbounds function _getindex(
-        A::AbstractDiffEqArray, ::ArraySymbolic, sym, args...)
-    return getindex(A, collect(sym), args...)
-end
-
-Base.@propagate_inbounds function _getindex(
-        A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple, AbstractArray})
-    if all(x -> is_parameter(A, x), sym)
-        error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
-    else
-        return A[sym, eachindex(A.t)]
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym, arg)
+        $paramcheck
+        getu(A, sym)(A, arg)
     end
-end
-
-Base.@propagate_inbounds function _getindex(
-        A::AbstractDiffEqArray, ::ScalarSymbolic, sym::Union{Tuple, AbstractArray}, args...)
-    u = A.u[args...]
-    t = A.t[args...]
-    observed_fn = observed(A, sym)
-    if t isa AbstractArray
-        return observed_fn.(u, (parameter_values(A),), t)
-    else
-        return observed_fn(u, parameter_values(A), t)
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym, arg::Union{AbstractArray{Int}, AbstractArray{Bool}})
+        $paramcheck
+        getu(A, sym).((A,), arg)
+    end
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym, arg::Colon)
+        $paramcheck
+        getu(A, sym)(A)
     end
 end
 
