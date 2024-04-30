@@ -1,4 +1,5 @@
 using RecursiveArrayTools, ModelingToolkit, OrdinaryDiffEq, SymbolicIndexingInterface, Test
+using Zygote
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
 include("../testutils.jl")
@@ -38,7 +39,9 @@ gs, = Zygote.gradient(sol) do sol
     sum(sol[fol_separate.x])
 end
 
-@test "Symbolic Indexing ADjoint" all(all.(isone, gs.u))
+@testset "Symbolic Indexing ADjoint" begin
+    @test all(all.(isone, gs.u))
+end
 
 # Tables interface
 test_tables_interface(sol_new, [:timestamp, Symbol("x(t)")], hcat(sol_new[t], sol_new[x]))
