@@ -47,8 +47,8 @@ end
     if GROUP == "SymbolicIndexingInterface" || GROUP == "Downstream"
         if GROUP == "SymbolicIndexingInterface"
             activate_downstream_env()
-            @time @safetestset "DiffEqArray Indexing Tests" include("downstream/symbol_indexing.jl")
         end
+        @time @safetestset "DiffEqArray Indexing Tests" include("downstream/symbol_indexing.jl")
     end
 
     if GROUP == "GPU"
