@@ -31,6 +31,7 @@ jobs:
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core6}
+          - {user: SciML, repo: LabelledArrays.jl, group: RecursiveArrayTools}
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
