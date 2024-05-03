@@ -351,38 +351,58 @@ Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::NotSymboli
     DiffEqArray(A.u[I], A.t[I], parameter_values(A), symbolic_container(A))
 end
 
+struct ParameterIndexingError <: Exception
+    sym
+end
+
+function Base.showerror(io::IO, pie::ParameterIndexingError)
+    print(io, "Indexing with parameters is deprecated. Use `getp(A, $(pie.sym))` for parameter indexing.")
+end
+
 # Symbolic Indexing Methods
-for symtype in [ScalarSymbolic, ArraySymbolic]
-    paramcheck = quote
-        if is_parameter(A, sym) || (sym isa AbstractArray && symbolic_type(eltype(sym)) !== NotSymbolic() || sym isa Tuple) && all(x -> is_parameter(A, x), sym)
-            error("Indexing with parameters is deprecated. Use `getp(A, $sym)` for parameter indexing.")
-        end
+for (symtype, elsymtype, valtype, errcheck) in [
+    (ScalarSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any, :(is_parameter(A, sym))),
+    (ArraySymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any, :(is_parameter(A, sym))),
+    (NotSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Union{<:Tuple, <:AbstractArray}, 
+        :(all(x -> is_parameter(A, x), sym))),
+]
+@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+        ::$elsymtype, sym::$valtype)
+    if $errcheck
+        throw(ParameterIndexingError(sym))
     end
-    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym)
-        $paramcheck
-        getu(A, sym)(A)
+    getu(A, sym)(A)
+end
+@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+        ::$elsymtype, sym::$valtype, arg)
+    if $errcheck
+        throw(ParameterIndexingError(sym))
     end
-    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym, arg)
-        $paramcheck
-        getu(A, sym)(A, arg)
+    getu(A, sym)(A, arg)
+end
+@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+        ::$elsymtype, sym::$valtype, arg::Union{AbstractArray{Int}, AbstractArray{Bool}})
+    if $errcheck
+        throw(ParameterIndexingError(sym))
     end
-    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym, arg::Union{AbstractArray{Int}, AbstractArray{Bool}})
-        $paramcheck
-        getu(A, sym).((A,), arg)
+    getu(A, sym).((A,), arg)
+end
+@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+        ::$elsymtype, sym::$valtype, ::Colon)
+    if $errcheck
+        throw(ParameterIndexingError(sym))
     end
-    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype, sym, arg::Colon)
-        $paramcheck
-        getu(A, sym)(A)
-    end
+    getu(A, sym)(A)
+end
 end
 
 Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic,
-        ::SymbolicIndexingInterface.SolvedVariables, args...)
+        ::NotSymbolic, ::SymbolicIndexingInterface.SolvedVariables, args...)
     return getindex(A, variable_symbols(A), args...)
 end
 
 Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic,
-        ::SymbolicIndexingInterface.AllVariables, args...)
+        ::NotSymbolic, ::SymbolicIndexingInterface.AllVariables, args...)
     return getindex(A, all_variable_symbols(A), args...)
 end
 
@@ -390,10 +410,14 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     symtype = symbolic_type(_arg)
     elsymtype = symbolic_type(eltype(_arg))
 
-    if symtype != NotSymbolic()
-        return _getindex(A, symtype, _arg, args...)
+    if symtype == NotSymbolic() && elsymtype == NotSymbolic()
+        if _arg isa Union{Tuple, AbstractArray} && any(x -> symbolic_type(x) != NotSymbolic(), _arg)
+        _getindex(A, symtype, elsymtype, _arg, args...)
+        else
+            _getindex(A, symtype, _arg, args...)
+        end
     else
-        return _getindex(A, elsymtype, _arg, args...)
+        _getindex(A, symtype, elsymtype, _arg, args...)
     end
 end
 

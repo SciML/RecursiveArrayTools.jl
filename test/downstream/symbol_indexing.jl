@@ -61,3 +61,15 @@ sol_ts = sol(ts)
 @assert sol_ts isa DiffEqArray
 test_tables_interface(sol_ts, [:timestamp, Symbol("x(t)"), Symbol("y(t)")],
     hcat(ts, Array(sol_ts)'))
+
+# Array variables
+using LinearAlgebra
+sts = @variables x(t)[1:3]=[1, 2, 3.0] y(t)=1.0
+ps = @parameters p[1:3] = [1, 2, 3]
+eqs = [collect(D.(x) .~ x)
+       D(y) ~ norm(collect(x)) * y - x[1]]
+@mtkbuild sys = ODESystem(eqs, t, sts, ps)
+prob = ODEProblem(sys, [], (0, 1.0))
+sol = solve(prob, Tsit5())
+@test sol[x .+ [y, 2y, 3y]] ≈ vcat.(getindex.((sol,), [x[1] + y, x[2] + 2y, x[3] + 3y])...)
+@test sol[x, :] ≈ sol[x]
