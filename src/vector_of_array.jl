@@ -28,8 +28,12 @@ the `VectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractV
 returns a vector of the series for each component, that is, `A[i,:]` for each `i`.
 A plot recipe is provided, which plots the `A[i,:]` series.
 
+<<<<<<< Updated upstream
 There is also support for `VectorOfArray` with constructed from multi-dimensional arrays
 
+=======
+There is also support for `VectorOfArray` constructed from multi-dimensional arrays
+>>>>>>> Stashed changes
 ```julia
 VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 ```
@@ -37,7 +41,7 @@ VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 where `IndexStyle(typeof(u)) isa IndexLinear`.
 """
 mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
-    u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
+    u::A # A <: AbstractArray{<: AbstractArray{T, N - 1}}
 end
 # VectorOfArray with an added series for time
 
