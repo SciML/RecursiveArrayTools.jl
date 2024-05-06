@@ -840,12 +840,37 @@ end
 # make vectorofarrays broadcastable so they aren't collected
 Broadcast.broadcastable(x::AbstractVectorOfArray) = x
 
+# recurse through broadcast arguments and return a parent array for 
+# the first VoA or DiffEqArray in the bc arguments
+function find_VoA_parent(args)
+    arg = Base.first(args)
+    if arg isa AbstractDiffEqArray
+        # if first(args) is a DiffEqArray, use the underlying 
+        # field `u` of DiffEqArray as a parent array. 
+        return arg.u
+    elseif arg isa AbstractVectorOfArray
+        return parent(arg)
+    else
+        return find_VoA_parent(Base.tail(args))
+    end
+end
+
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
-    N = narrays(bc)
-    VectorOfArray(map(1:N) do i
-        copy(unpack_voa(bc, i))
-    end)
+
+    parent = find_VoA_parent(bc.args)
+
+    if parent isa AbstractVector
+        # this is the default behavior in v3.15.0
+        N = narrays(bc)
+        return VectorOfArray(map(1:N) do i
+            copy(unpack_voa(bc, i))
+        end)
+    else # if parent isa AbstractArray            
+        return VectorOfArray(map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
+            copy(unpack_voa(bc, i))
+        end)
+    end
 end
 
 for (type, N_expr) in [
