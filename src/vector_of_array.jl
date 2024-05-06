@@ -28,8 +28,7 @@ the `VectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractV
 returns a vector of the series for each component, that is, `A[i,:]` for each `i`.
 A plot recipe is provided, which plots the `A[i,:]` series.
 
-There is also support for `VectorOfArray` with constructed from multi-dimensional arrays
-
+There is also support for `VectorOfArray` constructed from multi-dimensional arrays
 ```julia
 VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 ```
@@ -37,7 +36,7 @@ VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 where `IndexStyle(typeof(u)) isa IndexLinear`.
 """
 mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
-    u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
+    u::A # A <: AbstractArray{<: AbstractArray{T, N - 1}}
 end
 # VectorOfArray with an added series for time
 
@@ -719,7 +718,7 @@ end
 # for VectorOfArray with multi-dimensional parent arrays of arrays where all elements are the same type
 function Base.similar(vec::VectorOfArray{
         T, N, AT}) where {T, N, AT <: AbstractArray{<:AbstractArray{T}}}
-    return VectorOfArray(similar(Base.parent(vec)))
+    return VectorOfArray(similar.(Base.parent(vec)))
 end
 
 # special-case when the multi-dimensional parent array is just an AbstractVector (call the old method)
@@ -727,6 +726,7 @@ function Base.similar(vec::VectorOfArray{
         T, N, AT}) where {T, N, AT <: AbstractVector{<:AbstractArray{T}}}
     return Base.similar(vec, eltype(vec))
 end
+
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
@@ -840,12 +840,37 @@ end
 # make vectorofarrays broadcastable so they aren't collected
 Broadcast.broadcastable(x::AbstractVectorOfArray) = x
 
+# recurse through broadcast arguments and return a parent array for 
+# the first VoA or DiffEqArray in the bc arguments
+function find_VoA_parent(args)
+    arg = Base.first(args)
+    if arg isa AbstractDiffEqArray
+        # if first(args) is a DiffEqArray, use the underlying 
+        # field `u` of DiffEqArray as a parent array. 
+        return arg.u
+    elseif arg isa AbstractVectorOfArray
+        return parent(arg)
+    else
+        return find_VoA_parent(Base.tail(args))
+    end
+end
+
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
-    N = narrays(bc)
-    VectorOfArray(map(1:N) do i
-        copy(unpack_voa(bc, i))
-    end)
+
+    parent = find_VoA_parent(bc.args)
+
+    if parent isa AbstractVector
+        # this is the default behavior in v3.15.0
+        N = narrays(bc)
+        return VectorOfArray(map(1:N) do i
+            copy(unpack_voa(bc, i))
+        end)
+    else # if parent isa AbstractArray            
+        return VectorOfArray(map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
+            copy(unpack_voa(bc, i))
+        end)
+    end
 end
 
 for (type, N_expr) in [

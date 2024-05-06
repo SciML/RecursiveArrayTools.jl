@@ -238,8 +238,8 @@ a[[1, 3, 8]]
 # multidimensional array of arrays
 ####################################################################
 
-u_matrix = VectorOfArray(fill([1, 2], 2, 3))
-u_vector = VectorOfArray(vec(u_matrix.u))
+u_matrix = VectorOfArray([[1, 2] for i in 1:2, j in 1:3])
+u_vector = VectorOfArray([[1, 2] for i in 1:6])
 
 # test broadcasting 
 function foo!(u)
@@ -248,11 +248,13 @@ function foo!(u)
 end
 foo!(u_matrix)
 foo!(u_vector)
-@test u_matrix ≈ u_vector
+@test all(u_matrix .== [3, 10]) 
+@test all(vec(u_matrix) .≈ vec(u_vector))
 
 # test that, for VectorOfArray with multi-dimensional parent arrays,
-# `similar` preserves the structure of the parent array
+# broadcast and `similar` preserve the structure of the parent array
 @test typeof(parent(similar(u_matrix))) == typeof(parent(u_matrix))
+@test typeof(parent((x->x).(u_matrix))) == typeof(parent(u_matrix)) 
 
 # test efficiency 
 num_allocs = @allocations foo!(u_matrix)
