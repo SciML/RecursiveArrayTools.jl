@@ -712,7 +712,7 @@ Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
     end
 end
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
-    VectorOfArray(similar.(Base.parent(VA), T))
+    VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
 end
 
 # for VectorOfArray with multi-dimensional parent arrays of arrays where all elements are the same type
