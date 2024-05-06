@@ -29,6 +29,7 @@ returns a vector of the series for each component, that is, `A[i,:]` for each `i
 A plot recipe is provided, which plots the `A[i,:]` series.
 
 There is also support for `VectorOfArray` constructed from multi-dimensional arrays
+
 ```julia
 VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 ```
@@ -351,48 +352,53 @@ Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::NotSymboli
 end
 
 struct ParameterIndexingError <: Exception
-    sym
+    sym::Any
 end
 
 function Base.showerror(io::IO, pie::ParameterIndexingError)
-    print(io, "Indexing with parameters is deprecated. Use `getp(A, $(pie.sym))` for parameter indexing.")
+    print(io,
+        "Indexing with parameters is deprecated. Use `getp(A, $(pie.sym))` for parameter indexing.")
 end
 
 # Symbolic Indexing Methods
 for (symtype, elsymtype, valtype, errcheck) in [
-    (ScalarSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any, :(is_parameter(A, sym))),
-    (ArraySymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any, :(is_parameter(A, sym))),
-    (NotSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Union{<:Tuple, <:AbstractArray}, 
-        :(all(x -> is_parameter(A, x), sym))),
+    (ScalarSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait,
+        Any, :(is_parameter(A, sym))),
+    (ArraySymbolic, SymbolicIndexingInterface.SymbolicTypeTrait,
+        Any, :(is_parameter(A, sym))),
+    (NotSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait,
+        Union{<:Tuple, <:AbstractArray},
+        :(all(x -> is_parameter(A, x), sym)))
 ]
-@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
-        ::$elsymtype, sym::$valtype)
-    if $errcheck
-        throw(ParameterIndexingError(sym))
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+            ::$elsymtype, sym::$valtype)
+        if $errcheck
+            throw(ParameterIndexingError(sym))
+        end
+        getu(A, sym)(A)
     end
-    getu(A, sym)(A)
-end
-@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
-        ::$elsymtype, sym::$valtype, arg)
-    if $errcheck
-        throw(ParameterIndexingError(sym))
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+            ::$elsymtype, sym::$valtype, arg)
+        if $errcheck
+            throw(ParameterIndexingError(sym))
+        end
+        getu(A, sym)(A, arg)
     end
-    getu(A, sym)(A, arg)
-end
-@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
-        ::$elsymtype, sym::$valtype, arg::Union{AbstractArray{Int}, AbstractArray{Bool}})
-    if $errcheck
-        throw(ParameterIndexingError(sym))
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+            ::$elsymtype, sym::$valtype, arg::Union{
+                AbstractArray{Int}, AbstractArray{Bool}})
+        if $errcheck
+            throw(ParameterIndexingError(sym))
+        end
+        getu(A, sym).((A,), arg)
     end
-    getu(A, sym).((A,), arg)
-end
-@eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
-        ::$elsymtype, sym::$valtype, ::Colon)
-    if $errcheck
-        throw(ParameterIndexingError(sym))
+    @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
+            ::$elsymtype, sym::$valtype, ::Colon)
+        if $errcheck
+            throw(ParameterIndexingError(sym))
+        end
+        getu(A, sym)(A)
     end
-    getu(A, sym)(A)
-end
 end
 
 Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymbolic,
@@ -410,8 +416,9 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     elsymtype = symbolic_type(eltype(_arg))
 
     if symtype == NotSymbolic() && elsymtype == NotSymbolic()
-        if _arg isa Union{Tuple, AbstractArray} && any(x -> symbolic_type(x) != NotSymbolic(), _arg)
-        _getindex(A, symtype, elsymtype, _arg, args...)
+        if _arg isa Union{Tuple, AbstractArray} &&
+           any(x -> symbolic_type(x) != NotSymbolic(), _arg)
+            _getindex(A, symtype, elsymtype, _arg, args...)
         else
             _getindex(A, symtype, _arg, args...)
         end
@@ -726,7 +733,6 @@ function Base.similar(vec::VectorOfArray{
         T, N, AT}) where {T, N, AT <: AbstractVector{<:AbstractArray{T}}}
     return Base.similar(vec, eltype(vec))
 end
-
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
