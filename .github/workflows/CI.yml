@@ -24,7 +24,6 @@ jobs:
       matrix:
         version:
           - "1"
-          - "1.6"
         group:
           - "Core"
           - "Downstream"
