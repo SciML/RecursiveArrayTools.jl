@@ -31,3 +31,9 @@ function f(p)
     sum(CuArray(x))
 end
 Zygote.gradient(f, p)
+
+# Check conversion preserves device
+va_cu = convert(AbstractArray, va)
+
+@test va_cu isa CuArray
+@test size(va_cu) == size(x)
