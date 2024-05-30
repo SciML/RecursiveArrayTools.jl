@@ -88,7 +88,7 @@ end
 
 @adjoint function Base.copy(u::VectorOfArray)
     copy(u),
-    y -> (copy(y),)
+    tuple ∘ copy
 end
 
 @adjoint function DiffEqArray(u, t)
@@ -123,18 +123,24 @@ end
 end
 
 @adjoint function Base.view(A::AbstractVectorOfArray, I::Colon...)
-    function adjoint(y)
-        (recursivecopy(parent(y)), map(_ -> nothing, I)...)
+    view_adjoint = let A = A, I = I
+        function (y)
+            A = recursivecopy(A)
+            copyto!(A, y)
+            (A, map(_ -> nothing, I)...)
+        end
     end
-    return view(A, I...), adjoint
+    return view(A, I...), view_adjoint
 end
 
 @adjoint function Base.view(A::AbstractVectorOfArray, I...)
-    function view_adjoint(y)
-        A = recursivecopy(parent(y))
-        recursivefill!(A, zero(eltype(A)))
-        A[I...] .= y
-        return (A, map(_ -> nothing, I)...)
+    view_adjoint = let A = A, I = I
+        function (y)
+            A = recursivecopy(A)
+            recursivefill!(A, zero(eltype(A)))
+            A[I...] .= y
+            return (A, map(_ -> nothing, I)...)
+        end
     end
     view(A, I...), view_adjoint
 end

@@ -66,6 +66,16 @@ function loss9(x)
     return VectorOfArray([collect((3i):(3i + 3)) .* x for i in 1:5])
 end
 
+function loss10(x)
+    voa = VectorOfArray([i * x for i in 1:5])
+    return sum(view(voa, 2:4, 3:5))
+end
+
+function loss11(x)
+    voa = VectorOfArray([i * x for i in 1:5])
+    return sum(view(voa, :, :))
+end
+
 x = float.(6:10)
 loss(x)
 @test Zygote.gradient(loss, x)[1] == ForwardDiff.gradient(loss, x)
@@ -78,3 +88,5 @@ loss(x)
 @test Zygote.gradient(loss8, x)[1] == ForwardDiff.gradient(loss8, x)
 @test ForwardDiff.derivative(loss9, 0.0) ==
       VectorOfArray([collect((3i):(3i + 3)) for i in 1:5])
+@test Zygote.gradient(loss10, x)[1] == ForwardDiff.gradient(loss10, x)
+@test Zygote.gradient(loss11, x)[1] == ForwardDiff.gradient(loss11, x)
