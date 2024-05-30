@@ -115,7 +115,7 @@ end
     adj = let VA = VA
         function Array_adjoint(y)
             VA = recursivecopy(VA)
-            VA .= y
+            copyto!(VA, y)
             return (VA,)
         end
     end
@@ -126,8 +126,8 @@ end
     view_adjoint = let A = A, I = I
         function (y)
             A = recursivecopy(A)
-            A .= y
-            (A, map(_ -> nothing, I)...)
+            copyto!(A, y)
+            return (A, map(_ -> nothing, I)...)
         end
     end
     return view(A, I...), view_adjoint
@@ -139,7 +139,7 @@ end
             A = recursivecopy(A)
             recursivefill!(A, zero(eltype(A)))
             v = view(A, I...)
-            v .= y
+            copyto!(v, y)
             return (A, map(_ -> nothing, I)...)
         end
     end
