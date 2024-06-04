@@ -609,6 +609,7 @@ function Base.check_parent_index_match(
     nothing
 end
 Base.ndims(::AbstractVectorOfArray{T, N}) where {T, N} = N
+Base.ndims(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N} = N
 
 function Base.checkbounds(
         ::Type{Bool}, VA::AbstractVectorOfArray{T, N, <:AbstractVector{T}},
