@@ -50,6 +50,10 @@ push!(testda, [-1, -2, -3, -4])
 @test testda[:, 9] == [-1, -2, -3, -4]
 @test testda[:, end] == [-1, -2, -3, -4]
 
+# ndims
+@test ndims(testva) == 2
+@test ndims(typeof(testva)) == 2
+
 # Currently we enforce the general shape, they can just be different lengths, ie we
 # can't do
 # Decide if this is desired, or remove this restriction
