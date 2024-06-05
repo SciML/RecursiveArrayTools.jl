@@ -265,6 +265,8 @@ function Base._maybe_reshape(::IndexCartesian,
     Vector(A)
 end
 
+Base.IndexStyle(::ArrayPartition) = IndexLinear()
+
 ## recursive methods
 
 function recursivecopy!(A::ArrayPartition, B::ArrayPartition)
