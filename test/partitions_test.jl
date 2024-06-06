@@ -266,7 +266,7 @@ begin
 end
 
 @testset "Copy and zero with type changing array" begin
-    # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied 
+    # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied
     struct TypeChangingArray{T, N} <: AbstractArray{T, N} end
     Base.copy(::TypeChangingArray{T, N}) where {T, N} = Array{T, N}(undef,
         ntuple(_ -> 0, N))
@@ -280,4 +280,10 @@ end
 @test !iszero(ArrayPartition([2], [3, 4]))
 @testset "Cartesian indexing" begin
     @test ArrayPartition([1, 2], [3])[1:3, 1] == [1, 2, 3]
+end
+
+@testset "Scalar copyto!" begin
+    u = [2.0,1.0]
+    copyto!(u, ArrayPartition(1.0,-1.2))
+    @test u == [1.0,-1.2]
 end
