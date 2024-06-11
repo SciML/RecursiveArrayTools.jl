@@ -40,7 +40,7 @@ gs, = Zygote.gradient(sol) do sol
 end
 
 @testset "Symbolic Indexing ADjoint" begin
-    @test all(all.(isone, gs.u))
+    @test all(all.(isone, gs))
 end
 
 # Tables interface
