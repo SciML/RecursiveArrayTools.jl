@@ -136,6 +136,26 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
+# any
+@test !any(isnan, ArrayPartition([1, 2], [3.0, 4.0]))
+@test !any(isnan, ArrayPartition([3.0, 4.0]))
+@test any(isnan, ArrayPartition([NaN], [3.0, 4.0]))
+@test any(isnan, ArrayPartition([NaN]))
+@test any(isnan, ArrayPartition(ArrayPartition([NaN])))
+@test any(isnan, ArrayPartition([2], [NaN]))
+@test any(isnan, ArrayPartition([2], ArrayPartition([NaN])))
+
+# all 
+@test !all(isnan, ArrayPartition([1, 2], [3.0, 4.0]))
+@test !all(isnan, ArrayPartition([3.0, 4.0]))
+@test !all(isnan, ArrayPartition([NaN], [3.0, 4.0]))
+@test all(isnan, ArrayPartition([NaN]))
+@test all(isnan, ArrayPartition(ArrayPartition([NaN])))
+@test !all(isnan, ArrayPartition([2], [NaN]))
+@test all(isnan, ArrayPartition([NaN], [NaN]))
+@test all(isnan, ArrayPartition([NaN], ArrayPartition([NaN])))
+
+
 # broadcasting
 _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
