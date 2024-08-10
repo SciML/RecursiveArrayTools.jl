@@ -3,7 +3,7 @@ module RecursiveArrayToolsSparseArraysExt
 import SparseArrays
 import RecursiveArrayTools
 
-function Base.copyto!(dest::SparseArrays.AbstractCompressedVector, A::RecursiveArrayToolsArrayPartition)
+function Base.copyto!(dest::SparseArrays.AbstractCompressedVector, A::RecursiveArrayTools.ArrayPartition)
     @assert length(dest) == length(A)
     cur = 1
     @inbounds for i in 1:length(A.x)
