@@ -176,7 +176,7 @@ Base.all(f, A::ArrayPartition) = all(f, (all(f, x) for x in A.x))
 Base.all(f::Function, A::ArrayPartition) = all((all(f, x) for x in A.x))
 Base.all(A::ArrayPartition) = all(identity, A)
 
-for type in [AbstractArray, SparseArrays.AbstractCompressedVector, PermutedDimsArray]
+for type in [AbstractArray, PermutedDimsArray]
     @eval function Base.copyto!(dest::$(type), A::ArrayPartition)
         @assert length(dest) == length(A)
         cur = 1
