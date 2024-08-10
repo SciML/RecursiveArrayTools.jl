@@ -1,4 +1,4 @@
-module RecursiveArrayToolsSparseArrays
+module RecursiveArrayToolsSparseArraysExt
 
 import SparseArrays
 import RecursiveArrayTools
