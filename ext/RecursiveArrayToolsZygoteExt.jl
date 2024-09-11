@@ -146,7 +146,6 @@ end
     view(A, I...), view_adjoint
 end
 
-
 @adjoint function Broadcast.broadcasted(::typeof(+), x::AbstractVectorOfArray,
         y::Union{Zygote.Numeric, AbstractVectorOfArray})
     broadcast(+, x, y), ȳ -> (nothing, map(x -> Zygote.unbroadcast(x, ȳ), (x, y))...)
