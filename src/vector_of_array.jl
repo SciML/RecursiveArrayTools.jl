@@ -731,8 +731,8 @@ function Base.similar(vec::VectorOfArray{
     return VectorOfArray(similar.(Base.parent(vec)))
 end
 
-@inline function Base.similar(VA::VectorOfArray{T1, N, AT}, ::Type{T2}) where {T1, T2, N, AT <: AbstractArray{<:AbstractArray{T1}}}
-    eltype(VA.u) <: Vector ? VectorOfArray(similar(VA.u, Vector{T2})) : VectorOfArray(similar(VA.u, Matrix{T2}))
+@inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
+    VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
 end
 
 @inline function Base.similar(VA::VectorOfArray, dims::N) where {N}

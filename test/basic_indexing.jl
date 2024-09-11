@@ -45,7 +45,7 @@ testvasim = similar(testva)
 @test size(testvasim) == size(testva)
 @test eltype(testvasim) == eltype(testva)
 testvasim = similar(testva, Float32)
-#@test size(testvasim) == size(testva)
+@test size(testvasim) == size(testva)
 @test eltype(testvasim) == Float32
 testvb = deepcopy(testva)
 @test testva == testvb == recs
