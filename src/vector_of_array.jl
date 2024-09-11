@@ -735,21 +735,12 @@ end
     VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
 end
 
-@inline function Base.similar(VA::VectorOfArray, dims::N) where {N}
+@inline function Base.similar(VA::VectorOfArray, dims::N) where {N <: Number}
     l = length(VA)
     if dims <= l
         VectorOfArray([similar(VA[:, i]) for i in 1:l])
     else
         VectorOfArray([[similar(VA[:, i]) for i in 1:l]; [similar(VA.u[end]) for _ in (l+1):dims]])
-    end
-end
-
-@inline function Base.similar(VA::VectorOfArray, ::Type{T}, dims::N) where {N, T}
-    l = length(VA)
-    if dims <= l
-        VectorOfArray([similar(VA[:, i], T) for i in 1:l])
-    else
-        VectorOfArray([[similar(VA[:, i], T) for i in 1:l]; [similar(VA.u[end], T) for _ in (l+1):dims]])
     end
 end
 
