@@ -718,9 +718,9 @@ Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
 
 @inline function Base.similar(VA::AbstractVectorOfArray, args...)
     if args[end] isa Type
-        return Base.similar(VA.u, args..., size(VA))
+        return return Base.similar(eltype(VA)[], args..., size(VA))
     else
-        return Base.similar(VA.u, args...)
+        return Base.similar(eltype(VA)[], args...)
     end
 end
 
