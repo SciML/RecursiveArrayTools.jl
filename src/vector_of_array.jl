@@ -718,7 +718,7 @@ Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
 
 @inline function Base.similar(VA::AbstractVectorOfArray, args...)
     if args[end] isa Type
-        return return Base.similar(eltype(VA)[], args..., size(VA))
+        return Base.similar(eltype(VA)[], args..., size(VA))
     else
         return Base.similar(eltype(VA)[], args...)
     end
@@ -740,11 +740,6 @@ end
     else
         VectorOfArray([similar.(VA.u); [similar(VA.u[end]) for _ in (l + 1):dims]])
     end
-end
-
-@inline function Base.similar(VA::VectorOfArray{T, N, AT},
-        dims::Tuple) where {T, N, AT <: AbstractArray{<:AbstractArray{T}}}
-    VectorOfArray(similar(VA.u, dims))
 end
 
 # fill!
