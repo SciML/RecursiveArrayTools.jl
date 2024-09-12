@@ -546,9 +546,7 @@ end
 
 function Base.zero(VA::AbstractVectorOfArray)
     val = copy(VA)
-    for i in eachindex(VA.u)
-        val.u[i] = zero(VA.u[i])
-    end
+    val.u = zero.(VA.u)
     return val
 end
 
@@ -732,15 +730,15 @@ function Base.similar(vec::VectorOfArray{
 end
 
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
-    VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
+    VectorOfArray(similar.(VA.u, T))
 end
 
 @inline function Base.similar(VA::VectorOfArray, dims::N) where {N <: Number}
     l = length(VA)
     if dims <= l
-        VectorOfArray([similar(VA[:, i]) for i in 1:l])
+        VectorOfArray(similar.(VA.u[1:dims]))
     else
-        VectorOfArray([[similar(VA[:, i]) for i in 1:l]; [similar(VA.u[end]) for _ in (l+1):dims]])
+        VectorOfArray([similar.(VA.u); [similar(VA.u[end]) for _ in (l + 1):dims]])
     end
 end
 
