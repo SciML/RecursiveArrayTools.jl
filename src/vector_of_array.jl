@@ -29,6 +29,7 @@ returns a vector of the series for each component, that is, `A[i,:]` for each `i
 A plot recipe is provided, which plots the `A[i,:]` series.
 
 There is also support for `VectorOfArray` constructed from multi-dimensional arrays
+
 ```julia
 VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
 ```
@@ -60,8 +61,9 @@ A[1, :]  # all time periods for f(t)
 A.t
 ```
 """
-mutable struct DiffEqArray{T, N, A, B, F, S, D <: Union{Nothing, ParameterTimeseriesCollection}} <:
-        AbstractDiffEqArray{T, N, A}
+mutable struct DiffEqArray{
+    T, N, A, B, F, S, D <: Union{Nothing, ParameterTimeseriesCollection}} <:
+               AbstractDiffEqArray{T, N, A}
     u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
     t::B
     p::F
@@ -177,7 +179,9 @@ function DiffEqArray(vec::AbstractVector{T},
         ::NTuple{N, Int},
         p = nothing,
         sys = nothing; discretes = nothing) where {T, N}
-    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes)}(vec,
+    DiffEqArray{
+        eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes)}(
+        vec,
         ts,
         p,
         sys,
@@ -197,7 +201,8 @@ end
 function DiffEqArray(vec::AbstractVector{VT},
         ts::AbstractVector,
         ::NTuple{N, Int}, p; discretes = nothing) where {T, N, VT <: AbstractArray{T, N}}
-    DiffEqArray{eltype(T), N, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes)}(vec,
+    DiffEqArray{
+        eltype(T), N, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes)}(vec,
         ts,
         p,
         nothing,
@@ -253,7 +258,7 @@ function DiffEqArray(vec::AbstractVector{VT},
         typeof(ts),
         typeof(p),
         typeof(sys),
-        typeof(discretes),
+        typeof(discretes)
     }(vec,
         ts,
         p,
@@ -375,19 +380,23 @@ Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::NotSymboli
 end
 
 struct ParameterIndexingError <: Exception
-    sym
+    sym::Any
 end
 
 function Base.showerror(io::IO, pie::ParameterIndexingError)
-    print(io, "Indexing with parameters is deprecated. Use `getp(A, $(pie.sym))` for parameter indexing.")
+    print(io,
+        "Indexing with parameters is deprecated. Use `getp(A, $(pie.sym))` for parameter indexing.")
 end
 
 # Symbolic Indexing Methods
 for (symtype, elsymtype, valtype, errcheck) in [
-    (ScalarSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any, :(is_parameter(A, sym) && !is_timeseries_parameter(A, sym))),
-    (ArraySymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any, :(is_parameter(A, sym) && !is_timeseries_parameter(A, sym))),
-    (NotSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Union{<:Tuple, <:AbstractArray}, 
-        :(all(x -> is_parameter(A, x) && !is_timeseries_parameter(A, x), sym))),
+    (ScalarSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any,
+        :(is_parameter(A, sym) && !is_timeseries_parameter(A, sym))),
+    (ArraySymbolic, SymbolicIndexingInterface.SymbolicTypeTrait, Any,
+        :(is_parameter(A, sym) && !is_timeseries_parameter(A, sym))),
+    (NotSymbolic, SymbolicIndexingInterface.SymbolicTypeTrait,
+        Union{<:Tuple, <:AbstractArray},
+        :(all(x -> is_parameter(A, x) && !is_timeseries_parameter(A, x), sym)))
 ]
     @eval Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::$symtype,
             ::$elsymtype, sym::$valtype, arg...)
@@ -413,8 +422,9 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     elsymtype = symbolic_type(eltype(_arg))
 
     if symtype == NotSymbolic() && elsymtype == NotSymbolic()
-        if _arg isa Union{Tuple, AbstractArray} && any(x -> symbolic_type(x) != NotSymbolic(), _arg)
-        _getindex(A, symtype, elsymtype, _arg, args...)
+        if _arg isa Union{Tuple, AbstractArray} &&
+           any(x -> symbolic_type(x) != NotSymbolic(), _arg)
+            _getindex(A, symtype, elsymtype, _arg, args...)
         else
             _getindex(A, symtype, _arg, args...)
         end
@@ -536,9 +546,7 @@ end
 
 function Base.zero(VA::AbstractVectorOfArray)
     val = copy(VA)
-    for i in eachindex(VA.u)
-        val.u[i] = zero(VA.u[i])
-    end
+    val.u = zero.(VA.u)
     return val
 end
 
@@ -707,7 +715,7 @@ end
 
 # Tools for creating similar objects
 Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
-# TODO: Is there a better way to do this?
+
 @inline function Base.similar(VA::AbstractVectorOfArray, args...)
     if args[end] isa Type
         return Base.similar(eltype(VA)[], args..., size(VA))
@@ -715,22 +723,24 @@ Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
         return Base.similar(eltype(VA)[], args...)
     end
 end
-@inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
-    VectorOfArray([similar(VA[:, i], T) for i in eachindex(VA.u)])
-end
 
-# for VectorOfArray with multi-dimensional parent arrays of arrays where all elements are the same type
 function Base.similar(vec::VectorOfArray{
         T, N, AT}) where {T, N, AT <: AbstractArray{<:AbstractArray{T}}}
     return VectorOfArray(similar.(Base.parent(vec)))
 end
 
-# special-case when the multi-dimensional parent array is just an AbstractVector (call the old method)
-function Base.similar(vec::VectorOfArray{
-        T, N, AT}) where {T, N, AT <: AbstractVector{<:AbstractArray{T}}}
-    return Base.similar(vec, eltype(vec))
+@inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
+    VectorOfArray(similar.(VA.u, T))
 end
 
+@inline function Base.similar(VA::VectorOfArray, dims::N) where {N <: Number}
+    l = length(VA)
+    if dims <= l
+        VectorOfArray(similar.(VA.u[1:dims]))
+    else
+        VectorOfArray([similar.(VA.u); [similar(VA.u[end]) for _ in (l + 1):dims]])
+    end
+end
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u

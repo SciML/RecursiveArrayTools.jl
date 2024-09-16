@@ -155,7 +155,6 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 @test all(isnan, ArrayPartition([NaN], [NaN]))
 @test all(isnan, ArrayPartition([NaN], ArrayPartition([NaN])))
 
-
 # broadcasting
 _scalar_op(y) = y + 1
 # Can't do `@inferred(_scalar_op.(x))` so we wrap that in a function:
@@ -303,7 +302,7 @@ end
 end
 
 @testset "Scalar copyto!" begin
-    u = [2.0,1.0]
-    copyto!(u, ArrayPartition(1.0,-1.2))
-    @test u == [1.0,-1.2]
+    u = [2.0, 1.0]
+    copyto!(u, ArrayPartition(1.0, -1.2))
+    @test u == [1.0, -1.2]
 end

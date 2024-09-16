@@ -24,7 +24,8 @@ end
     return Array(VA), Array_adjoint
 end
 
-@adjoint function Base.view(A::AbstractVectorOfArray{<:ReverseDiff.TrackedReal, N}, I::Colon...) where {N}
+@adjoint function Base.view(
+        A::AbstractVectorOfArray{<:ReverseDiff.TrackedReal, N}, I::Colon...) where {N}
     view_adjoint = let A = A, I = I
         function (y)
             A = recursivecopy(A)

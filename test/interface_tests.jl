@@ -145,6 +145,10 @@ testva2 = similar(testva)
 @test typeof(testva2) == typeof(testva)
 @test size(testva2) == size(testva)
 
+testva3 = similar(testva, 10)
+@test typeof(testva3) == typeof(testva)
+@test length(testva3) == 10
+
 # Fill AbstractVectorOfArray and check all
 testval = 3.0
 fill!(testva2, testval)

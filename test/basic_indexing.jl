@@ -248,13 +248,13 @@ function foo!(u)
 end
 foo!(u_matrix)
 foo!(u_vector)
-@test all(u_matrix .== [3, 10]) 
+@test all(u_matrix .== [3, 10])
 @test all(vec(u_matrix) .≈ vec(u_vector))
 
 # test that, for VectorOfArray with multi-dimensional parent arrays,
 # broadcast and `similar` preserve the structure of the parent array
 @test typeof(parent(similar(u_matrix))) == typeof(parent(u_matrix))
-@test typeof(parent((x->x).(u_matrix))) == typeof(parent(u_matrix)) 
+@test typeof(parent((x -> x).(u_matrix))) == typeof(parent(u_matrix))
 
 # test efficiency 
 num_allocs = @allocations foo!(u_matrix)
