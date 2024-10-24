@@ -792,6 +792,9 @@ end
 @inline Statistics.cor(VA::AbstractVectorOfArray; kwargs...) = cor(Array(VA); kwargs...)
 @inline Base.adjoint(VA::AbstractVectorOfArray) = Adjoint(VA)
 
+# linear algebra
+ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
+
 # make it show just like its data
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray)
     (println(io, summary(x), ':'); show(io, m, x.u))
