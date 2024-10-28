@@ -82,3 +82,23 @@ b = recursivecopy(a)
 @test a[1] == b[1]
 a[1] *= 2
 @test a[1] != b[1]
+
+# Broadcasting when SVector{1}
+a = [SVector(0.0) for _ in 1:2]
+a_voa = VectorOfArray(a)
+b_voa = copy(a_voa)
+a_voa[1] = SVector(1.0)
+a_voa[2] = SVector(1.0)
+@. b_voa = a_voa
+@test b_voa[1] == a_voa[1]
+@test b_voa[2] == a_voa[2]
+
+# Broadcasting when SVector{N} where N > 1
+a = [SVector(0.0, 0.0) for _ in 1:2]
+a_voa = VectorOfArray(a)
+b_voa = copy(a_voa)
+a_voa[1] = SVector(1.0, 1.0)
+a_voa[2] = SVector(1.0, 1.0)
+@. b_voa = a_voa
+@test b_voa[1] == a_voa[1]
+@test b_voa[2] == a_voa[2]
