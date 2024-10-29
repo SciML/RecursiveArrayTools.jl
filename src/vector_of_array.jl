@@ -905,7 +905,9 @@ for (type, N_expr) in [
                 else
                     unpacked = unpack_voa(bc, i)
                     arr_type = StaticArraysCore.similar_type(dest[:, i])
-                    dest[:, i] = if length(unpacked) == 1
+                    dest[:, i] = if length(unpacked) == 1 && length(dest[:, i]) == 1
+                        arr_type(unpacked[1])
+                    elseif length(unpacked) == 1
                         fill(copy(unpacked), arr_type)
                     else
                         arr_type(unpacked[j] for j in eachindex(unpacked))
