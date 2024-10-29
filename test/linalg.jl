@@ -1,5 +1,5 @@
 using RecursiveArrayTools, Test, Random
-using LinearAlgebra
+using LinearAlgebra, ArrayInterface
 
 n, m = 5, 6
 bb = rand(n), rand(m)
