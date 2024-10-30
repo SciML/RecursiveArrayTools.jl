@@ -321,32 +321,7 @@ end
 @deprecate Base.getindex(A::AbstractDiffEqArray, i::Int) Base.getindex(A, :, i) false
 
 __parameterless_type(T) = Base.typename(T).wrapper
-Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
-        ::NotSymbolic, I::Colon...) where {T, N}
-    @assert length(I) == ndims(A.u[1]) + 1
-    vecs = if N == 1
-        A.u
-    else
-        vec.(A.u)
-    end
-    return Adapt.adapt(__parameterless_type(T),
-        reshape(reduce(hcat, vecs), size(A.u[1])..., length(A.u)))
-end
-Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
-        ::NotSymbolic, I::Colon...) where {T <: Number, N}
-    @assert length(I) == ndims(A.u)
-    return A.u[I...]
-end
 
-Base.@propagate_inbounds function _getindex(A::AbstractVectorOfArray{T, N},
-        ::NotSymbolic, I::AbstractArray{Bool},
-        J::Colon...) where {T, N}
-    @assert length(J) == ndims(A.u[1]) + 1 - ndims(I)
-    @assert size(I) == size(A)[1:(ndims(A) - length(J))]
-    return A[ntuple(x -> Colon(), ndims(A))...][I, J...]
-end
-
-# Need two of each methods to avoid ambiguities
 Base.@propagate_inbounds function _getindex(
         A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Int)
     A.u[I]
