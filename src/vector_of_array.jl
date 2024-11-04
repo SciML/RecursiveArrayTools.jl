@@ -521,7 +521,7 @@ end
 
 function Base.zero(VA::AbstractVectorOfArray)
     val = copy(VA)
-    val.u = zero.(VA.u)
+    val.u .= zero.(VA.u)
     return val
 end
 

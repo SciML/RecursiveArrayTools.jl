@@ -161,7 +161,6 @@ _scalar_op(y) = y + 1
 _broadcast_wrapper(y) = _scalar_op.(y)
 # Issue #8
 @inferred _broadcast_wrapper(x)
-@test_broken @inferred _broadcast_wrapper(y)
 
 # Testing map
 @test map(x -> x^2, x) == ArrayPartition(x.x[1] .^ 2, x.x[2] .^ 2)

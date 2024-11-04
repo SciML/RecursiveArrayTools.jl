@@ -56,4 +56,4 @@ mat = Array(va)
 @test all(va'[i] == mat'[i] for i in eachindex(mat'))
 @test Array(va') == mat'
 
-@test !ArrayInterface.issingular(VectorOfArray([rand(2),rand(2)]))
+@test !ArrayInterface.issingular(VectorOfArray([rand(2), rand(2)]))

@@ -269,3 +269,13 @@ end
 f3!(z, zz)
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
 @test (@allocated f3!(z, zz)) == 0
+
+struct ImmutableVectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
+    u::A # A <: AbstractArray{<: AbstractArray{T, N - 1}}
+end
+
+@testset "Base.zero does not assume mutable struct" begin
+    voa = ImmutableVectorOfArray{Float64, 2, Vector{Vector{Float64}}}([ones(3), 2ones(3)])
+    zvoa = zero(voa)
+    @test zvoa.u[1] == zvoa.u[2] == zeros(3)
+end
