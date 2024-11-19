@@ -849,21 +849,24 @@ end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
-
     parent = find_VoA_parent(bc.args)
 
-    if parent isa AbstractVector
+    u = if parent isa AbstractVector
         # this is the default behavior in v3.15.0
         N = narrays(bc)
-        return VectorOfArray(map(1:N) do i
+        map(1:N) do i
             copy(unpack_voa(bc, i))
-        end)
+        end
     else # if parent isa AbstractArray            
-        return VectorOfArray(map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
+        map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
             copy(unpack_voa(bc, i))
-        end)
+        end
     end
+    VectorOfArray(rewrap(parent, u))
 end
+
+rewrap(::Array,u) = u
+rewrap(parent, u) = convert(typeof(parent), u)
 
 for (type, N_expr) in [
     (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
@@ -871,6 +874,8 @@ for (type, N_expr) in [
 ]
     @eval @inline function Base.copyto!(dest::AbstractVectorOfArray,
             bc::$type)
+            @show typeof(dest)
+            error()
         bc = Broadcast.flatten(bc)
         N = $N_expr
         @inbounds for i in 1:N
