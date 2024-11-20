@@ -874,8 +874,6 @@ for (type, N_expr) in [
 ]
     @eval @inline function Base.copyto!(dest::AbstractVectorOfArray,
             bc::$type)
-            @show typeof(dest)
-            error()
         bc = Broadcast.flatten(bc)
         N = $N_expr
         @inbounds for i in 1:N
