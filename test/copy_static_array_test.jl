@@ -114,3 +114,10 @@ a_voa = VectorOfArray(a)
 a_voa .= 1.0
 @test a_voa[1] == SVector(1.0, 1.0)
 @test a_voa[2] == SVector(1.0, 1.0)
+
+#Broadcast Copy of StructArray
+x = StructArray{SVector{2, Float64}}((randn(2), randn(2)))
+vx = VectorOfArray(x)
+vx2 = copy(vx) .+ 1
+ans = vx .+ vx2
+@test ans.u isa StructArray
