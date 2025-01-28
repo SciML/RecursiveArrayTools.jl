@@ -209,6 +209,13 @@ function Base.copyto!(A::ArrayPartition, src::ArrayPartition)
     A
 end
 
+function Base.fill!(A::ArrayPartition, x)
+    for i in eachindex(A.x)
+        fill!(A.x[i], x)
+    end
+    A
+end
+
 ## indexing
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
