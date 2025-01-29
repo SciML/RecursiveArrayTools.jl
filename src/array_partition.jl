@@ -210,8 +210,8 @@ function Base.copyto!(A::ArrayPartition, src::ArrayPartition)
 end
 
 function Base.fill!(A::ArrayPartition, x)
-    for i in eachindex(A.x)
-        fill!(A.x[i], x)
+    unrolled_foreach!(A.x) do x_
+        fill!(x_, x)
     end
     A
 end
@@ -221,7 +221,7 @@ function recursivefill!(b::ArrayPartition, a::T2) where {T2 <: Union{Number, Boo
         fill!(x, a)
     end
 end
-          
+
 ## indexing
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
