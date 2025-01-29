@@ -14,3 +14,7 @@ mask = pA .> 0
 # Test recursive filling is done using GPU kernels and not scalar indexing
 RecursiveArrayTools.recursivefill!(pA, true)
 @test all(pA .== true)
+
+# Test that regular filling is done using GPU kernels and not scalar indexing
+fill!(pA, false)
+@test all(pA .== false)

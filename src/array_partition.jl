@@ -209,12 +209,18 @@ function Base.copyto!(A::ArrayPartition, src::ArrayPartition)
     A
 end
 
+function Base.fill!(A::ArrayPartition, x)
+    unrolled_foreach!(A.x) do x_
+        fill!(x_, x)
+    end
+    A
+end
+
 function recursivefill!(b::ArrayPartition, a::T2) where {T2 <: Union{Number, Bool}}
     unrolled_foreach!(b.x) do x
         fill!(x, a)
     end
 end
-
 
 ## indexing
 
