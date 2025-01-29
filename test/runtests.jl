@@ -54,5 +54,6 @@ end
     if GROUP == "GPU"
         activate_gpu_env()
         @time @safetestset "VectorOfArray GPU" include("gpu/vectorofarray_gpu.jl")
+        @time @safetestset "ArrayPartition GPU" include("gpu/arraypartition_gpu.jl")
     end
 end
