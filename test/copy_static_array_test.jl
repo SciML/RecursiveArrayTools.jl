@@ -121,3 +121,13 @@ vx = VectorOfArray(x)
 vx2 = copy(vx) .+ 1
 ans = vx .+ vx2
 @test ans.u isa StructArray
+
+# check that Base.similar(VectorOfArray{<:StaticArray}) returns the 
+# same type as the original VectorOfArray
+x_staticvector = [SVector(0.0, 0.0) for _ in 1:2]
+x_structarray = StructArray{SVector{2, Float64}}((randn(2), randn(2)))
+x_mutablefv = [MutableFV(1.0, 2.0)]
+x_immutablefv = [ImmutableFV(1.0, 2.0)]
+for vec in [x_staticvector, x_structarray, x_mutablefv, x_immutablefv]
+    @test typeof(similar(VectorOfArray(vec))) === typeof(VectorOfArray(vec))
+end

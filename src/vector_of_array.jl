@@ -704,6 +704,12 @@ function Base.similar(vec::VectorOfArray{
     return VectorOfArray(similar.(Base.parent(vec)))
 end
 
+function Base.similar(vec::VectorOfArray{
+        T, N, AT}) where {T, N, AT <: AbstractArray{<:StaticArraysCore.StaticVecOrMat{T}}}
+    # this avoids behavior such as similar(SVector) returning an MVector
+    return VectorOfArray(similar(Base.parent(vec)))
+end
+
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
     VectorOfArray(similar.(VA.u, T))
 end
