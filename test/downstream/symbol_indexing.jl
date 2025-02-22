@@ -27,7 +27,7 @@ sol_new = DiffEqArray(sol.u[1:10],
 @test all(isequal.(all_variable_symbols(sol), all_variable_symbols(sol_new)))
 @test all(isequal.(all_variable_symbols(sol), [x, RHS]))
 @test all(isequal.(all_symbols(sol), all_symbols(sol_new)))
-@test all(isequal.(all_symbols(sol), [x, RHS, τ, t]))
+@test all([any(isequal(sym), all_symbols(sol)) for sym in [x, RHS, τ, t, Initial(x), Initial(RHS)]])
 @test sol[solvedvariables] == sol[[x]]
 @test sol_new[solvedvariables] == sol_new[[x]]
 @test sol[allvariables] == sol[[x, RHS]]

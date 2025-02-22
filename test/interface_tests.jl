@@ -279,3 +279,22 @@ end
     zvoa = zero(voa)
     @test zvoa.u[1] == zvoa.u[2] == zeros(3)
 end
+
+@testset "Issue SciMLBase#889: `DiffEqArray` constructor ambiguity" begin
+    darr = DiffEqArray([[1.0, 1.0]], [1.0], ())
+    @test darr.p == ()
+    @test darr.sys === nothing
+    @test ndims(darr) == 2
+    darr = DiffEqArray([[1.0, 1.0]], [1.0], (), "A")
+    @test darr.p == ()
+    @test darr.sys == "A"
+    @test ndims(darr) == 2
+    darr = DiffEqArray([ones(2, 2)], [1.0], (1, 1, 1))
+    @test darr.p == (1, 1, 1)
+    @test darr.sys === nothing
+    @test ndims(darr) == 3
+    darr = DiffEqArray([ones(2, 2)], [1.0], (1, 1, 1), "A")
+    @test darr.p == (1, 1, 1)
+    @test darr.sys == "A"
+    @test ndims(darr) == 3
+end
