@@ -298,3 +298,8 @@ end
     @test darr.sys == "A"
     @test ndims(darr) == 3
 end
+
+@testset "System retained in 4-argument constructor" begin
+    darr = DiffEqArray([ones(2)], [1.0], :params, :sys)
+    @test darr.sys == :sys
+end
