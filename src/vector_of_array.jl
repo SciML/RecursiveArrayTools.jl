@@ -297,10 +297,7 @@ function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, 
 end
 
 # first element representative
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys; discretes = nothing, variables = nothing, parameters = nothing, independent_variables = nothing)
-    sys = SymbolCache(something(variables, []),
-            something(parameters, []),
-            something(independent_variables, []))
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys; discretes = nothing)
     _size = size(vec[1])
     T = eltype(vec[1])
     return DiffEqArray{
