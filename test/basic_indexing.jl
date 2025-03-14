@@ -262,3 +262,12 @@ num_allocs = @allocations foo!(u_matrix)
 
 # issue 354
 @test VectorOfArray(ones(1))[:] == ones(1)
+
+# check VectorOfArray indexing for a StructArray of mutable structs
+using StructArrays
+using StaticArrays: MVector
+x = VectorOfArray(StructArray{MVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
+
+# check VectorOfArray assignment 
+x[1, 1] = 10
+@test x[1, 1] == 10
