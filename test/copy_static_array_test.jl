@@ -87,33 +87,33 @@ a[1] *= 2
 a = [SVector(0.0) for _ in 1:2]
 a_voa = VectorOfArray(a)
 b_voa = copy(a_voa)
-a_voa[1] = SVector(1.0)
-a_voa[2] = SVector(1.0)
+a_voa[:, 1] = SVector(1.0)
+a_voa[:, 2] = SVector(1.0)
 @. b_voa = a_voa
-@test b_voa[1] == a_voa[1]
-@test b_voa[2] == a_voa[2]
+@test b_voa[:, 1] == a_voa[1]
+@test b_voa[:, 2] == a_voa[2]
 
 a = [SVector(0.0) for _ in 1:2]
 a_voa = VectorOfArray(a)
 a_voa .= 1.0
-@test a_voa[1] == SVector(1.0)
-@test a_voa[2] == SVector(1.0)
+@test a_voa[:, 1] == SVector(1.0)
+@test a_voa[:, 2] == SVector(1.0)
 
 # Broadcasting when SVector{N} where N > 1
 a = [SVector(0.0, 0.0) for _ in 1:2]
 a_voa = VectorOfArray(a)
 b_voa = copy(a_voa)
-a_voa[1] = SVector(1.0, 1.0)
-a_voa[2] = SVector(1.0, 1.0)
+a_voa[:, 1] = SVector(1.0, 1.0)
+a_voa[:, 2] = SVector(1.0, 1.0)
 @. b_voa = a_voa
-@test b_voa[1] == a_voa[1]
-@test b_voa[2] == a_voa[2]
+@test b_voa[:, 1] == a_voa[:, 1]
+@test b_voa[:, 2] == a_voa[:, 2]
 
 a = [SVector(0.0, 0.0) for _ in 1:2]
 a_voa = VectorOfArray(a)
 a_voa .= 1.0
-@test a_voa[1] == SVector(1.0, 1.0)
-@test a_voa[2] == SVector(1.0, 1.0)
+@test a_voa[:, 1] == SVector(1.0, 1.0)
+@test a_voa[:, 2] == SVector(1.0, 1.0)
 
 #Broadcast Copy of StructArray
 x = StructArray{SVector{2, Float64}}((randn(2), randn(2)))
@@ -122,7 +122,7 @@ vx2 = copy(vx) .+ 1
 ans = vx .+ vx2
 @test ans.u isa StructArray
 
-# check that Base.similar(VectorOfArray{<:StaticArray}) returns the 
+# check that Base.similar(VectorOfArray{<:StaticArray}) returns the
 # same type as the original VectorOfArray
 x_staticvector = [SVector(0.0, 0.0) for _ in 1:2]
 x_structarray = StructArray{SVector{2, Float64}}((randn(2), randn(2)))
