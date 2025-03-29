@@ -1,5 +1,5 @@
 using RecursiveArrayTools, Zygote, ForwardDiff, Test
-using OrdinaryDiffEq
+using SciMLBase
 
 function loss(x)
     sum(abs2, Array(VectorOfArray([x .* i for i in 1:5])))
