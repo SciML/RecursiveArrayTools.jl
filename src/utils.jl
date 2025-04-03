@@ -1,7 +1,6 @@
 unrolled_foreach!(f, t::Tuple) = (f(t[1]); unrolled_foreach!(f, Base.tail(t)))
 unrolled_foreach!(f, ::Tuple{}) = nothing
 
-
 """
 ```julia
 recursivecopy(a::Union{AbstractArray{T, N}, AbstractVectorOfArray{T, N}})
@@ -130,7 +129,6 @@ function recursivefill!(bs::AbstractVectorOfArray{T, N},
         b[i] = fill(a, typeof(b[i]))
     end
 end
-
 
 for type in [AbstractArray, AbstractVectorOfArray]
     @eval function recursivefill!(b::$type{T, N}, a::T2) where {T <: Enum, T2 <: Enum, N}
