@@ -4,6 +4,8 @@ using RecursiveArrayTools, Test
     x = NamedArrayPartition(a = ones(10), b = rand(20))
     @test typeof(@. sin(x * x^2 / x - 1)) <: NamedArrayPartition
     @test typeof(x .^ 2) <: NamedArrayPartition
+    @test typeof(similar(x)) <: NamedArrayPartition
+    @test typeof(similar(x, Int)) <: NamedArrayPartition
     @test x.a ≈ ones(10)
     @test typeof(x .+ x[1:end]) <: Vector # test broadcast precedence 
     @test all(x .== x[1:end])

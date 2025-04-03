@@ -26,9 +26,34 @@ end
 # fields except through `getfield` and accessor functions.
 ArrayPartition(x::NamedArrayPartition) = getfield(x, :array_partition)
 
-function Base.similar(x::NamedArrayPartition, args...)
+function Base.similar(A::NamedArrayPartition{T, S}) where {T, S}
+    NamedArrayPartition(ArrayPartition{T, S}(similar.(getfield(A, :array_partition))),
+        getfield(A, :names_to_indices))
+end
+
+# return ArrayPartition when possible, otherwise next best thing of the correct size
+function Base.similar(A::NamedArrayPartition, dims::NTuple{N, Int}) where {N}
     NamedArrayPartition(
-        similar(getfield(x, :array_partition), args...), getfield(x, :names_to_indices))
+        similar(getfield(A, :array_partition), dims), getfield(A, :names_to_indices))
+end
+
+# similar array partition of common type
+@inline function Base.similar(A::NamedArrayPartition, ::Type{T}) where {T}
+    NamedArrayPartition(
+        similar(getfield(A, :array_partition), T), getfield(A, :names_to_indices))
+end
+
+# return ArrayPartition when possible, otherwise next best thing of the correct size
+function Base.similar(A::NamedArrayPartition, ::Type{T}, dims::NTuple{N, Int}) where {T, N}
+    NamedArrayPartition(
+        similar(getfield(A, :array_partition), T, dims), getfield(A, :names_to_indices))
+end
+
+# similar array partition with different types
+function Base.similar(
+        A::NamedArrayPartition, ::Type{T}, ::Type{S}, R::DataType...) where {T, S}
+    NamedArrayPartition(
+        similar(getfield(A, :array_partition), T, S, R), getfield(A, :names_to_indices))
 end
 
 Base.Array(x::NamedArrayPartition) = Array(ArrayPartition(x))
