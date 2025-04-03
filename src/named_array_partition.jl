@@ -26,6 +26,11 @@ end
 # fields except through `getfield` and accessor functions.
 ArrayPartition(x::NamedArrayPartition) = getfield(x, :array_partition)
 
+function Base.similar(x::NamedArrayPartition, args...)
+    NamedArrayPartition(
+        similar(getfield(x, :array_partition), args...), getfield(x, :names_to_indices))
+end
+
 Base.Array(x::NamedArrayPartition) = Array(ArrayPartition(x))
 
 function Base.zero(x::NamedArrayPartition{T, S, TN}) where {T, S, TN}
