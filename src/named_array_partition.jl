@@ -26,9 +26,9 @@ end
 # fields except through `getfield` and accessor functions.
 ArrayPartition(x::NamedArrayPartition) = getfield(x, :array_partition)
 
-function Base.similar(A::NamedArrayPartition{T, S}) where {T, S}
-    NamedArrayPartition(ArrayPartition{T, S}(similar.(getfield(A, :array_partition))),
-        getfield(A, :names_to_indices))
+function Base.similar(A::NamedArrayPartition)
+    NamedArrayPartition(
+        similar(getfield(A, :array_partition)), getfield(A, :names_to_indices))
 end
 
 # return ArrayPartition when possible, otherwise next best thing of the correct size
