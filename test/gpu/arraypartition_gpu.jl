@@ -1,7 +1,6 @@
 using RecursiveArrayTools, CUDA, Test
 CUDA.allowscalar(false)
 
-
 # Test indexing with colon
 a = (CUDA.zeros(5), CUDA.zeros(5))
 pA = ArrayPartition(a)

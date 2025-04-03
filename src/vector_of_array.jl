@@ -177,10 +177,11 @@ Base.parent(vec::VectorOfArray) = vec.u
 #### 2-argument
 
 # first element representative
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector; discretes = nothing, variables = nothing, parameters = nothing, independent_variables = nothing)
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector; discretes = nothing,
+        variables = nothing, parameters = nothing, independent_variables = nothing)
     sys = SymbolCache(something(variables, []),
-            something(parameters, []),
-            something(independent_variables, []))
+        something(parameters, []),
+        something(independent_variables, []))
     _size = size(vec[1])
     T = eltype(vec[1])
     return DiffEqArray{
@@ -199,10 +200,12 @@ function DiffEqArray(vec::AbstractVector, ts::AbstractVector; discretes = nothin
 end
 
 # T and N from type
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector; discretes = nothing, variables = nothing, parameters = nothing, independent_variables = nothing) where {T, N, VT <: AbstractArray{T, N}}
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector;
+        discretes = nothing, variables = nothing, parameters = nothing,
+        independent_variables = nothing) where {T, N, VT <: AbstractArray{T, N}}
     sys = SymbolCache(something(variables, []),
-            something(parameters, []),
-            something(independent_variables, []))
+        something(parameters, []),
+        something(independent_variables, []))
     return DiffEqArray{
         eltype(eltype(vec)),
         N + 1,
@@ -221,7 +224,8 @@ end
 #### 3-argument
 
 # NTuple, T from type
-function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector, ::NTuple{N, Int}; discretes = nothing) where {T, N}
+function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector,
+        ::NTuple{N, Int}; discretes = nothing) where {T, N}
     DiffEqArray{
         eltype(T), N, typeof(vec), typeof(ts), Nothing, Nothing, typeof(discretes)}(
         vec,
@@ -232,8 +236,11 @@ function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector, ::NTuple{N, Int
 end
 
 # NTuple parameter
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, Int}; discretes = nothing) where {T, N, VT <: AbstractArray{T, N}, N2}
-    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes)}(vec,
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, Int};
+        discretes = nothing) where {T, N, VT <: AbstractArray{T, N}, N2}
+    DiffEqArray{
+        eltype(T), N + 1, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes)}(
+        vec,
         ts,
         p,
         nothing,
@@ -241,10 +248,11 @@ function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, 
 end
 
 # first element representative
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p; discretes = nothing, variables = nothing, parameters = nothing, independent_variables = nothing)
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p; discretes = nothing,
+        variables = nothing, parameters = nothing, independent_variables = nothing)
     sys = SymbolCache(something(variables, []),
-            something(parameters, []),
-            something(independent_variables, []))
+        something(parameters, []),
+        something(independent_variables, []))
     _size = size(vec[1])
     T = eltype(vec[1])
     return DiffEqArray{
@@ -263,11 +271,14 @@ function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p; discretes = not
 end
 
 # T and N from type
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p; discretes = nothing, variables = nothing, parameters = nothing, independent_variables = nothing) where {T, N, VT <: AbstractArray{T, N}}
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p;
+        discretes = nothing, variables = nothing, parameters = nothing,
+        independent_variables = nothing) where {T, N, VT <: AbstractArray{T, N}}
     sys = SymbolCache(something(variables, []),
-            something(parameters, []),
-            something(independent_variables, []))
-    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes)}(vec,
+        something(parameters, []),
+        something(independent_variables, []))
+    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts),
+        typeof(p), typeof(sys), typeof(discretes)}(vec,
         ts,
         p,
         sys,
@@ -277,7 +288,8 @@ end
 #### 4-argument
 
 # NTuple, T from type
-function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector, ::NTuple{N, Int}, p; discretes = nothing) where {T, N}
+function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector,
+        ::NTuple{N, Int}, p; discretes = nothing) where {T, N}
     DiffEqArray{
         eltype(T), N, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes)}(
         vec,
@@ -288,8 +300,10 @@ function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector, ::NTuple{N, Int
 end
 
 # NTuple parameter
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, Int}, sys; discretes = nothing) where {T, N, VT <: AbstractArray{T, N}, N2}
-    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes)}(vec,
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, Int}, sys;
+        discretes = nothing) where {T, N, VT <: AbstractArray{T, N}, N2}
+    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts),
+        typeof(p), typeof(sys), typeof(discretes)}(vec,
         ts,
         p,
         sys,
@@ -316,8 +330,10 @@ function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys; discretes 
 end
 
 # T and N from type
-function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p, sys; discretes = nothing) where {T, N, VT <: AbstractArray{T, N}}
-    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes)}(vec,
+function DiffEqArray(vec::AbstractVector{VT}, ts::AbstractVector, p, sys;
+        discretes = nothing) where {T, N, VT <: AbstractArray{T, N}}
+    DiffEqArray{eltype(T), N + 1, typeof(vec), typeof(ts),
+        typeof(p), typeof(sys), typeof(discretes)}(vec,
         ts,
         p,
         sys,
@@ -327,7 +343,8 @@ end
 #### 5-argument
 
 # NTuple, T from type
-function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector, ::NTuple{N, Int}, p, sys; discretes = nothing) where {T, N}
+function DiffEqArray(vec::AbstractVector{T}, ts::AbstractVector,
+        ::NTuple{N, Int}, p, sys; discretes = nothing) where {T, N}
     DiffEqArray{
         eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes)}(
         vec,
@@ -942,7 +959,7 @@ end
     VectorOfArray(rewrap(parent, u))
 end
 
-rewrap(::Array,u) = u
+rewrap(::Array, u) = u
 rewrap(parent, u) = convert(typeof(parent), u)
 
 for (type, N_expr) in [
