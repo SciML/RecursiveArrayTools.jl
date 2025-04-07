@@ -33,8 +33,12 @@ end
 
 # return ArrayPartition when possible, otherwise next best thing of the correct size
 function Base.similar(A::NamedArrayPartition, dims::NTuple{N, Int}) where {N}
-    NamedArrayPartition(
-        similar(getfield(A, :array_partition), dims), getfield(A, :names_to_indices))
+    similar_array_partition = similar(getfield(A, :array_partition), dims)
+    if similar_array_partition isa ArrayPartition
+        NamedArrayPartition(similar_array_partition, getfield(A, :names_to_indices))
+    else
+        similar_array_partition
+    end
 end
 
 # similar array partition of common type
