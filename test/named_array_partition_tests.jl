@@ -7,6 +7,7 @@ using RecursiveArrayTools, Test
     @test typeof(similar(x)) <: NamedArrayPartition
     @test typeof(similar(x, Int)) <: NamedArrayPartition
     @test typeof(similar(x, (5, 5))) <: Matrix
+    @test typeof(similar(x, Int, (5, 5))) <: Matrix
     @test x.a ≈ ones(10)
     @test typeof(x .+ x[1:end]) <: Vector # test broadcast precedence 
     @test all(x .== x[1:end])
