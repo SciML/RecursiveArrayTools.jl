@@ -143,7 +143,7 @@ end
 Base.convert(::Type{AbstractArray}, VA::AbstractVectorOfArray) = stack(VA.u)
 
 function Adapt.adapt_structure(to, VA::AbstractVectorOfArray)
-    Adapt.adapt(to, Array(VA))
+    Adapt.adapt.(to, VA.u)
 end
 
 function VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N}
