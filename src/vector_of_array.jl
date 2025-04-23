@@ -147,7 +147,7 @@ function Adapt.adapt_structure(to, VA::AbstractVectorOfArray)
 end
 
 function Adapt.adapt_structure(to, VA::AbstractDiffEqArray)
-    DiffEqArray(Adapt.adapt.((to,), VA.u), Adapt.adapt((to,), VA.t))
+    DiffEqArray(Adapt.adapt.((to,), VA.u), Adapt.adapt(to, VA.t))
 end
 
 function VectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N}
