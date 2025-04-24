@@ -407,13 +407,13 @@ Base.getindex(A::AbstractVectorOfArray, I::AbstractArray{Int}) = A.u[I]
 Base.getindex(A::AbstractDiffEqArray, I::Int) = A.u[I]
 Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) = A.u[I]
 
-@deprecate Base.getindex(A::AbstractVectorOfArray{T,N,A}, I::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[I] false
+@deprecate Base.getindex(VA::AbstractVectorOfArray{T,N,A}, I::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
 
-@deprecate Base.getindex(A::AbstractVectorOfArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[I] false
+@deprecate Base.getindex(VA::AbstractVectorOfArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
 
-@deprecate Base.getindex(A::AbstractDiffEqArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[I] false
+@deprecate Base.getindex(VA::AbstractDiffEqArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
 
-@deprecate Base.getindex(A::AbstractDiffEqArray{T,N,A}, i::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[i] false
+@deprecate Base.getindex(VA::AbstractDiffEqArray{T,N,A}, i::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[i] false
 
 __parameterless_type(T) = Base.typename(T).wrapper
 
