@@ -388,29 +388,32 @@ end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
 @inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
 @inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
-function Base.firstindex(VA::AbstractVectorOfArray)
-    Base.depwarn(
+function Base.firstindex(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A}
+    N > 1 && Base.depwarn(
         "Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",
         :firstindex)
     return firstindex(VA.u)
 end
 
-function Base.lastindex(VA::AbstractVectorOfArray)
-    Base.depwarn(
+function Base.lastindex(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A}
+     N > 1 && Base.depwarn(
         "Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",
         :lastindex)
     return lastindex(VA.u)
 end
 
-@deprecate Base.getindex(A::AbstractVectorOfArray, I::Int) Base.getindex(A, :, I) false
+Base.getindex(A::AbstractVectorOfArray, I::Int) = A.u[I]
+Base.getindex(A::AbstractVectorOfArray, I::AbstractArray{Int}) = A.u[I]
+Base.getindex(A::AbstractDiffEqArray, I::Int) = A.u[I]
+Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) = A.u[I]
 
-@deprecate Base.getindex(A::AbstractVectorOfArray, I::AbstractArray{Int}) Base.getindex(
-    A, :, I) false
+@deprecate Base.getindex(A::AbstractVectorOfArray{T,N,A}, I::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[I] false
 
-@deprecate Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) Base.getindex(
-    A, :, I) false
+@deprecate Base.getindex(A::AbstractVectorOfArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[I] false
 
-@deprecate Base.getindex(A::AbstractDiffEqArray, i::Int) Base.getindex(A, :, i) false
+@deprecate Base.getindex(A::AbstractDiffEqArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[I] false
+
+@deprecate Base.getindex(A::AbstractDiffEqArray{T,N,A}, i::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} A.u[i] false
 
 __parameterless_type(T) = Base.typename(T).wrapper
 
@@ -520,22 +523,25 @@ Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}
     VA.u[I] = v
 end
 
-@deprecate Base.setindex!(VA::AbstractVectorOfArray, v, I::Int) Base.setindex!(VA, v, :, I) false
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Int) = Base.setindex!(VA.u, v, I)
+@deprecate Base.setindex!(VA::AbstractVectorOfArray{T,N,A}, v, I::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(VA.u, v, I) false
 
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
         ::Colon, I::Colon) where {T, N}
     VA.u[I] = v
 end
 
-@deprecate Base.setindex!(VA::AbstractVectorOfArray, v, I::Colon) Base.setindex!(
-    VA, v, :, I) false
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Colon) = Base.setindex!(VA.u, v, I)
+@deprecate Base.setindex!(VA::AbstractVectorOfArray{T,N,A}, v, I::Colon)  where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
+    VA.u, v, I) false
 
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
         ::Colon, I::AbstractArray{Int}) where {T, N}
     VA.u[I] = v
 end
 
-@deprecate Base.setindex!(VA::AbstractVectorOfArray, v, I::AbstractArray{Int}) Base.setindex!(
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::AbstractArray{Int}) = Base.setindex!(VA.u, v, I)
+@deprecate Base.setindex!(VA::AbstractVectorOfArray{T,N,A}, v, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
     VA, v, :, I) false
 
 Base.@propagate_inbounds function Base.setindex!(
