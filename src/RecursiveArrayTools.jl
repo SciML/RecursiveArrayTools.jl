@@ -126,6 +126,9 @@ additional properties:
 An AbstractDiffEqArray adds the following fields:
 
 * `t` which holds the times of each timestep.
+* `discretes` (optional) which contains a
+  `SymbolicIndexingInterface.ParameterTimeseriesCollection` to allow storing and indexing
+  discrete variables. Indexing behavior is handled via `SymbolicIndexingInterface.getu`.
 """
 abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
