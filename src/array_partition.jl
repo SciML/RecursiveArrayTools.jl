@@ -430,7 +430,10 @@ end
 
 ## Linear Algebra
 
-ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
+function ArrayInterface.zeromatrix(A::ArrayPartition)
+    x = reduce(vcat,vec.(A.x))
+    x .* x' .* false
+end
 
 function __get_subtypes_in_module(
         mod, supertype; include_supertype = true, all = false, except = [])
