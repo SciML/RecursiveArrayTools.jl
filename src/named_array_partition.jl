@@ -1,4 +1,20 @@
-abstract type AbstractNamedArrayPartition{T, A, NT} <: AbstractVector{T} end
+"""
+    AbstractNamedArrayPartition{T, A, NT}
+
+An abstract type above that of `NamedArrayPartition` that can be used to subtype a
+new and seperately named 'NamedArrayPartition'-like structure. This can be done
+by defining your new type as:
+
+```julia
+struct foo{T, A <: ArrayPartition{T}, NT <: NamedTuple} <: AbstractNamedArrayPartition{T, A, NT}
+    array_partition::A
+    names_to_indices::NT
+end
+```
+
+where `foo` is your custom name and then all funcitonalities of NamedArrayPartitions will be inherited.
+"""
+abstract type AbstractNamedArrayPartition{T, A, NT} <: AbstractArrayPartition{T} end
 
 """
     NamedArrayPartition(; kwargs...)
