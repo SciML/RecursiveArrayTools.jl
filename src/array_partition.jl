@@ -1,3 +1,5 @@
+abstract type AbstractArrayPartition{T} <: AbstractVector{T} end
+
 """
 ```julia
 ArrayPartition(x::AbstractArray...)
@@ -23,7 +25,7 @@ A = ArrayPartition(y, z)
 
 we would have `A.x[1]==y` and `A.x[2]==z`. Broadcasting like `f.(A)` is efficient.
 """
-struct ArrayPartition{T, S <: Tuple} <: AbstractVector{T}
+struct ArrayPartition{T, S <: Tuple} <: AbstractArrayPartition{T}
     x::S
 end
 
