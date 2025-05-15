@@ -1,6 +1,6 @@
 # The AbstractVectorOfArray and AbstractDiffEqArray Interfaces
 
-```@doc
+```@docs
 AbstractVectorOfArray
 AbstractDiffEqArray
 ```
