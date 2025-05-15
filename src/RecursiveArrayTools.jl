@@ -150,6 +150,6 @@ export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_pus
        vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
        recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
-export ArrayPartition, NamedArrayPartition
+export ArrayPartition, NamedArrayPartition, AbstractNamedArrayPartition
 
 end # module
