@@ -914,7 +914,7 @@ end
 ## broadcasting
 
 struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
-VectorOfArrayStyle(::Val{N}) where {N} = VectorOfArrayStyle{N}()
+VectorOfArrayStyle{N}(::Val{N}) where {N} = VectorOfArrayStyle{N}()
 
 # The order is important here. We want to override Base.Broadcast.DefaultArrayStyle to return another Base.Broadcast.DefaultArrayStyle.
 Broadcast.BroadcastStyle(a::VectorOfArrayStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = a
