@@ -31,7 +31,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 [extensions]
 RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
 RecursiveArrayToolsForwardDiffExt = "ForwardDiff"
-RecursiveArrayToolsKernelAbstractionExt = "KernelAbstractions"
+RecursiveArrayToolsKernelAbstractionsExt = "KernelAbstractions"
 RecursiveArrayToolsMeasurementsExt = "Measurements"
 RecursiveArrayToolsMonteCarloMeasurementsExt = "MonteCarloMeasurements"
 RecursiveArrayToolsReverseDiffExt = ["ReverseDiff", "Zygote"]
