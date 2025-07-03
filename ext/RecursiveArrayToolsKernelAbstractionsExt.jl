@@ -1,4 +1,4 @@
-module RecursiveArrayToolsKernelAbstractions
+module RecursiveArrayToolsKernelAbstractionsExt
 
 import RecursiveArrayTools: VectorOfArray
 import KernelAbstractions
