@@ -1,4 +1,4 @@
-using RecursiveArrayTools, CUDA, Test, Zygote, Adapt
+using RecursiveArrayTools, CUDA, Test, Zygote, Adapt, KernelAbstractions
 CUDA.allowscalar(false)
 
 # Test indexing with colon
@@ -6,9 +6,13 @@ x = zeros(5)
 y = VectorOfArray([x, x, x])
 y[:, :]
 
+KernelAbstractions.get_backend(y) isa KernelAbstractions.CPU
+
 x = CUDA.zeros(5)
 y = VectorOfArray([x, x, x])
 y[:, :]
+
+KernelAbstractions.get_backend(y) isa CUDA.CUDABackend
 
 # Test indexing with boolean masks and colon
 nx, ny, nt = 3, 4, 5
