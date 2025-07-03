@@ -138,3 +138,9 @@ end
     @test u1.u[1] isa SVector
     @test u1.u[2] isa SVector
 end
+
+import KernelAbstractions: get_backend
+@testset "KernelAbstractions" begin
+    v = VectorOfArray([randn(2) for i in 1:10])
+    @test get_backend(v) === get_backend(parent(v)[1])
+end
