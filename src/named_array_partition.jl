@@ -135,6 +135,7 @@ end
     NamedArrayPartition(f, N, getfield(x, :names_to_indices))
 end
 
+# TODO: has this also performance problems and can be improved?
 @inline function Base.copyto!(dest::NamedArrayPartition,
         bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NamedArrayPartition}})
     N = npartitions(dest, bc)

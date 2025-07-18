@@ -364,15 +364,37 @@ end
     ArrayPartition(f, N)
 end
 
+# old version
+# @inline function Base.copyto!(dest::ArrayPartition,
+#         bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
+#         Style,
+# }
+#     N = npartitions(dest, bc)
+#     @inline function f(i)
+#         copyto!(dest.x[i], unpack(bc, i))
+#     end
+#     ntuple(f, Val(N))
+#     dest
+# end
+
+# new version
 @inline function Base.copyto!(dest::ArrayPartition,
-        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
-        Style,
-}
+        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {Style}
     N = npartitions(dest, bc)
-    @inline function f(i)
-        copyto!(dest.x[i], unpack(bc, i))
+    # Check if this is a simple enough broadcast that we can optimize
+    if bc.f isa Union{typeof(+), typeof(*), typeof(muladd)}
+        # @show "hey", bc, N
+        @inbounds for i in 1:N
+            # Use materialize! which is more efficient than copyto! for simple broadcasts
+            Base.Broadcast.materialize!(dest.x[i], unpack(bc, i))
+        end
+    else
+        # Fall back to original implementation for complex broadcasts
+        @inline function f(i)
+            copyto!(dest.x[i], unpack(bc, i))
+        end
+        ntuple(f, Val(N))
     end
-    ntuple(f, Val(N))
     dest
 end
 
@@ -411,8 +433,10 @@ end
         i) where {Style <: Broadcast.DefaultArrayStyle}
     Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 end
-unpack(x, ::Any) = x
-unpack(x::ArrayPartition, i) = x.x[i]
+
+@inline unpack(x, ::Any) = x
+@inline unpack(x::ArrayPartition, i) = x.x[i]
+
 
 @inline function unpack_args(i, args::Tuple)
     (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
