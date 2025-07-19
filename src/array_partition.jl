@@ -383,7 +383,6 @@ end
     N = npartitions(dest, bc)
     # Check if this is a simple enough broadcast that we can optimize
     if bc.f isa Union{typeof(+), typeof(*), typeof(muladd)}
-        # @show "hey", bc, N
         @inbounds for i in 1:N
             # Use materialize! which is more efficient than copyto! for simple broadcasts
             Base.Broadcast.materialize!(dest.x[i], unpack(bc, i))
