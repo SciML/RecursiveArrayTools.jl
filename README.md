@@ -22,8 +22,6 @@ the documentation, which contains the unreleased features.
 
 ## Example
 
-### VectorOfArray
-
 ```julia
 using RecursiveArrayTools
 a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -32,30 +30,11 @@ vA = VectorOfArray(a)
 vB = VectorOfArray(b)
 
 vA .* vB # Now all standard array stuff works!
-```
 
-### ArrayPartition
-
-```julia
 a = (rand(5), rand(5))
 b = (rand(5), rand(5))
 pA = ArrayPartition(a)
 pB = ArrayPartition(b)
 
 pA .* pB # Now all standard array stuff works!
-
-
-x0 = rand(3,3)
-v0 = rand(3,3)
-a0 = rand(3,3)
-u0 = ArrayPartition(x0, v0, a0)
-u0.x[1] == x0 # true
-
-u0 .+= 1
-u0.x[2] == v0 # still true
-
-# do some calculations creating a new partitioned array
-unew = u0 * 10
-# easily access the individual components without having to rely on complicated indexing
-xnew, vnew, anew = unew.x
 ```
