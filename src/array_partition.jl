@@ -417,10 +417,8 @@ end
         i) where {Style <: Broadcast.DefaultArrayStyle}
     Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 end
-
 @inline unpack(x, ::Any) = x
 @inline unpack(x::ArrayPartition, i) = x.x[i]
-
 
 @inline function unpack_args(i, args::Tuple)
     (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
