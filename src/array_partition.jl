@@ -364,28 +364,13 @@ end
     ArrayPartition(f, N)
 end
 
-# old version
-# @inline function Base.copyto!(dest::ArrayPartition,
-#         bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
-#         Style,
-# }
-#     N = npartitions(dest, bc)
-#     @inline function f(i)
-#         copyto!(dest.x[i], unpack(bc, i))
-#     end
-#     ntuple(f, Val(N))
-#     dest
-# end
-
-# new version
 @inline function Base.copyto!(dest::ArrayPartition,
         bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {Style}
     N = npartitions(dest, bc)
-    # Check if this is a simple enough broadcast that we can optimize
-    if bc.f isa Union{typeof(+), typeof(*), typeof(muladd)}
+    # If dest is all the same underlying array type, use for-loop
+    if all(x isa typeof(first(dest.x)) for x in dest.x)
         @inbounds for i in 1:N
-            # Use materialize! which is more efficient than copyto! for simple broadcasts
-            Base.Broadcast.materialize!(dest.x[i], unpack(bc, i))
+            copyto!(dest.x[i], unpack(bc, i))
         end
     else
         # Fall back to original implementation for complex broadcasts
