@@ -138,10 +138,9 @@ end
 @inline function Base.copyto!(dest::NamedArrayPartition,
         bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NamedArrayPartition}})
     N = npartitions(dest, bc)
-    @inline function f(i)
-        copyto!(ArrayPartition(dest).x[i], unpack(bc, i))
+    @inbounds for i in 1:N
+        copyto!(dest.x[i], unpack(bc, i))
     end
-    ntuple(f, Val(N))
     return dest
 end
 

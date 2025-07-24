@@ -365,14 +365,20 @@ end
 end
 
 @inline function Base.copyto!(dest::ArrayPartition,
-        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
-        Style,
-}
+        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {Style}
     N = npartitions(dest, bc)
-    @inline function f(i)
-        copyto!(dest.x[i], unpack(bc, i))
+    # If dest is all the same underlying array type, use for-loop
+    if all(x isa typeof(first(dest.x)) for x in dest.x)
+        @inbounds for i in 1:N
+            copyto!(dest.x[i], unpack(bc, i))
+        end
+    else
+        # Fall back to original implementation for complex broadcasts
+        @inline function f(i)
+            copyto!(dest.x[i], unpack(bc, i))
+        end
+        ntuple(f, Val(N))
     end
-    ntuple(f, Val(N))
     dest
 end
 
@@ -411,8 +417,8 @@ end
         i) where {Style <: Broadcast.DefaultArrayStyle}
     Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 end
-unpack(x, ::Any) = x
-unpack(x::ArrayPartition, i) = x.x[i]
+@inline unpack(x, ::Any) = x
+@inline unpack(x::ArrayPartition, i) = x.x[i]
 
 @inline function unpack_args(i, args::Tuple)
     (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
