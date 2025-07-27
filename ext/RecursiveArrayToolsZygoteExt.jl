@@ -2,13 +2,9 @@ module RecursiveArrayToolsZygoteExt
 
 using RecursiveArrayTools
 
-if isdefined(Base, :get_extension)
-    using Zygote
-    using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
-else
-    using ..Zygote
-    using ..Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
-end
+using Zygote
+using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
+
 
 # Define a new species of projection operator for this type:
 # ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()

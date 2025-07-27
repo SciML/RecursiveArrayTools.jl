@@ -1,7 +1,7 @@
 module RecursiveArrayToolsTrackerExt
 
 import RecursiveArrayTools
-isdefined(Base, :get_extension) ? (import Tracker) : (import ..Tracker)
+import Tracker
 
 function RecursiveArrayTools.recursivecopy!(b::AbstractArray{T, N},
         a::AbstractArray{T2, N}) where {
