@@ -2,7 +2,6 @@ module RecursiveArrayToolsZygoteExt
 
 using RecursiveArrayTools
 
-if isdefined(Base, :get_extension)
     using Zygote
     using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
 else
