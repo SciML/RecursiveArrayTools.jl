@@ -3,15 +3,29 @@ unrolled_foreach!(f, ::Tuple{}) = nothing
 
 """
 ```julia
-recursivecopy(a::Union{AbstractArray{T, N}, AbstractVectorOfArray{T, N}})
+recursivecopy(a)
 ```
 
 A recursive `copy` function. Acts like a `deepcopy` on arrays of arrays, but
-like `copy` on arrays of scalars.
-"""
-function recursivecopy(a)
-    deepcopy(a)
+like `copy` on arrays of scalars. For struct types, recursively copies each
+field, creating new instances while preserving the struct type.
+
+## Examples
+
+```julia
+# Basic array copying
+arr = [[1, 2], [3, 4]]
+copied = recursivecopy(arr)  # New arrays at each level
+
+# Struct copying
+struct MyStruct
+    data::Vector{Float64}
+    metadata::String
 end
+original = MyStruct([1.0, 2.0], "test")
+copied = recursivecopy(original)  # New struct with new vector
+```
+"""
 function recursivecopy(a::Union{StaticArraysCore.SVector, StaticArraysCore.SMatrix,
         StaticArraysCore.SArray, Number})
     copy(a)
@@ -33,6 +47,42 @@ function recursivecopy(a::AbstractVectorOfArray)
     b = copy(a)
     b.u .= recursivecopy.(a.u)
     return b
+end
+
+function _is_basic_julia_type(T)
+    # Check if this is a built-in Julia type that we should not handle as a user struct
+    # We check the module to identify Core/Base types vs user-defined types
+    mod = Base.parentmodule(T)
+    return T <: AbstractString || T <: Number || T <: Symbol || T <: Tuple || 
+           T <: UnitRange || T <: StepRange || T <: Regex || 
+           T === Nothing || T === Missing || 
+           mod === Core || mod === Base
+end
+
+function recursivecopy(s::T) where {T}
+    # Only handle user-defined immutable structs. Many basic Julia types (String, Symbol, 
+    # Tuple, etc.) are technically structs but should use copy() or return as-is.
+    if Base.isstructtype(T) && !_is_basic_julia_type(T)
+        if Base.ismutabletype(T)
+            error("recursivecopy for mutable structs is not currently implemented. Use deepcopy instead.")
+        else
+            # Handle immutable structs only
+            field_values = ntuple(fieldcount(T)) do i
+                field_value = getfield(s, i)
+                recursivecopy(field_value)
+            end
+            return T(field_values...)
+        end
+    elseif _is_basic_julia_type(T)
+        # For basic Julia types, use copy if available, otherwise return as-is (for immutable types)
+        if hasmethod(copy, Tuple{T})
+            return copy(s)
+        else
+            return s  # Immutable basic types like Symbol, Nothing, Missing don't need copying
+        end
+    else
+        deepcopy(s)
+    end
 end
 
 """
