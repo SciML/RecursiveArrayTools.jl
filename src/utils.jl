@@ -54,7 +54,7 @@ function _is_basic_julia_type(T)
     # We check the module to identify Core/Base types vs user-defined types
     mod = Base.parentmodule(T)
     return T <: AbstractString || T <: Number || T <: Symbol || T <: Tuple || 
-           T <: UnitRange || T <: StepRange || T <: Regex || 
+           T <: UnitRange || T <: StepRange || T <: Regex || T <: Function ||
            T === Nothing || T === Missing || 
            mod === Core || mod === Base
 end
