@@ -110,6 +110,7 @@ function recursivefill!(bs::AbstractVectorOfArray{T, N},
         a::T2) where {T <: StaticArraysCore.StaticArray,
         T2 <: StaticArraysCore.StaticArray, N}
     @inbounds for b in bs, i in eachindex(b)
+
         b[i] = copy(a)
     end
 end
@@ -126,6 +127,7 @@ function recursivefill!(bs::AbstractVectorOfArray{T, N},
         a::T2) where {T <: StaticArraysCore.SArray,
         T2 <: Union{Number, Bool}, N}
     @inbounds for b in bs, i in eachindex(b)
+
         b[i] = fill(a, typeof(b[i]))
     end
 end
