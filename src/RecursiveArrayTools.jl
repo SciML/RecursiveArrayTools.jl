@@ -28,14 +28,7 @@ An AbstractVectorOfArray subtype should match the following behaviors.
 
 !!! note
 
-    In 2023 the linear indexing `A[i]`` was deprecated. It previously had the behavior that
-    `A[i] = A.u[i]`. However, this is incompatible with standard `AbstractArray` interfaces,
-    Since if `A = VectorOfArray([[1,2],[3,4]])` and `A` is supposed to act like `[1 3; 2 4]`,
-    then there is a difference `A[1] = [1,2]` for the VectorOfArray while `A[1] = 1` for the
-    matrix. This causes many issues if `AbstractVectorOfArray <: AbstractArray`. Thus we
-    plan in 2026 to complete the deprecation and thus have a breaking update where `A[i]`
-    matches the linear indexing of an `AbstractArray`, and then making
-    `AbstractVectorOfArray <: AbstractArray`. Until then, `AbstractVectorOfArray` due to
+    In 2023 the linear indexing `A[i]`` was deprecated. It previously had the behavior that `A[i] = A.u[i]`. However, this is incompatible with standard `AbstractArray`interfaces, Since if`A = VectorOfArray([[1,2],[3,4]])`and`A`is supposed to act like`[1 3; 2 4]`, then there is a difference `A[1] = [1,2]`for the VectorOfArray while`A[1] = 1`for the matrix. This causes many issues if`AbstractVectorOfArray <: AbstractArray`. Thus we plan in 2026 to complete the deprecation and thus have a breaking update where `A[i]`matches the linear indexing of an`AbstractArray`, and then making `AbstractVectorOfArray <: AbstractArray`. Until then, `AbstractVectorOfArray` due to
     this interface break but manually implements an AbstractArray-like interface for
     future compatibility.
 
@@ -43,7 +36,7 @@ An AbstractVectorOfArray subtype should match the following behaviors.
 
 An AbstractVectorOfArray has the following fields:
 
-* `u` which holds the Vector of values at each timestep
+  - `u` which holds the Vector of values at each timestep
 
 ## Array Interface
 
@@ -125,7 +118,7 @@ additional properties:
 
 An AbstractDiffEqArray adds the following fields:
 
-* `t` which holds the times of each timestep.
+  - `t` which holds the times of each timestep.
 """
 abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 

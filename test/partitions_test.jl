@@ -286,7 +286,8 @@ end
 @testset "Copy and zero with type changing array" begin
     # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied
     struct TypeChangingArray{T, N} <: AbstractArray{T, N} end
-    Base.copy(::TypeChangingArray{T, N}) where {T, N} = Array{T, N}(undef,
+    Base.copy(::TypeChangingArray{
+        T, N}) where {T, N} = Array{T, N}(undef,
         ntuple(_ -> 0, N))
     Base.zero(::TypeChangingArray{T, N}) where {T, N} = zeros(T, ntuple(_ -> 0, N))
 

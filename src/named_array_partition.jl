@@ -115,7 +115,9 @@ end
 
 # hook into ArrayPartition broadcasting routines
 @inline RecursiveArrayTools.npartitions(x::NamedArrayPartition) = npartitions(ArrayPartition(x))
-@inline RecursiveArrayTools.unpack(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NamedArrayPartition}}, i) = Broadcast.Broadcasted(
+@inline RecursiveArrayTools.unpack(
+    bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NamedArrayPartition}},
+    i) = Broadcast.Broadcasted(
     bc.f, RecursiveArrayTools.unpack_args(i, bc.args))
 @inline RecursiveArrayTools.unpack(x::NamedArrayPartition, i) = unpack(ArrayPartition(x), i)
 
@@ -123,7 +125,10 @@ function Base.copy(A::NamedArrayPartition{T, S, NT}) where {T, S, NT}
     NamedArrayPartition{T, S, NT}(copy(ArrayPartition(A)), getfield(A, :names_to_indices))
 end
 
-@inline NamedArrayPartition(f::F, N, names_to_indices) where {F <: Function} = NamedArrayPartition(
+@inline NamedArrayPartition(f::F,
+    N,
+    names_to_indices) where {F <:
+                             Function} = NamedArrayPartition(
     ArrayPartition(ntuple(f, Val(N))), names_to_indices)
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NamedArrayPartition}})

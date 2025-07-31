@@ -5,7 +5,6 @@ using RecursiveArrayTools
 using Zygote
 using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
 
-
 # Define a new species of projection operator for this type:
 # ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
 
@@ -216,10 +215,12 @@ z̄ -> (nothing, conj.(z̄))
 @adjoint Broadcast.broadcasted(::typeof(real), x::AbstractVectorOfArray) = real.(x),
 z̄ -> (nothing, real.(z̄))
 
-@adjoint Broadcast.broadcasted(::typeof(imag), x::AbstractVectorOfArray) = imag.(x),
+@adjoint Broadcast.broadcasted(
+    ::typeof(imag), x::AbstractVectorOfArray) = imag.(x),
 z̄ -> (nothing, im .* real.(z̄))
 
-@adjoint Broadcast.broadcasted(::typeof(abs2), x::AbstractVectorOfArray) = abs2.(x),
+@adjoint Broadcast.broadcasted(::typeof(abs2),
+    x::AbstractVectorOfArray) = abs2.(x),
 z̄ -> (nothing, 2 .* real.(z̄) .* x)
 
 @adjoint function Broadcast.broadcasted(
@@ -260,7 +261,9 @@ end
     end
 end
 
-@adjoint Broadcast.broadcasted(::Type{T}, x::AbstractVectorOfArray) where {T <: Number} = T.(x),
+@adjoint Broadcast.broadcasted(::Type{T},
+    x::AbstractVectorOfArray) where {T <:
+                                     Number} = T.(x),
 ȳ -> (nothing, Zygote._project(x, ȳ))
 
 function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
@@ -273,11 +276,16 @@ function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
     end
 end
 
-@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray, b) where {F} = _broadcast_generic(
+@adjoint Broadcast.broadcasted(
+    ::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray,
+    b) where {F} = _broadcast_generic(
     __context__, f, a, b)
-@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a, b::AbstractVectorOfArray) where {F} = _broadcast_generic(
+@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a,
+    b::AbstractVectorOfArray) where {F} = _broadcast_generic(
     __context__, f, a, b)
-@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray, b::AbstractVectorOfArray) where {F} = _broadcast_generic(
+@adjoint Broadcast.broadcasted(
+    ::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray,
+    b::AbstractVectorOfArray) where {F} = _broadcast_generic(
     __context__, f, a, b)
 
 @inline function _broadcast_generic(__context__, f::F, args...) where {F}
