@@ -45,9 +45,9 @@ pB = ArrayPartition(b)
 pA .* pB # Now all standard array stuff works!
 
 # or do:
-x0 = rand(3,3)
-v0 = rand(3,3)
-a0 = rand(3,3)
+x0 = rand(3, 3)
+v0 = rand(3, 3)
+a0 = rand(3, 3)
 u0 = ArrayPartition(x0, v0, a0)
 u0.x[1] == x0 # true
 

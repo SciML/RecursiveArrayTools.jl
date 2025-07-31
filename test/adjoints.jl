@@ -13,6 +13,7 @@ function loss3(x)
     y = VectorOfArray([x .* i for i in 1:5])
     tmp = 0.0
     for i in 1:5, j in 1:5
+
         tmp += y[i, j]
     end
     tmp
@@ -22,6 +23,7 @@ function loss4(x)
     y = DiffEqArray([x .* i for i in 1:5], 1:5)
     tmp = 0.0
     for i in 1:5, j in 1:5
+
         tmp += y[i, j]
     end
     tmp
