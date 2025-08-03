@@ -11,8 +11,6 @@ using SymbolicIndexingInterface
 
 import Adapt
 
-import Tables, IteratorInterfaceExtensions
-
 """
     AbstractVectorOfArray{T, N, A}
 
@@ -124,7 +122,6 @@ abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
 
 include("utils.jl")
 include("vector_of_array.jl")
-include("tabletraits.jl")
 include("array_partition.jl")
 include("named_array_partition.jl")
 
