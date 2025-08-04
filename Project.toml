@@ -37,7 +37,6 @@ RecursiveArrayToolsMonteCarloMeasurementsExt = "MonteCarloMeasurements"
 RecursiveArrayToolsReverseDiffExt = ["ReverseDiff", "Zygote"]
 RecursiveArrayToolsSparseArraysExt = ["SparseArrays"]
 RecursiveArrayToolsStructArraysExt = "StructArrays"
-RecursiveArrayToolsIteratorInterfaceExtensionsExt = "IteratorInterfaceExtensions"
 RecursiveArrayToolsTablesExt = ["Tables", "IteratorInterfaceExtensions"]
 RecursiveArrayToolsTrackerExt = "Tracker"
 RecursiveArrayToolsZygoteExt = "Zygote"

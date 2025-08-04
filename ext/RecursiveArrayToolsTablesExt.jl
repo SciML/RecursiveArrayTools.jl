@@ -82,7 +82,7 @@ end
 
 # Iterator interface for QueryVerse
 # (see also https://tables.juliadata.org/stable/#Tables.datavaluerows)
-# Note: isiterable is defined in IteratorInterfaceExtensionsExt
+IteratorInterfaceExtensions.isiterable(::AbstractDiffEqArray) = true
 function IteratorInterfaceExtensions.getiterator(A::AbstractDiffEqArray)
     Tables.datavaluerows(Tables.rows(A))
 end
