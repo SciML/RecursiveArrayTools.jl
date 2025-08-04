@@ -1,5 +1,5 @@
 using RecursiveArrayTools
-using RecursiveArrayTools: Tables, IteratorInterfaceExtensions
+using Tables, IteratorInterfaceExtensions
 
 # Test Tables interface with row access + IteratorInterfaceExtensions for QueryVerse
 # (see https://tables.juliadata.org/stable/#Testing-Tables.jl-Implementations)

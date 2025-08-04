@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Random, Test
+using RecursiveArrayTools, Random, Test, Tables, IteratorInterfaceExtensions
 
 include("testutils.jl")
 
