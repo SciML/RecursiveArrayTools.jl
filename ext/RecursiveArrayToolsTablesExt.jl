@@ -2,7 +2,7 @@ module RecursiveArrayToolsTablesExt
 
 import RecursiveArrayTools: AbstractDiffEqArray, variable_symbols
 import Tables
-import IteratorInterfaceExtensions
+import Tables: IteratorInterfaceExtensions
 
 # Tables traits for AbstractDiffEqArray
 Tables.istable(::Type{<:AbstractDiffEqArray}) = true
