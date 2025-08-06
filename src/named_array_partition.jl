@@ -149,6 +149,13 @@ end
     return dest
 end
 
+#Overwrite ArrayInterface zeromatrix to work with NamedArrayPartitions & implicit solvers within OrdinaryDiffEq
+function ArrayInterface.zeromatrix(A::NamedArrayPartition)
+	B = ArrayPartition(A)
+    x = reduce(vcat,vec.(B.x))
+    x .* x' .* false
+end
+
 # `x = find_NamedArrayPartition(x)` returns the first `NamedArrayPartition` among broadcast arguments.
 find_NamedArrayPartition(bc::Base.Broadcast.Broadcasted) = find_NamedArrayPartition(bc.args)
 function find_NamedArrayPartition(args::Tuple)
