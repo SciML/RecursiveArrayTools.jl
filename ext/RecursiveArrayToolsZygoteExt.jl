@@ -99,6 +99,17 @@ end
     end
 end
 
+Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.VectorOfArray, ::Val{:u})
+    function literal_VectorOfArray_x_adjoint(d)
+        m = map(enumerate(d)) do (idx, d_i)
+            isnothing(d_i) && return zero(A.u[idx])
+            d_i
+        end
+        (VectorOfArray(m),nothing)
+    end
+    A.u, literal_VectorOfArray_x_adjoint
+end
+
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})
     function literal_ArrayPartition_x_adjoint(d)
         (ArrayPartition((isnothing(d[i]) ? zero(A.x[i]) : d[i] for i in 1:length(d))...),)
