@@ -92,3 +92,9 @@ loss(x)
       VectorOfArray([collect((3i):(3i + 3)) for i in 1:5])
 @test Zygote.gradient(loss10, x)[1] == ForwardDiff.gradient(loss10, x)
 @test Zygote.gradient(loss11, x)[1] == ForwardDiff.gradient(loss11, x)
+
+voa = RecursiveArrayTools.VectorOfArray(fill(rand(3), 3))
+voa_gs, = Zygote.gradient(voa) do x
+    sum(sum.(x.u))
+end
+@test voa_gs isa RecursiveArrayTools.VectorOfArray
