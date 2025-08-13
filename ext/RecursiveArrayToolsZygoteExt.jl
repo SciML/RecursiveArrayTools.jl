@@ -105,7 +105,7 @@ Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.Vecto
             isnothing(d_i) && return zero(A.u[idx])
             d_i
         end
-        (VectorOfArray(m),nothing)
+        (VectorOfArray(m), nothing)
     end
     A.u, literal_VectorOfArray_x_adjoint
 end
