@@ -107,7 +107,7 @@ Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.Abstr
     A.u, literal_AbstractVofA_u_adjoint
 end
 
-function vofa_u_adjoint(d, A::RecursiveArrayTools.VectorOfArray)
+function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
     m = map(enumerate(d)) do (idx, d_i)
         isnothing(d_i) && return zero(A.u[idx])
         d_i 
