@@ -110,8 +110,8 @@ end
 function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
     m = map(enumerate(d)) do (idx, d_i)
         isnothing(d_i) && return zero(A.u[idx])
-        d_i 
-    end 
+        d_i
+    end
     VectorOfArray(m)
 end
 
