@@ -100,14 +100,27 @@ end
 end
 
 Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.AbstractVectorOfArray, ::Val{:u})
-    function literal_VectorOfArray_x_adjoint(d)
-        m = map(enumerate(d)) do (idx, d_i)
-            isnothing(d_i) && return zero(A.u[idx])
-            d_i
-        end
-        (VectorOfArray(m), nothing)
+    function literal_AbstractVofA_u_adjoint(d)
+        dA = vofa_u_adjoint(d, A)
+        (dA, nothing)
     end
     A.u, literal_VectorOfArray_x_adjoint
+end
+
+function vofa_u_adjoint(d, A::RecursiveArrayTools.VectorOfArray)
+    m = map(enumerate(d)) do (idx, d_i)
+        isnothing(d_i) && return zero(A.u[idx])
+        d_i 
+    end 
+    VectorOfArray(m)
+end
+
+function vofa_u_adjoint(d, A::RecursiveArrayTools.DiffEqArray)
+    m = map(enumerate(d)) do (idx, d_i)
+        isnothing(d_i) && return zero(A.u[idx])
+        d_i
+    end
+    DiffEqArray(m, A.t)
 end
 
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})
