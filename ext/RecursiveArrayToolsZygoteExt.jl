@@ -104,7 +104,7 @@ Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.Abstr
         dA = vofa_u_adjoint(d, A)
         (dA, nothing)
     end
-    A.u, literal_VectorOfArray_x_adjoint
+    A.u, literal_VectorOfArray_u_adjoint
 end
 
 function vofa_u_adjoint(d, A::RecursiveArrayTools.VectorOfArray)
