@@ -30,6 +30,7 @@ end
         @time @safetestset "Linear Algebra Tests" include("linalg.jl")
         @time @safetestset "Adjoint Tests" include("adjoints.jl")
         @time @safetestset "Measurement Tests" include("measurements.jl")
+        @time @safetestset "Struct Copy Tests" include("struct_copy_test.jl")
     end
 
     if GROUP == "SymbolicIndexingInterface" || GROUP == "All"
@@ -39,6 +40,7 @@ end
     if GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "ODE Solve Tests" include("downstream/odesolve.jl")
+        @time @safetestset "ODE Solution Copy Tests" include("downstream/ode_solution_copy_test.jl")
         @time @safetestset "Event Tests with ArrayPartition" include("downstream/downstream_events.jl")
         @time @safetestset "Measurements and Units" include("downstream/measurements_and_units.jl")
         @time @safetestset "TrackerExt" include("downstream/TrackerExt.jl")
