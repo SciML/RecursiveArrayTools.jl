@@ -115,7 +115,7 @@ function vofa_u_adjoint(d, A::RecursiveArrayTools.VectorOfArray)
     VectorOfArray(m)
 end
 
-function vofa_u_adjoint(d, A::RecursiveArrayTools.DiffEqArray)
+function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractDiffEqArray)
     m = map(enumerate(d)) do (idx, d_i)
         isnothing(d_i) && return zero(A.u[idx])
         d_i
