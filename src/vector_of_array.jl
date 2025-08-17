@@ -861,14 +861,14 @@ end
     mapreduce(f, Base.mul_prod, VA; kwargs...)
 end
 
-@inline Statistics.mean(VA::AbstractVectorOfArray; kwargs...) = mean(Array(VA); kwargs...)
-@inline function Statistics.median(VA::AbstractVectorOfArray; kwargs...)
+@inline BasicStats.mean(VA::AbstractVectorOfArray; kwargs...) = mean(Array(VA); kwargs...)
+@inline function BasicStats.median(VA::AbstractVectorOfArray; kwargs...)
     median(Array(VA); kwargs...)
 end
-@inline Statistics.std(VA::AbstractVectorOfArray; kwargs...) = std(Array(VA); kwargs...)
-@inline Statistics.var(VA::AbstractVectorOfArray; kwargs...) = var(Array(VA); kwargs...)
-@inline Statistics.cov(VA::AbstractVectorOfArray; kwargs...) = cov(Array(VA); kwargs...)
-@inline Statistics.cor(VA::AbstractVectorOfArray; kwargs...) = cor(Array(VA); kwargs...)
+@inline BasicStats.std(VA::AbstractVectorOfArray; kwargs...) = std(Array(VA); kwargs...)
+@inline BasicStats.var(VA::AbstractVectorOfArray; kwargs...) = var(Array(VA); kwargs...)
+@inline BasicStats.cov(VA::AbstractVectorOfArray; kwargs...) = cov(Array(VA); kwargs...)
+@inline BasicStats.cor(VA::AbstractVectorOfArray; kwargs...) = cor(Array(VA); kwargs...)
 @inline Base.adjoint(VA::AbstractVectorOfArray) = Adjoint(VA)
 
 # linear algebra

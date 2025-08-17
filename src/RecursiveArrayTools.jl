@@ -5,7 +5,7 @@ $(DocStringExtensions.README)
 module RecursiveArrayTools
 
 using DocStringExtensions
-using RecipesBase, StaticArraysCore, Statistics,
+using RecipesBase, StaticArraysCore, BasicStats,
       ArrayInterface, LinearAlgebra
 using SymbolicIndexingInterface
 
