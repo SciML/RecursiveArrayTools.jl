@@ -93,6 +93,12 @@ loss(x)
 @test Zygote.gradient(loss10, x)[1] == ForwardDiff.gradient(loss10, x)
 @test Zygote.gradient(loss11, x)[1] == ForwardDiff.gradient(loss11, x)
 
+voa = RecursiveArrayTools.VectorOfArray(fill(rand(3), 3))
+voa_gs, = Zygote.gradient(voa) do x
+    sum(sum.(x.u))
+end
+@test voa_gs isa RecursiveArrayTools.VectorOfArray
+      
 x = ArrayPartition(ArrayPartition(rand(3,4), rand(3,4)), rand(2))
 g = Zygote.gradient(norm, x)[1]
 @test g isa typeof(x)
