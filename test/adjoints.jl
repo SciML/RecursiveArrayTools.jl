@@ -92,3 +92,7 @@ loss(x)
       VectorOfArray([collect((3i):(3i + 3)) for i in 1:5])
 @test Zygote.gradient(loss10, x)[1] == ForwardDiff.gradient(loss10, x)
 @test Zygote.gradient(loss11, x)[1] == ForwardDiff.gradient(loss11, x)
+
+x = ArrayPartition(ArrayPartition(rand(3,4), rand(3,4)), rand(2))
+g = Zygote.gradient(norm, x)[1]
+@test g isa typeof(x)

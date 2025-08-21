@@ -280,3 +280,9 @@ x = VectorOfArray(StructArray{SVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
 y = 2 * x
 @. x = y
 @test all(all.(y .== x))
+
+
+x = ArrayPartition(ArrayPartition(rand(3,4), rand(3,4)), rand(2))
+@test (x .* 1.2) isa ArrayPartition{<:Any, <:ArrayPartition}
+
+g = Zygote.gradient(norm, x)[1]
