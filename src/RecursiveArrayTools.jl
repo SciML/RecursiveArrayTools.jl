@@ -17,7 +17,7 @@ import Adapt
 An AbstractVectorOfArray is an object which represents arrays of arrays,
 and arbitrary recursive nesting of arrays, as a single array-like object.
 Thus a canonical example of an AbstractVectorOfArray is something of the
-form `VectorOfArray([[1,2],[3,4]])`, which "acts" like the matrix [1 3; 2 4]
+form `VectorOfArray([[1,2],[3,4]])`, which "acts" like the matrix `[1 3; 2 4]`
 where the data is stored and accessed in a column-ordered fashion (as is typical
 in Julia), but the actual matrix is never constructed and instead lazily represented
 through the type.
@@ -26,8 +26,8 @@ An AbstractVectorOfArray subtype should match the following behaviors.
 
 !!! note
 
-    In 2023 the linear indexing `A[i]`` was deprecated. It previously had the behavior that `A[i] = A.u[i]`. However, this is incompatible with standard `AbstractArray`interfaces, Since if`A = VectorOfArray([[1,2],[3,4]])`and`A`is supposed to act like`[1 3; 2 4]`, then there is a difference `A[1] = [1,2]`for the VectorOfArray while`A[1] = 1`for the matrix. This causes many issues if`AbstractVectorOfArray <: AbstractArray`. Thus we plan in 2026 to complete the deprecation and thus have a breaking update where `A[i]`matches the linear indexing of an`AbstractArray`, and then making `AbstractVectorOfArray <: AbstractArray`. Until then, `AbstractVectorOfArray` due to
-    this interface break but manually implements an AbstractArray-like interface for
+    In 2023 the linear indexing `A[i]` was deprecated. It previously had the behavior that `A[i] = A.u[i]`. However, this is incompatible with standard `AbstractArray` interfaces, Since if `A = VectorOfArray([[1,2],[3,4]])` and `A` is supposed to act like `[1 3; 2 4]`, then there is a difference `A[1] = [1,2]` for the VectorOfArray while `A[1] = 1` for the matrix. This causes many issues if `AbstractVectorOfArray <: AbstractArray`. Thus we plan in 2026 to complete the deprecation and thus have a breaking update where `A[i]` matches the linear indexing of an`AbstractArray`, and then making `AbstractVectorOfArray <: AbstractArray`. Until then, `AbstractVectorOfArray` due to
+    this interface break but manually implements an `AbstractArray`-like interface for
     future compatibility.
 
 ## Fields
