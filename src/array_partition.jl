@@ -124,6 +124,12 @@ Base.ones(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = ones(A)
     return :($res)
 end
 
+## resize!
+function Base.resize!(A::ArrayPartition, sizes::Tuple)
+    resize!.(A.x, sizes)
+    A
+end
+
 ## vector space operations
 
 for op in (:+, :-)

@@ -60,6 +60,10 @@ copyto!(p, c)
 @test c[1:5] == p.x[1]
 @test c[6:10] == p.x[2]
 
+resize!(p, (6, 7))
+@test length(p.x[1]) == 6
+@test length(p.x[2]) == 7
+
 ## inference tests
 
 x = ArrayPartition([1, 2], [3.0, 4.0])
