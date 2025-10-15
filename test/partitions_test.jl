@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test, Statistics, ArrayInterface
+using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
 
 @test length(ArrayPartition()) == 0
 @test isempty(ArrayPartition())
@@ -305,4 +305,23 @@ end
     u = [2.0, 1.0]
     copyto!(u, ArrayPartition(1.0, -1.2))
     @test u == [1.0, -1.2]
+end
+
+# Test adapt on ArrayPartition from Float64 to Float32 arrays
+a = Float64.([1., 2., 3., 4.])
+b = Float64.([1., 2., 3., 4.])
+part_a_64 = ArrayPartition(a, b)
+part_a = adapt(Array{Float32}, part_a_64)
+
+c = Float32.([1., 2., 3., 4.])
+d = Float32.([1., 2., 3., 4.])
+part_b = ArrayPartition(c, d)
+
+@test part_a == part_b # Test equality of partitions
+
+for i in 1:length(part_a.x)
+    sub_a = part_a.x[i]
+    sub_b = part_b.x[i]
+    @test sub_a == sub_b # Test for value equality
+    @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end

@@ -579,3 +579,7 @@ end
     end
     return sum_expr
 end
+
+function Adapt.adapt_structure(to, ap::ArrayPartition)
+    ArrayPartition(map(x -> Adapt.adapt(to, x), ap.x)...)
+end
