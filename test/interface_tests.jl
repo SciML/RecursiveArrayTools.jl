@@ -303,3 +303,24 @@ end
     darr = DiffEqArray([ones(2)], [1.0], :params, :sys)
     @test darr.sys == :sys
 end
+
+@testset "issparse for AbstractVectorOfArray (issue #486)" begin
+    using SparseArrays
+
+    # Test that issparse returns false for VectorOfArray
+    testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    @test issparse(testva) == false
+
+    # Test that issparse returns false for DiffEqArray
+    testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], 1:3)
+    @test issparse(testda) == false
+
+    # Test the original issue: issparse should work with SubArray views
+    # This was failing before because issparse(::SubArray) calls issparse on the parent
+    testview = view(testva, :, :)
+    @test issparse(testview) == false
+
+    # Test with nested VectorOfArray
+    nested_voa = VectorOfArray([testva, testva])
+    @test issparse(nested_voa) == false
+end

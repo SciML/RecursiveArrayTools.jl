@@ -18,4 +18,8 @@ function Base.copyto!(
     dest
 end
 
+# Fix for issue #486: Define issparse for AbstractVectorOfArray
+# AbstractVectorOfArray is not a sparse array type, so it should return false
+SparseArrays.issparse(::RecursiveArrayTools.AbstractVectorOfArray) = false
+
 end
