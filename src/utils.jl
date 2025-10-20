@@ -45,6 +45,10 @@ like `copy!` on arrays of scalars.
 """
 function recursivecopy! end
 
+function recursivecopy!(b, a)
+        copyto!(b, a)
+end
+
 function recursivecopy!(b::AbstractArray{T, N},
         a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
         T2 <: StaticArraysCore.StaticArray,
