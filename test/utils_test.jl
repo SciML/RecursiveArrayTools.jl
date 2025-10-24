@@ -139,6 +139,35 @@ end
     @test u1.u[2] isa SVector
 end
 
+# Test recursivefill! with immutable StaticArrays (issue #461)
+@testset "recursivefill! with immutable StaticArrays (issue #461)" begin
+    # Test with only immutable SVectors
+    x = VectorOfArray([SVector{2}(ones(2)), SVector{2}(ones(2))])
+    recursivefill!(x, 0.0)
+    @test all(x.u[i] == SVector{2}(zeros(2)) for i in 1:2)
+    @test all(x.u[i] isa SVector for i in 1:2)
+
+    # Test with mixed immutable and mutable StaticArrays
+    x = VectorOfArray([SVector{2}(ones(2)), MVector{2}(ones(2))])
+    recursivefill!(x, 0.0)
+    @test all(x.u[i] == [0.0, 0.0] for i in 1:2)
+    @test x.u[1] isa SVector
+    @test x.u[2] isa MVector
+
+    # Test fill! on VectorOfArray with immutable SVectors
+    x = VectorOfArray([SVector{2}(ones(2)), SVector{2}(ones(2))])
+    fill!(x, 0.0)
+    @test all(x.u[i] == SVector{2}(zeros(2)) for i in 1:2)
+    @test all(x.u[i] isa SVector for i in 1:2)
+
+    # Test fill! on VectorOfArray with mixed types
+    x = VectorOfArray([SVector{2}(ones(2)), MVector{2}(ones(2))])
+    fill!(x, 0.0)
+    @test all(x.u[i] == [0.0, 0.0] for i in 1:2)
+    @test x.u[1] isa SVector
+    @test x.u[2] isa MVector
+end
+
 import KernelAbstractions: get_backend
 @testset "KernelAbstractions" begin
     v = VectorOfArray([randn(2) for i in 1:10])

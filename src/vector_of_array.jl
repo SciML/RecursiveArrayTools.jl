@@ -826,7 +826,12 @@ end
 function Base.fill!(VA::AbstractVectorOfArray, x)
     for i in 1:length(VA.u)
         if VA[:, i] isa AbstractArray
-            fill!(VA[:, i], x)
+            if ArrayInterface.ismutable(VA.u[i]) || VA.u[i] isa AbstractVectorOfArray
+                fill!(VA[:, i], x)
+            else
+                # For immutable arrays like SVector, create a new filled array
+                VA.u[i] = fill(x, StaticArraysCore.similar_type(VA.u[i]))
+            end
         else
             VA[:, i] = x
         end
