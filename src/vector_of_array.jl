@@ -675,6 +675,15 @@ function Base.view(A::AbstractVectorOfArray{T, N, <:AbstractVector{T}},
 end
 function Base.view(A::AbstractVectorOfArray, I::Vararg{Any, M}) where {M}
     @inline
+    # Special handling for heterogeneous arrays when viewing a single column
+    # The issue is that to_indices uses axes, which is based on the first element's size
+    # For heterogeneous arrays, we need to use the actual size of the specific column
+    if length(I) == 2 && I[1] == Colon() && I[2] isa Int
+        @boundscheck checkbounds(A.u, I[2])
+        # Use the actual size of the specific column instead of relying on axes/to_indices
+        J = (Base.OneTo(length(A.u[I[2]])), I[2])
+        return SubArray(A, J)
+    end
     J = map(i -> Base.unalias(A, i), to_indices(A, I))
     @boundscheck checkbounds(A, J...)
     SubArray(A, J)

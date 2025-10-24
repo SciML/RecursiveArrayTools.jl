@@ -145,6 +145,31 @@ diffeq = DiffEqArray(recs, t)
 @test diffeq[:, 1] == recs[1]
 @test diffeq[1:2, 1:2] == [1 3; 2 5]
 
+# Test views of heterogeneous arrays (issue #453)
+f = VectorOfArray([[1.0], [2.0, 3.0]])
+@test length(view(f, :, 1)) == 1
+@test length(view(f, :, 2)) == 2
+@test view(f, :, 1) == [1.0]
+@test view(f, :, 2) == [2.0, 3.0]
+@test collect(view(f, :, 1)) == f[:, 1]
+@test collect(view(f, :, 2)) == f[:, 2]
+
+f2 = VectorOfArray([[1.0, 2.0], [3.0]])
+@test length(view(f2, :, 1)) == 2
+@test length(view(f2, :, 2)) == 1
+@test view(f2, :, 1) == [1.0, 2.0]
+@test view(f2, :, 2) == [3.0]
+@test collect(view(f2, :, 1)) == f2[:, 1]
+@test collect(view(f2, :, 2)) == f2[:, 2]
+
+# Test that views can be modified
+f3 = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
+v = view(f3, :, 2)
+@test length(v) == 3
+v[1] = 10.0
+@test f3[1, 2] == 10.0
+@test f3.u[2][1] == 10.0
+
 t = 1:5
 recs = [rand(2, 2) for i in 1:5]
 testva = VectorOfArray(recs)
