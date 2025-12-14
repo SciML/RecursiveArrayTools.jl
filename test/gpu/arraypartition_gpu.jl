@@ -1,4 +1,4 @@
-using RecursiveArrayTools, CUDA, Test, Adapt
+using RecursiveArrayTools, ArrayInterface, CUDA, Adapt, Test
 CUDA.allowscalar(false)
 
 # Test indexing with colon
@@ -41,3 +41,8 @@ for i in 1:length(part_a.x)
     @test sub_a == sub_b # Test for value equality in sub-arrays
     @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end
+
+x = ArrayPartition((CUDA.zeros(2),CUDA.zeros(2)))
+@test ArrayInterface.zeromatrix(x) isa CuMatrix
+@test size(ArrayInterface.zeromatrix(x)) == (4,4)
+@test maximum(abs, x) == 0f0

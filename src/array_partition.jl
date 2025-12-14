@@ -171,8 +171,40 @@ Base.:(==)(A::ArrayPartition, B::ArrayPartition) = A.x == B.x
 ## Iterable Collection Constructs
 
 Base.map(f, A::ArrayPartition) = ArrayPartition(map(x -> map(f, x), A.x))
-function Base.mapreduce(f, op, A::ArrayPartition{T}; kwargs...) where {T}
-    mapreduce(f, op, (i for i in A); kwargs...)
+# Use @generated function for type stability on Julia 1.10
+# The generated approach avoids type inference issues with kwargs in older Julia versions
+@generated function _mapreduce_impl(f, op, A::ArrayPartition{T, S}) where {T, S}
+    N = length(S.parameters)
+    if N == 1
+        return :(mapreduce(f, op, A.x[1]))
+    else
+        expr = :(mapreduce(f, op, A.x[$N]))
+        for i in (N - 1):-1:1
+            expr = :(op(mapreduce(f, op, A.x[$i]), $expr))
+        end
+        return expr
+    end
+end
+@generated function _mapreduce_impl_init(f, op, A::ArrayPartition{T, S}, init) where {T, S}
+    N = length(S.parameters)
+    if N == 1
+        return :(mapreduce(f, op, A.x[1]))
+    else
+        expr = :(mapreduce(f, op, A.x[$N]))
+        for i in (N - 1):-1:1
+            expr = :(op(mapreduce(f, op, A.x[$i]), $expr))
+        end
+        # Apply init only at the outermost reduction
+        return :(op(init, $expr))
+    end
+end
+@inline function Base.mapreduce(f, op, A::ArrayPartition;
+        init = Base._InitialValue(), kwargs...)
+    if init isa Base._InitialValue
+        _mapreduce_impl(f, op, A)
+    else
+        _mapreduce_impl_init(f, op, A, init)
+    end
 end
 Base.filter(f, A::ArrayPartition) = ArrayPartition(map(x -> filter(f, x), A.x))
 Base.any(f, A::ArrayPartition) = any((any(f, x) for x in A.x))
@@ -442,7 +474,10 @@ end
 
 ## Linear Algebra
 
-ArrayInterface.zeromatrix(A::ArrayPartition) = ArrayInterface.zeromatrix(Vector(A))
+function ArrayInterface.zeromatrix(A::ArrayPartition)
+    x = reduce(vcat,vec.(A.x))
+    x .* x' .* false
+end
 
 function __get_subtypes_in_module(
         mod, supertype; include_supertype = true, all = false, except = [])
