@@ -3,7 +3,7 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 
 [sources]
-RecursiveArrayTools = {path = "/home/chrisrackauckas/github-runners/deepsea3-4/_work/RecursiveArrayTools.jl/RecursiveArrayTools.jl"}
+RecursiveArrayTools = {path = "/home/runner/work/RecursiveArrayTools.jl/RecursiveArrayTools.jl"}
 
 [compat]
 Documenter = "1.3"
