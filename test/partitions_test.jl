@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test, Statistics, ArrayInterface
+using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
 
 @test length(ArrayPartition()) == 0
 @test isempty(ArrayPartition())
@@ -59,6 +59,10 @@ copyto!(b, p)
 copyto!(p, c)
 @test c[1:5] == p.x[1]
 @test c[6:10] == p.x[2]
+
+resize!(p, (6, 7))
+@test length(p.x[1]) == 6
+@test length(p.x[2]) == 7
 
 ## inference tests
 
@@ -286,7 +290,8 @@ end
 @testset "Copy and zero with type changing array" begin
     # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied
     struct TypeChangingArray{T, N} <: AbstractArray{T, N} end
-    Base.copy(::TypeChangingArray{T, N}) where {T, N} = Array{T, N}(undef,
+    Base.copy(::TypeChangingArray{
+        T, N}) where {T, N} = Array{T, N}(undef,
         ntuple(_ -> 0, N))
     Base.zero(::TypeChangingArray{T, N}) where {T, N} = zeros(T, ntuple(_ -> 0, N))
 
@@ -304,4 +309,23 @@ end
     u = [2.0, 1.0]
     copyto!(u, ArrayPartition(1.0, -1.2))
     @test u == [1.0, -1.2]
+end
+
+# Test adapt on ArrayPartition from Float64 to Float32 arrays
+a = Float64.([1., 2., 3., 4.])
+b = Float64.([1., 2., 3., 4.])
+part_a_64 = ArrayPartition(a, b)
+part_a = adapt(Array{Float32}, part_a_64)
+
+c = Float32.([1., 2., 3., 4.])
+d = Float32.([1., 2., 3., 4.])
+part_b = ArrayPartition(c, d)
+
+@test part_a == part_b # Test equality of partitions
+
+for i in 1:length(part_a.x)
+    sub_a = part_a.x[i]
+    sub_b = part_b.x[i]
+    @test sub_a == sub_b # Test for value equality
+    @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end

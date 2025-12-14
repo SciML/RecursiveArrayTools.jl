@@ -1,5 +1,4 @@
-using RecursiveArrayTools, Random, Test
-
+using RecursiveArrayTools, Random, Test, Tables
 include("testutils.jl")
 
 Random.seed!(1234)

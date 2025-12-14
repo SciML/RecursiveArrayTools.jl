@@ -1,4 +1,4 @@
-using RecursiveArrayTools, ArrayInterface, CUDA, Test
+using RecursiveArrayTools, ArrayInterface, CUDA, Adapt, Test
 CUDA.allowscalar(false)
 
 # Test indexing with colon

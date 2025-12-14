@@ -675,6 +675,15 @@ function Base.view(A::AbstractVectorOfArray{T, N, <:AbstractVector{T}},
 end
 function Base.view(A::AbstractVectorOfArray, I::Vararg{Any, M}) where {M}
     @inline
+    # Special handling for heterogeneous arrays when viewing a single column
+    # The issue is that to_indices uses axes, which is based on the first element's size
+    # For heterogeneous arrays, we need to use the actual size of the specific column
+    if length(I) == 2 && I[1] == Colon() && I[2] isa Int
+        @boundscheck checkbounds(A.u, I[2])
+        # Use the actual size of the specific column instead of relying on axes/to_indices
+        J = (Base.OneTo(length(A.u[I[2]])), I[2])
+        return SubArray(A, J)
+    end
     J = map(i -> Base.unalias(A, i), to_indices(A, I))
     @boundscheck checkbounds(A, J...)
     SubArray(A, J)
@@ -826,7 +835,12 @@ end
 function Base.fill!(VA::AbstractVectorOfArray, x)
     for i in 1:length(VA.u)
         if VA[:, i] isa AbstractArray
-            fill!(VA[:, i], x)
+            if ArrayInterface.ismutable(VA.u[i]) || VA.u[i] isa AbstractVectorOfArray
+                fill!(VA[:, i], x)
+            else
+                # For immutable arrays like SVector, create a new filled array
+                VA.u[i] = fill(x, StaticArraysCore.similar_type(VA.u[i]))
+            end
         else
             VA[:, i] = x
         end
@@ -914,7 +928,7 @@ end
 ## broadcasting
 
 struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
-VectorOfArrayStyle(::Val{N}) where {N} = VectorOfArrayStyle{N}()
+VectorOfArrayStyle{N}(::Val{N}) where {N} = VectorOfArrayStyle{N}()
 
 # The order is important here. We want to override Base.Broadcast.DefaultArrayStyle to return another Base.Broadcast.DefaultArrayStyle.
 Broadcast.BroadcastStyle(a::VectorOfArrayStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = a

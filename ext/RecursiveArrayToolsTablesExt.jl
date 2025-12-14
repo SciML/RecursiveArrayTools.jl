@@ -1,3 +1,9 @@
+module RecursiveArrayToolsTablesExt
+
+import RecursiveArrayTools: AbstractDiffEqArray, variable_symbols
+import Tables
+import Tables: IteratorInterfaceExtensions
+
 # Tables traits for AbstractDiffEqArray
 Tables.istable(::Type{<:AbstractDiffEqArray}) = true
 Tables.rowaccess(::Type{<:AbstractDiffEqArray}) = true
@@ -79,4 +85,6 @@ end
 IteratorInterfaceExtensions.isiterable(::AbstractDiffEqArray) = true
 function IteratorInterfaceExtensions.getiterator(A::AbstractDiffEqArray)
     Tables.datavaluerows(Tables.rows(A))
+end
+
 end

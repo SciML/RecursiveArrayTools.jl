@@ -2,13 +2,8 @@ module RecursiveArrayToolsZygoteExt
 
 using RecursiveArrayTools
 
-if isdefined(Base, :get_extension)
-    using Zygote
-    using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
-else
-    using ..Zygote
-    using ..Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
-end
+using Zygote
+using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
 
 # Define a new species of projection operator for this type:
 # ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
@@ -102,6 +97,30 @@ end
                 t),
             nothing)
     end
+end
+
+Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.AbstractVectorOfArray, ::Val{:u})
+    function literal_AbstractVofA_u_adjoint(d)
+        dA = vofa_u_adjoint(d, A)
+        (dA, nothing)
+    end
+    A.u, literal_AbstractVofA_u_adjoint
+end
+
+function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
+    m = map(enumerate(d)) do (idx, d_i)
+        isnothing(d_i) && return zero(A.u[idx])
+        d_i
+    end
+    VectorOfArray(m)
+end
+
+function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractDiffEqArray)
+    m = map(enumerate(d)) do (idx, d_i)
+        isnothing(d_i) && return zero(A.u[idx])
+        d_i
+    end
+    DiffEqArray(m, A.t)
 end
 
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})
@@ -220,10 +239,12 @@ z̄ -> (nothing, conj.(z̄))
 @adjoint Broadcast.broadcasted(::typeof(real), x::AbstractVectorOfArray) = real.(x),
 z̄ -> (nothing, real.(z̄))
 
-@adjoint Broadcast.broadcasted(::typeof(imag), x::AbstractVectorOfArray) = imag.(x),
+@adjoint Broadcast.broadcasted(
+    ::typeof(imag), x::AbstractVectorOfArray) = imag.(x),
 z̄ -> (nothing, im .* real.(z̄))
 
-@adjoint Broadcast.broadcasted(::typeof(abs2), x::AbstractVectorOfArray) = abs2.(x),
+@adjoint Broadcast.broadcasted(::typeof(abs2),
+    x::AbstractVectorOfArray) = abs2.(x),
 z̄ -> (nothing, 2 .* real.(z̄) .* x)
 
 @adjoint function Broadcast.broadcasted(
@@ -264,7 +285,9 @@ end
     end
 end
 
-@adjoint Broadcast.broadcasted(::Type{T}, x::AbstractVectorOfArray) where {T <: Number} = T.(x),
+@adjoint Broadcast.broadcasted(::Type{T},
+    x::AbstractVectorOfArray) where {T <:
+                                     Number} = T.(x),
 ȳ -> (nothing, Zygote._project(x, ȳ))
 
 function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
@@ -277,11 +300,16 @@ function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
     end
 end
 
-@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray, b) where {F} = _broadcast_generic(
+@adjoint Broadcast.broadcasted(
+    ::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray,
+    b) where {F} = _broadcast_generic(
     __context__, f, a, b)
-@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a, b::AbstractVectorOfArray) where {F} = _broadcast_generic(
+@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a,
+    b::AbstractVectorOfArray) where {F} = _broadcast_generic(
     __context__, f, a, b)
-@adjoint Broadcast.broadcasted(::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray, b::AbstractVectorOfArray) where {F} = _broadcast_generic(
+@adjoint Broadcast.broadcasted(
+    ::Broadcast.AbstractArrayStyle, f::F, a::AbstractVectorOfArray,
+    b::AbstractVectorOfArray) where {F} = _broadcast_generic(
     __context__, f, a, b)
 
 @inline function _broadcast_generic(__context__, f::F, args...) where {F}

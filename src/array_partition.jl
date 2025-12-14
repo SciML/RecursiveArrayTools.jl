@@ -124,6 +124,12 @@ Base.ones(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = ones(A)
     return :($res)
 end
 
+## resize!
+function Base.resize!(A::ArrayPartition, sizes::Tuple)
+    resize!.(A.x, sizes)
+    A
+end
+
 ## vector space operations
 
 for op in (:+, :-)
@@ -397,14 +403,20 @@ end
 end
 
 @inline function Base.copyto!(dest::ArrayPartition,
-        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {
-        Style,
-}
+        bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}) where {Style}
     N = npartitions(dest, bc)
-    @inline function f(i)
-        copyto!(dest.x[i], unpack(bc, i))
+    # If dest is all the same underlying array type, use for-loop
+    if all(x isa typeof(first(dest.x)) for x in dest.x)
+        @inbounds for i in 1:N
+            copyto!(dest.x[i], unpack(bc, i))
+        end
+    else
+        # Fall back to original implementation for complex broadcasts
+        @inline function f(i)
+            copyto!(dest.x[i], unpack(bc, i))
+        end
+        ntuple(f, Val(N))
     end
-    ntuple(f, Val(N))
     dest
 end
 
@@ -443,8 +455,8 @@ end
         i) where {Style <: Broadcast.DefaultArrayStyle}
     Broadcast.Broadcasted{Style}(bc.f, unpack_args(i, bc.args))
 end
-unpack(x, ::Any) = x
-unpack(x::ArrayPartition, i) = x.x[i]
+@inline unpack(x, ::Any) = x
+@inline unpack(x::ArrayPartition, i) = x.x[i]
 
 @inline function unpack_args(i, args::Tuple)
     (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
@@ -607,4 +619,8 @@ end
         push!(sum_expr.args, :(length($param)))
     end
     return sum_expr
+end
+
+function Adapt.adapt_structure(to, ap::ArrayPartition)
+    ArrayPartition(map(x -> Adapt.adapt(to, x), ap.x)...)
 end
