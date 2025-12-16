@@ -145,6 +145,14 @@ diffeq = DiffEqArray(recs, t)
 @test diffeq[:, 1] == recs[1]
 @test diffeq[1:2, 1:2] == [1 3; 2 5]
 
+ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
+@test ragged[end, 1] == 2.0
+@test ragged[end, 2] == 5.0
+@test ragged[end, 3] == 9.0
+@test ragged[end - 1, 3] == 8.0
+@test ragged[1:end, 1] == [1.0, 2.0]
+@test ragged[1:end, 2] == [3.0, 4.0, 5.0]
+
 # Test views of heterogeneous arrays (issue #453)
 f = VectorOfArray([[1.0], [2.0, 3.0]])
 @test length(view(f, :, 1)) == 1
@@ -259,14 +267,14 @@ a[1:8]
 a[[1, 3, 8]]
 
 ####################################################################
-# test when VectorOfArray is constructed from a linearly indexed 
+# test when VectorOfArray is constructed from a linearly indexed
 # multidimensional array of arrays
 ####################################################################
 
 u_matrix = VectorOfArray([[1, 2] for i in 1:2, j in 1:3])
 u_vector = VectorOfArray([[1, 2] for i in 1:6])
 
-# test broadcasting 
+# test broadcasting
 function foo!(u)
     @. u += 2 * u * abs(u)
     return u
@@ -281,7 +289,7 @@ foo!(u_vector)
 @test typeof(parent(similar(u_matrix))) == typeof(parent(u_matrix))
 @test typeof(parent((x -> x).(u_matrix))) == typeof(parent(u_matrix))
 
-# test efficiency 
+# test efficiency
 num_allocs = @allocations foo!(u_matrix)
 @test num_allocs == 0
 
