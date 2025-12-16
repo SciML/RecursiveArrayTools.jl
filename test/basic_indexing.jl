@@ -145,14 +145,6 @@ diffeq = DiffEqArray(recs, t)
 @test diffeq[:, 1] == recs[1]
 @test diffeq[1:2, 1:2] == [1 3; 2 5]
 
-ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
-@test ragged[end, 1] == 2.0
-@test ragged[end, 2] == 5.0
-@test ragged[end, 3] == 9.0
-@test ragged[end - 1, 3] == 8.0
-@test ragged[1:end, 1] == [1.0, 2.0]
-@test ragged[1:end, 2] == [3.0, 4.0, 5.0]
-
 # Test views of heterogeneous arrays (issue #453)
 f = VectorOfArray([[1.0], [2.0, 3.0]])
 @test length(view(f, :, 1)) == 1
@@ -169,6 +161,33 @@ f2 = VectorOfArray([[1.0, 2.0], [3.0]])
 @test view(f2, :, 2) == [3.0]
 @test collect(view(f2, :, 1)) == f2[:, 1]
 @test collect(view(f2, :, 2)) == f2[:, 2]
+
+# Test `end` with ragged arrays
+ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
+@test ragged[end, 1] == 2.0
+@test ragged[end, 2] == 5.0
+@test ragged[end, 3] == 9.0
+@test ragged[end - 1, 1] == 1.0
+@test ragged[end - 1, 2] == 4.0
+@test ragged[end - 1, 3] == 8.0
+@test ragged[1:end, 1] == [1.0, 2.0]
+@test ragged[1:end, 2] == [3.0, 4.0, 5.0]
+@test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]
+
+ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
+@test ragged2[end, 1] == 4.0
+@test ragged2[end, 2] == 6.0
+@test ragged2[end, 3] == 9.0
+@test ragged2[end - 1, 1] == 3.0
+@test ragged2[end - 1, 2] == 5.0
+@test ragged2[end - 1, 3] == 8.0
+@test ragged2[end - 2, 1] == 2.0
+@test ragged2[1:end, 1] == [1.0, 2.0, 3.0, 4.0]
+@test ragged2[1:end, 2] == [5.0, 6.0]
+@test ragged2[1:end, 3] == [7.0, 8.0, 9.0]
+@test ragged2[2:end, 1] == [2.0, 3.0, 4.0]
+@test ragged2[2:end, 2] == [6.0]
+@test ragged2[2:end, 3] == [8.0, 9.0]
 
 # Test that views can be modified
 f3 = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
