@@ -329,11 +329,13 @@ function recursivecopy!(A::ArrayPartition, B::ArrayPartition)
 end
 recursivecopy(A::ArrayPartition) = ArrayPartition(copy.(A.x))
 
-function recursivecopy(A::ArrayPartition{T, S}) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
+function recursivecopy(A::ArrayPartition{
+        T, S}) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
     return ArrayPartition(map(recursivecopy, A.x))
 end
 
-function recursivecopy!(A::ArrayPartition{T, S}, B::ArrayPartition{T, S}) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
+function recursivecopy!(A::ArrayPartition{T, S},
+        B::ArrayPartition{T, S}) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
     for i in eachindex(A.x, B.x)
         recursivecopy!(A.x[i], B.x[i])
     end
@@ -486,7 +488,7 @@ end
 ## Linear Algebra
 
 function ArrayInterface.zeromatrix(A::ArrayPartition)
-    x = reduce(vcat,vec.(A.x))
+    x = reduce(vcat, vec.(A.x))
     x .* x' .* false
 end
 
