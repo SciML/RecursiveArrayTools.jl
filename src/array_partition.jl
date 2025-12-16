@@ -329,6 +329,17 @@ function recursivecopy!(A::ArrayPartition, B::ArrayPartition)
 end
 recursivecopy(A::ArrayPartition) = ArrayPartition(copy.(A.x))
 
+function recursivecopy(A::ArrayPartition{T, S}) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
+    return ArrayPartition(map(recursivecopy, A.x))
+end
+
+function recursivecopy!(A::ArrayPartition{T, S}, B::ArrayPartition{T, S}) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
+    for i in eachindex(A.x, B.x)
+        recursivecopy!(A.x[i], B.x[i])
+    end
+    return A
+end
+
 recursive_mean(A::ArrayPartition) = mean((recursive_mean(x) for x in A.x))
 
 # note: consider only first partition for recursive one and eltype

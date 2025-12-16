@@ -132,6 +132,23 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 @inferred recursive_one(x)
 @inferred recursive_bottom_eltype(x)
 
+src_voa = VectorOfArray([[1.0, 2.0], [3.0, 4.0]])
+src_ap = ArrayPartition(src_voa)
+
+copied_ap = recursivecopy(src_ap)
+@test copied_ap.x[1].u[1] == src_ap.x[1].u[1]
+@test copied_ap.x[1].u[2] == src_ap.x[1].u[2]
+@test copied_ap.x[1].u[1] !== src_ap.x[1].u[1]
+@test copied_ap.x[1].u[2] !== src_ap.x[1].u[2]
+
+dest_voa = VectorOfArray([zeros(2), zeros(2)])
+dest_ap = ArrayPartition(dest_voa)
+recursivecopy!(dest_ap, src_ap)
+@test dest_ap.x[1].u[1] == src_ap.x[1].u[1]
+@test dest_ap.x[1].u[2] == src_ap.x[1].u[2]
+@test dest_ap.x[1].u[1] !== src_ap.x[1].u[1]
+@test dest_ap.x[1].u[2] !== src_ap.x[1].u[2]
+
 # mapreduce
 @inferred Union{Int, Float64} sum(x)
 @inferred sum(ArrayPartition(ArrayPartition(zeros(4, 4))))
@@ -149,7 +166,7 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 @test any(isnan, ArrayPartition([2], [NaN]))
 @test any(isnan, ArrayPartition([2], ArrayPartition([NaN])))
 
-# all 
+# all
 @test !all(isnan, ArrayPartition([1, 2], [3.0, 4.0]))
 @test !all(isnan, ArrayPartition([3.0, 4.0]))
 @test !all(isnan, ArrayPartition([NaN], [3.0, 4.0]))
