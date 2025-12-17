@@ -407,7 +407,7 @@ end
         return lastindex(VA.u)
     elseif d < ndims(VA)
         isempty(VA.u) && return 0
-        return _is_ragged_dim(VA, d) ? RaggedEnd{d}() : size(VA.u[1], d)
+        return RaggedEnd(Int(d))
     else
         return 1
     end
@@ -429,24 +429,23 @@ Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) = A.u[I]
 __parameterless_type(T) = Base.typename(T).wrapper
 
 # `end` support for ragged inner arrays
-struct RaggedEnd{D}
-    offset::Int
+# Use tuple (dim, offset) as runtime value instead of type parameter
+struct RaggedEnd
+    data::Tuple{Int, Int}  # (dimension, offset)
 end
-RaggedEnd{D}() where {D} = RaggedEnd{D}(0)
+RaggedEnd(dim::Int) = RaggedEnd((dim, 0))
 
-Base.:+(re::RaggedEnd{D}, n::Integer) where {D} = RaggedEnd{D}(re.offset + Int(n))
-Base.:-(re::RaggedEnd{D}, n::Integer) where {D} = RaggedEnd{D}(re.offset - Int(n))
-Base.:+(n::Integer, re::RaggedEnd{D}) where {D} = re + n
+Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd((re.data[1], re.data[2] + Int(n)))
+Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd((re.data[1], re.data[2] - Int(n)))
+Base.:+(n::Integer, re::RaggedEnd) = re + n
 
-struct RaggedRange{D}
-    start::Int
-    step::Int
-    stop::RaggedEnd{D}
+struct RaggedRange
+    data::Tuple{Int, Int, Int, Int}  # (dim, start, step, offset)
 end
 
-Base.:(:)(stop::RaggedEnd{D}) where {D} = RaggedRange{D}(1, 1, stop)
-Base.:(:)(start::Integer, stop::RaggedEnd{D}) where {D} = RaggedRange{D}(Int(start), 1, stop)
-Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd{D}) where {D} = RaggedRange{D}(Int(start), Int(step), stop)
+Base.:(:)(stop::RaggedEnd) = RaggedRange((stop.data[1], 1, 1, stop.data[2]))
+Base.:(:)(start::Integer, stop::RaggedEnd) = RaggedRange((stop.data[1], Int(start), 1, stop.data[2]))
+Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd) = RaggedRange((stop.data[1], Int(start), Int(step), stop.data[2]))
 
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
     length(VA.u) <= 1 && return false
@@ -533,12 +532,18 @@ end
 end
 
 @inline _resolve_ragged_index(idx, ::AbstractVectorOfArray, ::Any) = idx
-@inline function _resolve_ragged_index(idx::RaggedEnd{D}, VA::AbstractVectorOfArray, col) where {D}
-    return lastindex(VA.u[col], D) + idx.offset
+@inline function _resolve_ragged_index(idx::RaggedEnd, VA::AbstractVectorOfArray, col)
+    dim = idx.data[1]
+    offset = idx.data[2]
+    return lastindex(VA.u[col], dim) + offset
 end
-@inline function _resolve_ragged_index(idx::RaggedRange{D}, VA::AbstractVectorOfArray, col) where {D}
-    stop_val = _resolve_ragged_index(idx.stop, VA, col)
-    return Base.range(idx.start; step = idx.step, stop = stop_val)
+@inline function _resolve_ragged_index(idx::RaggedRange, VA::AbstractVectorOfArray, col)
+    dim = idx.data[1]
+    start_val = idx.data[2]
+    step_val = idx.data[3]
+    offset = idx.data[4]
+    stop_val = lastindex(VA.u[col], dim) + offset
+    return Base.range(start_val; step = step_val, stop = stop_val)
 end
 @inline function _resolve_ragged_index(idx::AbstractRange{<:RaggedEnd}, VA::AbstractVectorOfArray, col)
     return Base.range(_resolve_ragged_index(first(idx), VA, col); step = step(idx),
