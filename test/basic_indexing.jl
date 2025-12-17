@@ -188,6 +188,9 @@ ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
 @test ragged2[2:end, 1] == [2.0, 3.0, 4.0]
 @test ragged2[2:end, 2] == [6.0]
 @test ragged2[2:end, 3] == [8.0, 9.0]
+@test ragged2[1:(end - 1), 1] == [1.0, 2.0, 3.0]
+@test ragged2[1:(end - 1), 2] == [5.0]
+@test ragged2[1:(end - 1), 3] == [7.0, 8.0]
 
 # Test that views can be modified
 f3 = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
