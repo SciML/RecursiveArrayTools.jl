@@ -429,23 +429,27 @@ Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) = A.u[I]
 __parameterless_type(T) = Base.typename(T).wrapper
 
 # `end` support for ragged inner arrays
-# Use tuple (dim, offset) as runtime value instead of type parameter
+# Use runtime fields instead of type parameters for type stability
 struct RaggedEnd
-    data::Tuple{Int, Int}  # (dimension, offset)
+    dim::Int
+    offset::Int
 end
-RaggedEnd(dim::Int) = RaggedEnd((dim, 0))
+RaggedEnd(dim::Int) = RaggedEnd(dim, 0)
 
-Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd((re.data[1], re.data[2] + Int(n)))
-Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd((re.data[1], re.data[2] - Int(n)))
+Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset + Int(n))
+Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset - Int(n))
 Base.:+(n::Integer, re::RaggedEnd) = re + n
 
 struct RaggedRange
-    data::Tuple{Int, Int, Int, Int}  # (dim, start, step, offset)
+    dim::Int
+    start::Int
+    step::Int
+    offset::Int
 end
 
-Base.:(:)(stop::RaggedEnd) = RaggedRange((stop.data[1], 1, 1, stop.data[2]))
-Base.:(:)(start::Integer, stop::RaggedEnd) = RaggedRange((stop.data[1], Int(start), 1, stop.data[2]))
-Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd) = RaggedRange((stop.data[1], Int(start), Int(step), stop.data[2]))
+Base.:(:)(stop::RaggedEnd) = RaggedRange(stop.dim, 1, 1, stop.offset)
+Base.:(:)(start::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, Int(start), 1, stop.offset)
+Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
 
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
     length(VA.u) <= 1 && return false
@@ -533,17 +537,11 @@ end
 
 @inline _resolve_ragged_index(idx, ::AbstractVectorOfArray, ::Any) = idx
 @inline function _resolve_ragged_index(idx::RaggedEnd, VA::AbstractVectorOfArray, col)
-    dim = idx.data[1]
-    offset = idx.data[2]
-    return lastindex(VA.u[col], dim) + offset
+    return lastindex(VA.u[col], idx.dim) + idx.offset
 end
 @inline function _resolve_ragged_index(idx::RaggedRange, VA::AbstractVectorOfArray, col)
-    dim = idx.data[1]
-    start_val = idx.data[2]
-    step_val = idx.data[3]
-    offset = idx.data[4]
-    stop_val = lastindex(VA.u[col], dim) + offset
-    return Base.range(start_val; step = step_val, stop = stop_val)
+    stop_val = lastindex(VA.u[col], idx.dim) + idx.offset
+    return Base.range(idx.start; step = idx.step, stop = stop_val)
 end
 @inline function _resolve_ragged_index(idx::AbstractRange{<:RaggedEnd}, VA::AbstractVectorOfArray, col)
     return Base.range(_resolve_ragged_index(first(idx), VA, col); step = step(idx),
