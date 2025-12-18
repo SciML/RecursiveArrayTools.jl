@@ -53,7 +53,7 @@ end
 function Base.similar(
         A::NamedArrayPartition, ::Type{T}, ::Type{S}, R::DataType...) where {T, S}
     NamedArrayPartition(
-    similar(getfield(A, :array_partition), T, S, R...), getfield(A, :names_to_indices))
+        similar(getfield(A, :array_partition), T, S, R...), getfield(A, :names_to_indices))
 end
 
 Base.Array(x::NamedArrayPartition) = Array(ArrayPartition(x))
