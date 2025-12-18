@@ -151,8 +151,8 @@ end
 
 #Overwrite ArrayInterface zeromatrix to work with NamedArrayPartitions & implicit solvers within OrdinaryDiffEq
 function ArrayInterface.zeromatrix(A::NamedArrayPartition)
-	B = ArrayPartition(A)
-    x = reduce(vcat,vec.(B.x))
+    B = ArrayPartition(A)
+    x = reduce(vcat, vec.(B.x))
     x .* x' .* false
 end
 

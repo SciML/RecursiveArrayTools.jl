@@ -182,8 +182,8 @@ u[1, [1, 3], 2] .= [7.0, 9.0]
 
 # 3D inner arrays (tensors) with ragged third dimension
 u = VectorOfArray([zeros(2, 1, n) for n in (2, 3)])
-@test size(view(u, :, :, :, 1)) == (2, 1, 2)
-@test size(view(u, :, :, :, 2)) == (2, 1, 3)
+@test size(view(u,:,:,:,1)) == (2, 1, 2)
+@test size(view(u,:,:,:,2)) == (2, 1, 3)
 # assign into a slice of the second inner array using last index Int
 u[2, 1, :, 2] .= [7.0, 8.0, 9.0]
 @test vec(u.u[2][2, 1, :]) == [7.0, 8.0, 9.0]
