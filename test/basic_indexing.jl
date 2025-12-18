@@ -192,6 +192,38 @@ ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
 @test ragged2[1:(end - 1), 2] == [5.0]
 @test ragged2[1:(end - 1), 3] == [7.0, 8.0]
 
+# Broadcasting of heterogeneous arrays (issue #454)
+u = VectorOfArray([[1.0], [2.0, 3.0]])
+@test length(view(u, :, 1)) == 1
+@test length(view(u, :, 2)) == 2
+# broadcast assignment into selected column (last index Int)
+u[:, 2] .= [10.0, 11.0]
+@test u.u[2] == [10.0, 11.0]
+
+# 2D inner arrays (matrices) with ragged second dimension
+u = VectorOfArray([zeros(1, n) for n in (2, 3)])
+@test length(view(u, 1, :, 1)) == 2
+@test length(view(u, 1, :, 2)) == 3
+u[1, :, 2] .= [1.0, 2.0, 3.0]
+@test u.u[2] == [1.0 2.0 3.0]
+# partial column selection by indices
+u[1, [1, 3], 2] .= [7.0, 9.0]
+@test u.u[2] == [7.0 2.0 9.0]
+
+# 3D inner arrays (tensors) with ragged third dimension
+u = VectorOfArray([zeros(2, 1, n) for n in (2, 3)])
+@test size(view(u, :, :, :, 1)) == (2, 1, 2)
+@test size(view(u, :, :, :, 2)) == (2, 1, 3)
+# assign into a slice of the second inner array using last index Int
+u[2, 1, :, 2] .= [7.0, 8.0, 9.0]
+@test vec(u.u[2][2, 1, :]) == [7.0, 8.0, 9.0]
+# check mixed slicing with range on front dims
+u[1:2, 1, [1, 3], 2] .= [1.0 3.0; 2.0 4.0]
+@test u.u[2][1, 1, 1] == 1.0
+@test u.u[2][2, 1, 1] == 2.0
+@test u.u[2][1, 1, 3] == 3.0
+@test u.u[2][2, 1, 3] == 4.0
+
 # Test that views can be modified
 f3 = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
 v = view(f3, :, 2)

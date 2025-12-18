@@ -805,13 +805,19 @@ function Base.view(A::AbstractVectorOfArray{T, N, <:AbstractVector{T}},
 end
 function Base.view(A::AbstractVectorOfArray, I::Vararg{Any, M}) where {M}
     @inline
-    # Special handling for heterogeneous arrays when viewing a single column
-    # The issue is that to_indices uses axes, which is based on the first element's size
-    # For heterogeneous arrays, we need to use the actual size of the specific column
-    if length(I) == 2 && I[1] == Colon() && I[2] isa Int
-        @boundscheck checkbounds(A.u, I[2])
-        # Use the actual size of the specific column instead of relying on axes/to_indices
-        J = (Base.OneTo(length(A.u[I[2]])), I[2])
+    # Generalized handling for heterogeneous arrays when the last index selects a column (Int)
+    # The issue is that `to_indices` uses `axes(A)` which is based on the first element's size.
+    # For heterogeneous arrays, use the actual axes of the specific selected inner array.
+    if length(I) >= 1 && I[end] isa Int
+        i = I[end]
+        @boundscheck checkbounds(A.u, i)
+        frontI = Base.front(I)
+        # Normalize indices against the selected inner array's axes
+        frontJ = to_indices(A.u[i], frontI)
+        # Unalias indices and construct the full index tuple
+        J = (map(j -> Base.unalias(A, j), frontJ)..., i)
+        # Bounds check against the selected inner array to avoid relying on A's axes
+        @boundscheck checkbounds(Bool, A.u[i], frontJ...) || throw(BoundsError(A, I))
         return SubArray(A, J)
     end
     J = map(i -> Base.unalias(A, i), to_indices(A, I))
@@ -847,10 +853,14 @@ function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
         return _checkbounds_ragged(Bool, VA, idx...)
     end
     checkbounds(Bool, VA.u, last(idx)) || return false
-    for i in last(idx)
-        checkbounds(Bool, VA.u[i], Base.front(idx)...) || return false
+    if last(idx) isa Int
+        return checkbounds(Bool, VA.u[last(idx)], Base.front(idx)...)
+    else
+        for i in last(idx)
+            checkbounds(Bool, VA.u[i], Base.front(idx)...) || return false
+        end
+        return true
     end
-    return true
 end
 function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
     checkbounds(Bool, VA, idx...) || throw(BoundsError(VA, idx))
