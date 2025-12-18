@@ -119,7 +119,8 @@ function recursivefill!(b::AbstractArray{T, N},
         a::T2) where {T <: StaticArraysCore.SArray,
         T2 <: Union{Number, Bool}, N}
     @inbounds for i in eachindex(b)
-        b[i] = fill(a, typeof(b[i]))
+        # Preserve static array shape while replacing all entries with the scalar
+        b[i] = map(_ -> a, b[i])
     end
 end
 
@@ -128,7 +129,8 @@ function recursivefill!(bs::AbstractVectorOfArray{T, N},
         T2 <: Union{Number, Bool}, N}
     @inbounds for b in bs, i in eachindex(b)
 
-        b[i] = fill(a, typeof(b[i]))
+        # Preserve static array shape while replacing all entries with the scalar
+        b[i] = map(_ -> a, b[i])
     end
 end
 

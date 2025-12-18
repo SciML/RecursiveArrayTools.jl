@@ -669,6 +669,8 @@ function Base.view(A::AbstractVectorOfArray{T, N, <:AbstractVector{T}},
         J = map(i -> Base.unalias(A, i), to_indices(A, I))
     elseif length(I) == 2 && (I[1] == Colon() || I[1] == 1)
         J = map(i -> Base.unalias(A, i), to_indices(A, Base.tail(I)))
+    else
+        J = map(i -> Base.unalias(A, i), to_indices(A, I))
     end
     @boundscheck checkbounds(A, J...)
     SubArray(A, J)
@@ -939,6 +941,7 @@ end
 
 struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
 VectorOfArrayStyle{N}(::Val{N}) where {N} = VectorOfArrayStyle{N}()
+VectorOfArrayStyle(::Val{N}) where {N} = VectorOfArrayStyle{N}()
 
 # The order is important here. We want to override Base.Broadcast.DefaultArrayStyle to return another Base.Broadcast.DefaultArrayStyle.
 Broadcast.BroadcastStyle(a::VectorOfArrayStyle, ::Base.Broadcast.DefaultArrayStyle{0}) = a
