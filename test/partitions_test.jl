@@ -329,13 +329,13 @@ end
 end
 
 # Test adapt on ArrayPartition from Float64 to Float32 arrays
-a = Float64.([1., 2., 3., 4.])
-b = Float64.([1., 2., 3., 4.])
+a = Float64.([1.0, 2.0, 3.0, 4.0])
+b = Float64.([1.0, 2.0, 3.0, 4.0])
 part_a_64 = ArrayPartition(a, b)
 part_a = adapt(Array{Float32}, part_a_64)
 
-c = Float32.([1., 2., 3., 4.])
-d = Float32.([1., 2., 3., 4.])
+c = Float32.([1.0, 2.0, 3.0, 4.0])
+d = Float32.([1.0, 2.0, 3.0, 4.0])
 part_b = ArrayPartition(c, d)
 
 @test part_a == part_b # Test equality of partitions

@@ -10,12 +10,11 @@ using RecursiveArrayTools, ArrayInterface, Test
     @test typeof(x .+ x[1:end]) <: Vector # test broadcast precedence 
     @test all(x .== x[1:end])
     @test ArrayInterface.zeromatrix(x) isa Matrix
-    @test size(ArrayInterface.zeromatrix(x)) == (30,30)
+    @test size(ArrayInterface.zeromatrix(x)) == (30, 30)
     y = copy(x)
     @test zero(x, (10, 20)) == zero(x) # test that ignoring dims works
     @test typeof(zero(x)) <: NamedArrayPartition
     @test (y .*= 2).a[1] ≈ 2 # test in-place bcast
-    
 
     @test length(Array(x)) == 30
     @test typeof(Array(x)) <: Array
