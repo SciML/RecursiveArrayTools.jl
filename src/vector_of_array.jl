@@ -388,15 +388,15 @@ end
 @inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
 @inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
 @inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
-function Base.firstindex(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A}
+function Base.firstindex(VA::AbstractVectorOfArray{T, N, A}) where {T, N, A}
     N > 1 && Base.depwarn(
         "Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",
         :firstindex)
     return firstindex(VA.u)
 end
 
-function Base.lastindex(VA::AbstractVectorOfArray{T,N,A}) where {T,N,A}
-     N > 1 && Base.depwarn(
+function Base.lastindex(VA::AbstractVectorOfArray{T, N, A}) where {T, N, A}
+    N > 1 && Base.depwarn(
         "Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",
         :lastindex)
     return lastindex(VA.u)
@@ -420,13 +420,17 @@ Base.getindex(A::AbstractVectorOfArray, I::AbstractArray{Int}) = A.u[I]
 Base.getindex(A::AbstractDiffEqArray, I::Int) = A.u[I]
 Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) = A.u[I]
 
-@deprecate Base.getindex(VA::AbstractVectorOfArray{T,N,A}, I::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
+@deprecate Base.getindex(VA::AbstractVectorOfArray{T, N, A},
+    I::Int) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
 
-@deprecate Base.getindex(VA::AbstractVectorOfArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
+@deprecate Base.getindex(VA::AbstractVectorOfArray{T, N, A},
+    I::AbstractArray{Int}) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
 
-@deprecate Base.getindex(VA::AbstractDiffEqArray{T,N,A}, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
+@deprecate Base.getindex(VA::AbstractDiffEqArray{T, N, A},
+    I::AbstractArray{Int}) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
 
-@deprecate Base.getindex(VA::AbstractDiffEqArray{T,N,A}, i::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} VA.u[i] false
+@deprecate Base.getindex(VA::AbstractDiffEqArray{T, N, A},
+    i::Int) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[i] false
 
 __parameterless_type(T) = Base.typename(T).wrapper
 
@@ -450,8 +454,12 @@ struct RaggedRange
 end
 
 Base.:(:)(stop::RaggedEnd) = RaggedRange(stop.dim, 1, 1, stop.offset)
-Base.:(:)(start::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, Int(start), 1, stop.offset)
-Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
+function Base.:(:)(start::Integer, stop::RaggedEnd)
+    RaggedRange(stop.dim, Int(start), 1, stop.offset)
+end
+function Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd)
+    RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
+end
 
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
     length(VA.u) <= 1 && return false
@@ -532,7 +540,8 @@ Base.@propagate_inbounds function _getindex(A::AbstractDiffEqArray, ::ScalarSymb
     return getindex(A, all_variable_symbols(A), args...)
 end
 
-@inline _column_indices(VA::AbstractVectorOfArray, idx) = idx === Colon() ? eachindex(VA.u) : idx
+@inline _column_indices(VA::AbstractVectorOfArray, idx) = idx === Colon() ?
+                                                          eachindex(VA.u) : idx
 @inline function _column_indices(VA::AbstractVectorOfArray, idx::AbstractArray{Bool})
     findall(idx)
 end
@@ -559,7 +568,8 @@ end
     end
     return Base.range(idx.start; step = idx.step, stop = stop_val)
 end
-@inline function _resolve_ragged_index(idx::AbstractRange{<:RaggedEnd}, VA::AbstractVectorOfArray, col)
+@inline function _resolve_ragged_index(
+        idx::AbstractRange{<:RaggedEnd}, VA::AbstractVectorOfArray, col)
     return Base.range(_resolve_ragged_index(first(idx), VA, col); step = step(idx),
         stop = _resolve_ragged_index(last(idx), VA, col))
 end
@@ -569,10 +579,12 @@ end
 @inline function _resolve_ragged_index(idx::CartesianIndex, VA::AbstractVectorOfArray, col)
     return CartesianIndex(_resolve_ragged_indices(Tuple(idx), VA, col)...)
 end
-@inline function _resolve_ragged_index(idx::AbstractArray{<:RaggedEnd}, VA::AbstractVectorOfArray, col)
+@inline function _resolve_ragged_index(
+        idx::AbstractArray{<:RaggedEnd}, VA::AbstractVectorOfArray, col)
     return map(i -> _resolve_ragged_index(i, VA, col), idx)
 end
-@inline function _resolve_ragged_index(idx::AbstractArray{<:RaggedRange}, VA::AbstractVectorOfArray, col)
+@inline function _resolve_ragged_index(
+        idx::AbstractArray{<:RaggedRange}, VA::AbstractVectorOfArray, col)
     return map(i -> _resolve_ragged_index(i, VA, col), idx)
 end
 @inline function _resolve_ragged_index(idx::AbstractArray, VA::AbstractVectorOfArray, col)
@@ -591,7 +603,8 @@ end
     x isa AbstractRange && return eltype(x) <: Union{RaggedEnd, RaggedRange}
     if x isa AbstractArray
         el = eltype(x)
-        return el <: Union{RaggedEnd, RaggedRange} || (el === Any && any(_has_ragged_end, x))
+        return el <: Union{RaggedEnd, RaggedRange} ||
+               (el === Any && any(_has_ragged_end, x))
     end
     x isa Tuple && return any(_has_ragged_end, x)
     return false
@@ -621,30 +634,33 @@ end
                 if all(idx -> idx === Colon(), resolved_prefix)
                     (resolved_prefix..., ntuple(_ -> Colon(), n_missing)...)
                 else
-                    (resolved_prefix..., (lastindex(A.u[cols], length(resolved_prefix) + i) for i in 1:n_missing)...,)
+                    (resolved_prefix...,
+                        (lastindex(A.u[cols], length(resolved_prefix) + i) for i in 1:n_missing)...)
                 end
             else
                 resolved_prefix
             end
             return A.u[cols][padded...]
         else
-            return VectorOfArray([
-                begin
-                    resolved_prefix = _resolve_ragged_indices(prefix, A, col)
-                    inner_nd = ndims(A.u[col])
-                    n_missing = inner_nd - length(resolved_prefix)
-                    padded = if n_missing > 0
-                        if all(idx -> idx === Colon(), resolved_prefix)
-                            (resolved_prefix..., ntuple(_ -> Colon(), n_missing)...)
-                        else
-                            (resolved_prefix..., (lastindex(A.u[col], length(resolved_prefix) + i) for i in 1:n_missing)...,)
-                        end
-                    else
-                        resolved_prefix
-                    end
-                    A.u[col][padded...]
-                end for col in cols
-            ])
+            return VectorOfArray([begin
+                                      resolved_prefix = _resolve_ragged_indices(prefix, A, col)
+                                      inner_nd = ndims(A.u[col])
+                                      n_missing = inner_nd - length(resolved_prefix)
+                                      padded = if n_missing > 0
+                                          if all(idx -> idx === Colon(), resolved_prefix)
+                                              (resolved_prefix...,
+                                                  ntuple(_ -> Colon(), n_missing)...)
+                                          else
+                                              (resolved_prefix...,
+                                                  (lastindex(A.u[col],
+                                                       length(resolved_prefix) + i) for i in 1:n_missing)...)
+                                          end
+                                      else
+                                          resolved_prefix
+                                      end
+                                      A.u[col][padded...]
+                                  end
+                                  for col in cols])
         end
     end
 
@@ -685,13 +701,15 @@ end
         if col_idxs isa Int
             resolved = _resolve_ragged_indices(prefix, A, col_idxs)
             inner_nd = ndims(A.u[col_idxs])
-            padded = (resolved..., ntuple(_ -> Colon(), max(inner_nd - length(resolved), 0))...)
+            padded = (
+                resolved..., ntuple(_ -> Colon(), max(inner_nd - length(resolved), 0))...)
             return A.u[col_idxs][padded...]
         end
         vals = map(col_idxs) do col
             resolved = _resolve_ragged_indices(prefix, A, col)
             inner_nd = ndims(A.u[col])
-            padded = (resolved..., ntuple(_ -> Colon(), max(inner_nd - length(resolved), 0))...)
+            padded = (
+                resolved..., ntuple(_ -> Colon(), max(inner_nd - length(resolved), 0))...)
             A.u[col][padded...]
         end
         return stack(vals)
@@ -753,16 +771,21 @@ Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}
     VA.u[I] = v
 end
 
-Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Int) = Base.setindex!(VA.u, v, I)
-@deprecate Base.setindex!(VA::AbstractVectorOfArray{T,N,A}, v, I::Int) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(VA.u, v, I) false
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Int) = Base.setindex!(
+    VA.u, v, I)
+@deprecate Base.setindex!(VA::AbstractVectorOfArray{T, N, A}, v,
+    I::Int) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
+    VA.u, v, I) false
 
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
         ::Colon, I::Colon) where {T, N}
     VA.u[I] = v
 end
 
-Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Colon) = Base.setindex!(VA.u, v, I)
-@deprecate Base.setindex!(VA::AbstractVectorOfArray{T,N,A}, v, I::Colon)  where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Colon) = Base.setindex!(
+    VA.u, v, I)
+@deprecate Base.setindex!(VA::AbstractVectorOfArray{T, N, A}, v,
+    I::Colon) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
     VA.u, v, I) false
 
 Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}, v,
@@ -770,8 +793,10 @@ Base.@propagate_inbounds function Base.setindex!(VA::AbstractVectorOfArray{T, N}
     VA.u[I] = v
 end
 
-Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::AbstractArray{Int}) = Base.setindex!(VA.u, v, I)
-@deprecate Base.setindex!(VA::AbstractVectorOfArray{T,N,A}, v, I::AbstractArray{Int}) where {T,N,A<:Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
+Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::AbstractArray{Int}) = Base.setindex!(
+    VA.u, v, I)
+@deprecate Base.setindex!(VA::AbstractVectorOfArray{T, N, A}, v,
+    I::AbstractArray{Int}) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
     VA, v, :, I) false
 
 Base.@propagate_inbounds function Base.setindex!(
