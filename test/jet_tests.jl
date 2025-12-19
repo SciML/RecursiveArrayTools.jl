@@ -1,4 +1,4 @@
-using JET
+using JET, Test, RecursiveArrayTools
 
 # Get all reports first
 result = JET.report_package(RecursiveArrayTools; target_modules = (RecursiveArrayTools,))
