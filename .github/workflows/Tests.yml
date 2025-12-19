@@ -29,6 +29,7 @@ jobs:
         group:
           - "Core"
           - "Downstream"
+          - "JET"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       group: "${{ matrix.group }}"
