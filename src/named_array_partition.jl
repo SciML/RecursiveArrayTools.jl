@@ -1,6 +1,6 @@
 """
     NamedArrayPartition(; kwargs...)
-    NamedArrayPartition(x::NamedTuple) 
+    NamedArrayPartition(x::NamedTuple)
 
 Similar to an `ArrayPartition` but the individual arrays can be accessed via the
 constructor-specified names. However, unlike `ArrayPartition`, each individual array
@@ -22,7 +22,7 @@ function NamedArrayPartition(x::NamedTuple)
     return NamedArrayPartition(ArrayPartition{T, S}(values(x)), names_to_indices)
 end
 
-# Note: overloading `getproperty` means we cannot access `NamedArrayPartition` 
+# Note: overloading `getproperty` means we cannot access `NamedArrayPartition`
 # fields except through `getfield` and accessor functions.
 ArrayPartition(x::NamedArrayPartition) = getfield(x, :array_partition)
 
@@ -53,7 +53,7 @@ end
 function Base.similar(
         A::NamedArrayPartition, ::Type{T}, ::Type{S}, R::DataType...) where {T, S}
     NamedArrayPartition(
-        similar(getfield(A, :array_partition), T, S, R), getfield(A, :names_to_indices))
+        similar(getfield(A, :array_partition), T, S, R...), getfield(A, :names_to_indices))
 end
 
 Base.Array(x::NamedArrayPartition) = Array(ArrayPartition(x))
@@ -68,7 +68,7 @@ function Base.getproperty(x::NamedArrayPartition, s::Symbol)
     getindex(ArrayPartition(x).x, getproperty(getfield(x, :names_to_indices), s))
 end
 
-# this enables x.s = some_array. 
+# this enables x.s = some_array.
 @inline function Base.setproperty!(x::NamedArrayPartition, s::Symbol, v)
     index = getproperty(getfield(x, :names_to_indices), s)
     ArrayPartition(x).x[index] .= v
