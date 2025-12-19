@@ -15,9 +15,4 @@ filtered_reports = filter(reports) do report
 end
 
 # Check if there are any non-filtered errors
-if !isempty(filtered_reports)
-    @error "JET found errors" filtered_reports
-    exit(1)
-else
-    @info "All JET errors are filtered (similar_type related)"
-end
+@test isempty(filtered_reports)
