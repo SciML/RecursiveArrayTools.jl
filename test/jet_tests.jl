@@ -1,8 +1,4 @@
-using Pkg
-Pkg.add("JET")
-Pkg.instantiate()
 using JET
-using RecursiveArrayTools
 
 # Get all reports first
 result = JET.report_package(RecursiveArrayTools; target_modules = (RecursiveArrayTools,))
