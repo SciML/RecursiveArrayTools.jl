@@ -50,6 +50,7 @@ var DOC_VERSIONS = [
   "v2.33",
   "v2.32",
   "v2.31",
+  "v2.30",
   "dev",
 ];
 var DOCUMENTER_NEWEST = "v3.42.0";
