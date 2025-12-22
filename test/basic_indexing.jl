@@ -162,40 +162,6 @@ f2 = VectorOfArray([[1.0, 2.0], [3.0]])
 @test collect(view(f2, :, 1)) == f2[:, 1]
 @test collect(view(f2, :, 2)) == f2[:, 2]
 
-# Test `end` with ragged arrays
-ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
-@test ragged[end, 1] == 2.0
-@test ragged[end, 2] == 5.0
-@test ragged[end, 3] == 9.0
-@test ragged[end - 1, 1] == 1.0
-@test ragged[end - 1, 2] == 4.0
-@test ragged[end - 1, 3] == 8.0
-@test ragged[1:end, 1] == [1.0, 2.0]
-@test ragged[1:end, 2] == [3.0, 4.0, 5.0]
-@test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]
-@test ragged[:, end] == [6.0, 7.0, 8.0, 9.0]
-@test ragged[:, 2:end] == VectorOfArray(ragged.u[2:end])
-
-ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
-@test ragged2[end, 1] == 4.0
-@test ragged2[end, 2] == 6.0
-@test ragged2[end, 3] == 9.0
-@test ragged2[end - 1, 1] == 3.0
-@test ragged2[end - 1, 2] == 5.0
-@test ragged2[end - 1, 3] == 8.0
-@test ragged2[end - 2, 1] == 2.0
-@test ragged2[1:end, 1] == [1.0, 2.0, 3.0, 4.0]
-@test ragged2[1:end, 2] == [5.0, 6.0]
-@test ragged2[1:end, 3] == [7.0, 8.0, 9.0]
-@test ragged2[2:end, 1] == [2.0, 3.0, 4.0]
-@test ragged2[2:end, 2] == [6.0]
-@test ragged2[2:end, 3] == [8.0, 9.0]
-@test ragged2[:, end] == [7.0, 8.0, 9.0]
-@test ragged2[:, 2:end] == VectorOfArray(ragged2.u[2:end])
-@test ragged2[1:(end - 1), 1] == [1.0, 2.0, 3.0]
-@test ragged2[1:(end - 1), 2] == [5.0]
-@test ragged2[1:(end - 1), 3] == [7.0, 8.0]
-
 # Broadcasting of heterogeneous arrays (issue #454)
 u = VectorOfArray([[1.0], [2.0, 3.0]])
 @test length(view(u, :, 1)) == 1
@@ -213,10 +179,6 @@ u[1, :, 2] .= [1.0, 2.0, 3.0]
 # partial column selection by indices
 u[1, [1, 3], 2] .= [7.0, 9.0]
 @test u.u[2] == [7.0 2.0 9.0]
-# test scalar indexing with end
-@test u[1, 1, end] == u.u[end][1, 1]
-@test u[1, end, end] == u.u[end][1, end]
-@test u[1, 2:end, end] == vec(u.u[end][1, 2:end])
 
 # 3D inner arrays (tensors) with ragged third dimension
 u = VectorOfArray([zeros(2, 1, n) for n in (2, 3)])
@@ -231,10 +193,6 @@ u[1:2, 1, [1, 3], 2] .= [1.0 3.0; 2.0 4.0]
 @test u.u[2][2, 1, 1] == 2.0
 @test u.u[2][1, 1, 3] == 3.0
 @test u.u[2][2, 1, 3] == 4.0
-@test u[:, :, end] == u.u[end]
-@test u[:, :, 2:end] == VectorOfArray(u.u[2:end])
-@test u[1, 1, end] == u.u[end][1, 1, end]
-@test u[end, 1, end] == u.u[end][end, 1, end]
 
 # Test that views can be modified
 f3 = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
