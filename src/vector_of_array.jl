@@ -446,6 +446,10 @@ Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset + Int(n))
 Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset - Int(n))
 Base.:+(n::Integer, re::RaggedEnd) = re + n
 
+# Make RaggedEnd and RaggedRange broadcast as scalars to avoid
+# issues with collect/length in broadcasting contexts (e.g., SymbolicIndexingInterface)
+Base.broadcastable(x::RaggedEnd) = Ref(x)
+
 struct RaggedRange
     dim::Int
     start::Int
@@ -460,6 +464,7 @@ end
 function Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd)
     RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
 end
+Base.broadcastable(x::RaggedRange) = Ref(x)
 
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
     length(VA.u) <= 1 && return false
