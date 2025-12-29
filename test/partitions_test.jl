@@ -3,6 +3,15 @@ using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
 @test length(ArrayPartition()) == 0
 @test isempty(ArrayPartition())
 
+# Test undef initializer for single-partition ArrayPartition
+p_undef = ArrayPartition{Float64, Tuple{Vector{Float64}}}(undef, 10)
+@test p_undef isa ArrayPartition{Float64, Tuple{Vector{Float64}}}
+@test length(p_undef) == 10
+@test length(p_undef.x) == 1
+@test length(p_undef.x[1]) == 10
+# Test that multi-partition throws error
+@test_throws ArgumentError ArrayPartition{Float64, Tuple{Vector{Float64}, Vector{Float64}}}(undef, 10)
+
 A = (rand(5), rand(5))
 p = ArrayPartition(A)
 @inferred p[1]
