@@ -293,13 +293,21 @@ end
 recursive_unitless_eltype(a::Type{T}) where {T <: Number} = typeof(one(eltype(a)))
 recursive_unitless_eltype(::Type{<:Enum{T}}) where {T} = T
 
-recursive_mean(x...) = mean(x...)
 function recursive_mean(vecvec::Vector{T}) where {T <: AbstractArray}
     out = zero(vecvec[1])
     for i in eachindex(vecvec)
         out += vecvec[i]
     end
     out / length(vecvec)
+end
+
+# Fallback for scalars and general cases without Statistics
+function recursive_mean(x::AbstractArray{T}) where {T <: Number}
+    sum(x) / length(x)
+end
+
+function recursive_mean(x::Number)
+    x
 end
 
 # From Iterators.jl. Moved here since Iterators.jl is not precompile safe anymore.
