@@ -142,4 +142,6 @@ export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_pus
 
 export ArrayPartition, NamedArrayPartition
 
+include("precompilation.jl")
+
 end # module
