@@ -31,6 +31,15 @@ end
 @inline ArrayPartition(f::F, N) where {F <: Function} = ArrayPartition(ntuple(f, Val(N)))
 ArrayPartition(x...) = ArrayPartition((x...,))
 
+function (::Type{ArrayPartition{T, S}})(::UndefInitializer, n::Integer) where {T, S <: Tuple}
+    if length(S.parameters) != 1
+        throw(ArgumentError("ArrayPartition{T,S}(undef, n) is only supported for a single partition"))
+    end
+    part_type = S.parameters[1]
+    part = part_type(undef, n)
+    return ArrayPartition{T, S}((part,))
+end
+
 function ArrayPartition(x::S, ::Type{Val{copy_x}} = Val{false}) where {S <: Tuple, copy_x}
     T = promote_type(map(recursive_bottom_eltype, x)...)
     if copy_x
