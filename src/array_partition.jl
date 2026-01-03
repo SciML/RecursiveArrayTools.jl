@@ -406,9 +406,10 @@ function Broadcast.BroadcastStyle(::ArrayPartitionStyle{Style},
 }
     ArrayPartitionStyle{Style}()
 end
-function Broadcast.BroadcastStyle(::ArrayPartitionStyle,
-        ::Broadcast.DefaultArrayStyle{N}) where {N}
-    Broadcast.DefaultArrayStyle{N}()
+function Broadcast.BroadcastStyle(::ArrayPartitionStyle{AStyle},
+        ::Broadcast.DefaultArrayStyle{N}) where {AStyle, N}
+    pick = Broadcast.BroadcastStyle(AStyle(), Broadcast.DefaultArrayStyle{N}())
+    ArrayPartitionStyle(pick, Val(N))
 end
 
 combine_styles(::Type{Tuple{}}) = Broadcast.DefaultArrayStyle{0}()
