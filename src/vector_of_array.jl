@@ -616,6 +616,33 @@ end
 end
 @inline _has_ragged_end(x, xs...) = _has_ragged_end(x) || _has_ragged_end(xs)
 
+# Helper function to resolve RaggedEnd objects in a tuple of arguments
+@inline function _resolve_ragged_end_args(A::AbstractVectorOfArray, args::Tuple)
+    # Handle empty tuple case
+    length(args) == 0 && return args
+    if !_has_ragged_end(args...)
+        return args
+    end
+    # For now, we need to resolve only the last argument if it's RaggedEnd (column selector)
+    # This handles the common case sol[:x, end] where end gets converted to RaggedEnd(0, lastindex)
+    if args[end] isa RaggedEnd
+        resolved_last = _column_indices(A, args[end])
+        if length(args) == 1
+            return (resolved_last,)
+        else
+            return (Base.front(args)..., resolved_last)
+        end
+    elseif args[end] isa RaggedRange
+        resolved_last = _resolve_ragged_index(args[end], A, 1)
+        if length(args) == 1
+            return (resolved_last,)
+        else
+            return (Base.front(args)..., resolved_last)
+        end
+    end
+    return args
+end
+
 @inline function _ragged_getindex(A::AbstractVectorOfArray, I...)
     n = ndims(A)
     # Special-case when user provided one fewer index than ndims(A): last index is column selector.
@@ -752,7 +779,9 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
             _getindex(A, symtype, _arg, args...)
         end
     else
-        _getindex(A, symtype, elsymtype, _arg, args...)
+        # Resolve any RaggedEnd objects in args before passing to symbolic indexing
+        resolved_args = _resolve_ragged_end_args(A, args)
+        _getindex(A, symtype, elsymtype, _arg, resolved_args...)
     end
 end
 

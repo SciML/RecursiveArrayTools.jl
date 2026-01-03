@@ -63,6 +63,14 @@ sol_ts = sol(ts)
 test_tables_interface(sol_ts, [:timestamp, Symbol("x(t)"), Symbol("y(t)")],
     hcat(ts, Array(sol_ts)'))
 
+# Test issue 508: Cannot call `to_index(::RaggedEnd)` with symbolic indexing and end
+@testset "Symbolic indexing with end (issue #508)" begin
+    @test sol[x, end] isa Number
+    @test sol[y, end] isa Number
+    @test sol[x, end] == sol[x][end]
+    @test sol[y, end] == sol[y][end]
+end
+
 # Array variables
 using LinearAlgebra
 sts = @variables x(t)[1:3]=[1, 2, 3.0] y(t)=1.0
