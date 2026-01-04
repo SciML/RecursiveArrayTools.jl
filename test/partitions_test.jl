@@ -202,7 +202,7 @@ _broadcast_wrapper(y) = _scalar_op.(y)
 S = [
     ((1,), (2,)) => ((1,), (2,)),
     ((3, 2), (2,)) => ((3, 2), (2,)),
-    ((3, 2), (2,)) => ((3,), (3,), (2,))
+    ((3, 2), (2,)) => ((3,), (3,), (2,)),
 ]
 
 for sizes in S
@@ -220,13 +220,13 @@ xce0 = ArrayPartition(zeros(2), [0.0])
 xcde0 = copy(xce0)
 function foo(y, x)
     y .= y .+ x
-    nothing
+    return nothing
 end
 foo(xcde0, xce0)
 #@test 0 == @allocated foo(xcde0, xce0)
 function foo2(y, x)
     y .= y .+ 2 .* x
-    nothing
+    return nothing
 end
 foo2(xcde0, xce0)
 #@test 0 == @allocated foo(xcde0, xce0)
@@ -245,13 +245,15 @@ Base.IndexStyle(::MyType) = IndexLinear()
 
 Base.BroadcastStyle(::Type{<:MyType}) = Broadcast.ArrayStyle{MyType}()
 
-function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyType}},
-        ::Type{T}) where {T}
-    similar(find_mt(bc), T)
+function Base.similar(
+        bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyType}},
+        ::Type{T}
+    ) where {T}
+    return similar(find_mt(bc), T)
 end
 
 function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{MyType}})
-    similar(find_mt(bc))
+    return similar(find_mt(bc))
 end
 
 find_mt(bc::Base.Broadcast.Broadcasted) = find_mt(bc.args)
@@ -277,21 +279,28 @@ up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
 @testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in (
-    (1,
-        2,
-        false),
-    ([
-            1
-        ],
-        2,
-        false),
-    ([
-            1
-        ],
-        [
-            2
-        ],
-        true))
+        (
+            1,
+            2,
+            false,
+        ),
+        (
+            [
+                1,
+            ],
+            2,
+            false,
+        ),
+        (
+            [
+                1,
+            ],
+            [
+                2,
+            ],
+            true,
+        ),
+    )
     @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
 end
 
@@ -316,9 +325,14 @@ end
 @testset "Copy and zero with type changing array" begin
     # Motivating use case for this is ArrayPartitions of Arrow arrays which are mmap:ed and change type when copied
     struct TypeChangingArray{T, N} <: AbstractArray{T, N} end
-    Base.copy(::TypeChangingArray{
-        T, N}) where {T, N} = Array{T, N}(undef,
-        ntuple(_ -> 0, N))
+    Base.copy(
+        ::TypeChangingArray{
+            T, N,
+        }
+    ) where {T, N} = Array{T, N}(
+        undef,
+        ntuple(_ -> 0, N)
+    )
     Base.zero(::TypeChangingArray{T, N}) where {T, N} = zeros(T, ntuple(_ -> 0, N))
 
     a = ArrayPartition(TypeChangingArray{Int, 2}(), TypeChangingArray{Float32, 2}())

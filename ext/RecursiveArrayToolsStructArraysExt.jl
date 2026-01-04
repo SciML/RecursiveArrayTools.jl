@@ -4,34 +4,38 @@ import RecursiveArrayTools, StructArrays
 RecursiveArrayTools.rewrap(::StructArrays.StructArray, u) = StructArrays.StructArray(u)
 
 using RecursiveArrayTools: VectorOfArray, VectorOfArrayStyle, ArrayInterface, unpack_voa,
-                           narrays, StaticArraysCore
+    narrays, StaticArraysCore
 using StructArrays: StructArray
 
 const VectorOfStructArray{T, N} = VectorOfArray{T, N, <:StructArray}
 
-# Since `StructArray` lazily materializes struct entries, the general `setindex!(x, val, I)` 
-# operation `VA.u[I[end]][Base.front(I)...]` will only update a lazily materialized struct 
-# entry of `u`, but will not actually mutate `x::StructArray`. See the StructArray documentation 
+# Since `StructArray` lazily materializes struct entries, the general `setindex!(x, val, I)`
+# operation `VA.u[I[end]][Base.front(I)...]` will only update a lazily materialized struct
+# entry of `u`, but will not actually mutate `x::StructArray`. See the StructArray documentation
 # for more details:
 #
-#   https://juliaarrays.github.io/StructArrays.jl/stable/counterintuitive/#Modifying-a-field-of-a-struct-element 
-# 
-# To avoid this, we can materialize a struct entry, modify it, and then use `setindex!` 
+#   https://juliaarrays.github.io/StructArrays.jl/stable/counterintuitive/#Modifying-a-field-of-a-struct-element
+#
+# To avoid this, we can materialize a struct entry, modify it, and then use `setindex!`
 # with the modified struct entry.
-# 
-function Base.setindex!(VA::VectorOfStructArray{T, N}, v,
-        I::Int...) where {T, N}
+#
+function Base.setindex!(
+        VA::VectorOfStructArray{T, N}, v,
+        I::Int...
+    ) where {T, N}
     u_I = VA.u[I[end]]
     u_I[Base.front(I)...] = v
     return VA.u[I[end]] = u_I
 end
 
 for (type, N_expr) in [
-    (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
-    (Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle}, :(length(dest.u)))
-]
-    @eval @inline function Base.copyto!(dest::VectorOfStructArray,
-            bc::$type)
+        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
+        (Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle}, :(length(dest.u))),
+    ]
+    @eval @inline function Base.copyto!(
+            dest::VectorOfStructArray,
+            bc::$type
+        )
         bc = Broadcast.flatten(bc)
         N = $N_expr
         @inbounds for i in 1:N
@@ -55,7 +59,7 @@ for (type, N_expr) in [
             end
             dest[:, i] = dest_i
         end
-        dest
+        return dest
     end
 end
 

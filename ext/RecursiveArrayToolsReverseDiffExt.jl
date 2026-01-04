@@ -13,6 +13,7 @@ function trackedarraycopyto!(dest, src)
             dest.u[i] = slice
         end
     end
+    return
 end
 
 @adjoint function Array(VA::AbstractVectorOfArray{<:ReverseDiff.TrackedReal})
@@ -25,7 +26,8 @@ end
 end
 
 @adjoint function Base.view(
-        A::AbstractVectorOfArray{<:ReverseDiff.TrackedReal, N}, I::Colon...) where {N}
+        A::AbstractVectorOfArray{<:ReverseDiff.TrackedReal, N}, I::Colon...
+    ) where {N}
     view_adjoint = let A = A, I = I
         function (y)
             A = recursivecopy(A)

@@ -8,13 +8,13 @@ const GROUP = get(ENV, "GROUP", "All")
 function activate_downstream_env()
     Pkg.activate("downstream")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 function activate_gpu_env()
     Pkg.activate("gpu")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.instantiate()
+    return Pkg.instantiate()
 end
 
 @time begin

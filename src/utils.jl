@@ -10,18 +10,22 @@ A recursive `copy` function. Acts like a `deepcopy` on arrays of arrays, but
 like `copy` on arrays of scalars.
 """
 function recursivecopy(a)
-    deepcopy(a)
+    return deepcopy(a)
 end
-function recursivecopy(a::Union{StaticArraysCore.SVector, StaticArraysCore.SMatrix,
-        StaticArraysCore.SArray, Number})
-    copy(a)
+function recursivecopy(
+        a::Union{
+            StaticArraysCore.SVector, StaticArraysCore.SMatrix,
+            StaticArraysCore.SArray, Number,
+        }
+    )
+    return copy(a)
 end
 function recursivecopy(a::AbstractArray{T, N}) where {T <: Number, N}
-    copy(a)
+    return copy(a)
 end
 
 function recursivecopy(a::AbstractArray{T, N}) where {T <: AbstractArray, N}
-    if ArrayInterface.ismutable(a)
+    return if ArrayInterface.ismutable(a)
         b = similar(a)
         map!(recursivecopy, b, a)
     else
@@ -45,29 +49,41 @@ like `copy!` on arrays of scalars.
 """
 function recursivecopy! end
 
-function recursivecopy!(b::AbstractArray{T, N},
-        a::AbstractArray{T2, N}) where {T <: StaticArraysCore.StaticArray,
+function recursivecopy!(
+        b::AbstractArray{T, N},
+        a::AbstractArray{T2, N}
+    ) where {
+        T <: StaticArraysCore.StaticArray,
         T2 <: StaticArraysCore.StaticArray,
-        N}
-    @inbounds for i in eachindex(a)
+        N,
+    }
+    return @inbounds for i in eachindex(a)
         # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
         b[i] = copy(a[i])
     end
 end
 
-function recursivecopy!(b::AbstractArray{T, N},
-        a::AbstractArray{T2, N}) where {T <: Enum, T2 <: Enum, N}
-    copyto!(b, a)
+function recursivecopy!(
+        b::AbstractArray{T, N},
+        a::AbstractArray{T2, N}
+    ) where {T <: Enum, T2 <: Enum, N}
+    return copyto!(b, a)
 end
 
-function recursivecopy!(b::AbstractArray{T, N},
-        a::AbstractArray{T2, N}) where {T <: Number, T2 <: Number, N}
-    copyto!(b, a)
+function recursivecopy!(
+        b::AbstractArray{T, N},
+        a::AbstractArray{T2, N}
+    ) where {T <: Number, T2 <: Number, N}
+    return copyto!(b, a)
 end
 
-function recursivecopy!(b::AbstractArray{T, N},
-        a::AbstractArray{T2, N}) where {T <: Union{AbstractArray, AbstractVectorOfArray},
-        T2 <: Union{AbstractArray, AbstractVectorOfArray}, N}
+function recursivecopy!(
+        b::AbstractArray{T, N},
+        a::AbstractArray{T2, N}
+    ) where {
+        T <: Union{AbstractArray, AbstractVectorOfArray},
+        T2 <: Union{AbstractArray, AbstractVectorOfArray}, N,
+    }
     if ArrayInterface.ismutable(T)
         @inbounds for i in eachindex(b, a)
             recursivecopy!(b[i], a[i])
@@ -98,36 +114,52 @@ A recursive `fill!` function.
 """
 function recursivefill! end
 
-function recursivefill!(b::AbstractArray{T, N},
-        a::T2) where {T <: StaticArraysCore.StaticArray,
-        T2 <: StaticArraysCore.StaticArray, N}
-    @inbounds for i in eachindex(b)
+function recursivefill!(
+        b::AbstractArray{T, N},
+        a::T2
+    ) where {
+        T <: StaticArraysCore.StaticArray,
+        T2 <: StaticArraysCore.StaticArray, N,
+    }
+    return @inbounds for i in eachindex(b)
         b[i] = copy(a)
     end
 end
 
-function recursivefill!(bs::AbstractVectorOfArray{T, N},
-        a::T2) where {T <: StaticArraysCore.StaticArray,
-        T2 <: StaticArraysCore.StaticArray, N}
-    @inbounds for b in bs, i in eachindex(b)
+function recursivefill!(
+        bs::AbstractVectorOfArray{T, N},
+        a::T2
+    ) where {
+        T <: StaticArraysCore.StaticArray,
+        T2 <: StaticArraysCore.StaticArray, N,
+    }
+    return @inbounds for b in bs, i in eachindex(b)
 
         b[i] = copy(a)
     end
 end
 
-function recursivefill!(b::AbstractArray{T, N},
-        a::T2) where {T <: StaticArraysCore.SArray,
-        T2 <: Union{Number, Bool}, N}
-    @inbounds for i in eachindex(b)
+function recursivefill!(
+        b::AbstractArray{T, N},
+        a::T2
+    ) where {
+        T <: StaticArraysCore.SArray,
+        T2 <: Union{Number, Bool}, N,
+    }
+    return @inbounds for i in eachindex(b)
         # Preserve static array shape while replacing all entries with the scalar
         b[i] = map(_ -> a, b[i])
     end
 end
 
-function recursivefill!(bs::AbstractVectorOfArray{T, N},
-        a::T2) where {T <: StaticArraysCore.SArray,
-        T2 <: Union{Number, Bool}, N}
-    @inbounds for b in bs, i in eachindex(b)
+function recursivefill!(
+        bs::AbstractVectorOfArray{T, N},
+        a::T2
+    ) where {
+        T <: StaticArraysCore.SArray,
+        T2 <: Union{Number, Bool}, N,
+    }
+    return @inbounds for b in bs, i in eachindex(b)
 
         # Preserve static array shape while replacing all entries with the scalar
         b[i] = map(_ -> a, b[i])
@@ -136,19 +168,23 @@ end
 
 for type in [AbstractArray, AbstractVectorOfArray]
     @eval function recursivefill!(b::$type{T, N}, a::T2) where {T <: Enum, T2 <: Enum, N}
-        fill!(b, a)
+        return fill!(b, a)
     end
 
-    @eval function recursivefill!(b::$type{T, N},
-            a::T2) where {T <: Union{Number, Bool}, T2 <: Union{Number, Bool}, N
-    }
-        fill!(b, a)
+    @eval function recursivefill!(
+            b::$type{T, N},
+            a::T2
+        ) where {
+            T <: Union{Number, Bool}, T2 <: Union{Number, Bool}, N,
+        }
+        return fill!(b, a)
     end
 
     for type2 in [Any, StaticArraysCore.StaticArray]
         @eval function recursivefill!(
-                b::$type{T, N}, a::$type2) where {T <: StaticArraysCore.MArray, N}
-            @inbounds for i in eachindex(b)
+                b::$type{T, N}, a::$type2
+            ) where {T <: StaticArraysCore.MArray, N}
+            return @inbounds for i in eachindex(b)
                 if isassigned(b, i)
                     recursivefill!(b[i], a)
                 else
@@ -173,7 +209,7 @@ function vecvec_to_mat(vecvec)
     for i in 1:length(vecvec)
         mat[i, :] = vecvec[i]
     end
-    mat
+    return mat
 end
 
 """
@@ -190,17 +226,17 @@ function vecvecapply(f, v::AbstractArray{<:AbstractArray})
             push!(sol, v[i][j])
         end
     end
-    f(sol)
+    return f(sol)
 end
 
 vecvecapply(f, v::AbstractVectorOfArray) = vecvecapply(f, v.u)
 
 function vecvecapply(f, v::Array{T}) where {T <: Number}
-    f(v)
+    return f(v)
 end
 
 function vecvecapply(f, v::T) where {T <: Number}
-    f(v)
+    return f(v)
 end
 
 """
@@ -231,12 +267,14 @@ function copyat_or_push!(a::AbstractVector{T}, i::Int, x, perform_copy = true) w
             push!(a, x)
         end
     end
-    nothing
+    return nothing
 end
 
-function copyat_or_push!(a::AbstractVector{T}, i::Int, x,
-        nc::Type{Val{perform_copy}}) where {T, perform_copy}
-    copyat_or_push!(a, i, x, perform_copy)
+function copyat_or_push!(
+        a::AbstractVector{T}, i::Int, x,
+        nc::Type{Val{perform_copy}}
+    ) where {T, perform_copy}
+    return copyat_or_push!(a, i, x, perform_copy)
 end
 
 """
@@ -262,13 +300,13 @@ ones has a `Array{Array{Float64,N},N}`, this will return `Float64`.
 recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(typeof(a))
 recursive_unitless_bottom_eltype(a::Type{Any}) = Any
 function recursive_unitless_bottom_eltype(a::Type{T}) where {T}
-    recursive_unitless_bottom_eltype(eltype(a))
+    return recursive_unitless_bottom_eltype(eltype(a))
 end
 function recursive_unitless_bottom_eltype(a::Type{T}) where {T <: AbstractArray}
-    recursive_unitless_bottom_eltype(eltype(a))
+    return recursive_unitless_bottom_eltype(eltype(a))
 end
 function recursive_unitless_bottom_eltype(a::Type{T}) where {T <: Number}
-    eltype(a) == Number ? Float64 : typeof(one(eltype(a)))
+    return eltype(a) == Number ? Float64 : typeof(one(eltype(a)))
 end
 recursive_unitless_bottom_eltype(::Type{<:Enum{T}}) where {T} = T
 
@@ -284,11 +322,11 @@ recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
 recursive_unitless_eltype(a::Type{Any}) = Any
 
 function recursive_unitless_eltype(a::Type{T}) where {T <: StaticArraysCore.StaticArray}
-    StaticArraysCore.similar_type(a, recursive_unitless_eltype(eltype(a)))
+    return StaticArraysCore.similar_type(a, recursive_unitless_eltype(eltype(a)))
 end
 
 function recursive_unitless_eltype(a::Type{T}) where {T <: Array}
-    Array{recursive_unitless_eltype(eltype(a)), ndims(a)}
+    return Array{recursive_unitless_eltype(eltype(a)), ndims(a)}
 end
 recursive_unitless_eltype(a::Type{T}) where {T <: Number} = typeof(one(eltype(a)))
 recursive_unitless_eltype(::Type{<:Enum{T}}) where {T} = T
@@ -298,16 +336,16 @@ function recursive_mean(vecvec::Vector{T}) where {T <: AbstractArray}
     for i in eachindex(vecvec)
         out += vecvec[i]
     end
-    out / length(vecvec)
+    return out / length(vecvec)
 end
 
 # Fallback for scalars and general cases without Statistics
 function recursive_mean(x::AbstractArray{T}) where {T <: Number}
-    sum(x) / length(x)
+    return sum(x) / length(x)
 end
 
 function recursive_mean(x::Number)
-    x
+    return x
 end
 
 # From Iterators.jl. Moved here since Iterators.jl is not precompile safe anymore.

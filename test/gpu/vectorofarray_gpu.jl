@@ -32,7 +32,7 @@ mc = Array(m)
 p = cu([1.0, 2.0])
 function f(p)
     x = VectorOfArray([p, p])
-    sum(CuArray(x))
+    return sum(CuArray(x))
 end
 Zygote.gradient(f, p)
 

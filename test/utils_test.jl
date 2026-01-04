@@ -8,8 +8,10 @@ data = convert(Array, randomized)
 
 ## Test means
 A = [[1 2; 3 4], [1 3; 4 6], [5 6; 7 8]]
-@test recursive_mean(A) ≈ [2.33333333 3.666666666
-                           4.6666666666 6.0]
+@test recursive_mean(A) ≈ [
+    2.33333333 3.666666666
+    4.6666666666 6.0
+]
 
 A = zeros(5, 5)
 @test recursive_unitless_eltype(A) == Float64
@@ -53,7 +55,7 @@ function test_recursive_bottom_eltype()
 
         # It should return expected type for an array of vectors of chars
         AVval = [@SVector [val, val] for i in 1:5]
-        @test recursive_bottom_eltype(AVval) == expected_type
+        return @test recursive_bottom_eltype(AVval) == expected_type
     end
 
     # testing chars
@@ -70,7 +72,7 @@ function test_recursive_bottom_eltype()
 
     # testing float values
     test_value(1.0, Float64)
-    test_value(1.0u"kg", eltype(1.0u"kg"))
+    return test_value(1.0u"kg", eltype(1.0u"kg"))
 end
 test_recursive_bottom_eltype()
 

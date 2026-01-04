@@ -4,5 +4,5 @@ pages = [
     "Home" => "index.md",
     "AbstractVectorOfArrayInterface.md",
     "array_types.md",
-    "recursive_array_functions.md"
+    "recursive_array_functions.md",
 ]
