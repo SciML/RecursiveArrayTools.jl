@@ -15,9 +15,11 @@ fill!(mulX, 0)
 mulX .= sqrt.(abs.(testva .* X))
 @test mulX == ref
 
-@test Array(testva) == [1 4 7
-                        2 5 8
-                        3 6 9]
+@test Array(testva) == [
+    1 4 7
+    2 5 8
+    3 6 9
+]
 
 @test testa[1:2, 1:2] == [1 4; 2 5]
 @test testva[1:2, 1:2] == [1 4; 2 5]
@@ -25,9 +27,11 @@ mulX .= sqrt.(abs.(testva .* X))
 
 t = [1, 2, 3]
 diffeq = DiffEqArray(recs, t)
-@test Array(diffeq) == [1 4 7
-                        2 5 8
-                        3 6 9]
+@test Array(diffeq) == [
+    1 4 7
+    2 5 8
+    3 6 9
+]
 @test diffeq[1:2, 1:2] == [1 4; 2 5]
 
 # # ndims == 2
@@ -318,7 +322,7 @@ for i in 1:2:5
 end
 testva[CartesianIndex(3, 3, 5)] = 64.0
 @test testva[:, 5][3, 3] == 64.0
-@test_throws ArgumentError testva[2, 1:2, :]=108.0
+@test_throws ArgumentError testva[2, 1:2, :] = 108.0
 testva[2, 1:2, :] .= 108.0
 for i in 1:5
     @test all(testva[:, i][2, 1:2] .== 108.0)

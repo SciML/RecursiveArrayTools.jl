@@ -4,12 +4,14 @@ t = 0.0:0.1:1.0
 f(x) = 2x
 f2(x) = 3x
 
-dx = DiffEqArray([[f(x), f2(x)] for x in t],
+dx = DiffEqArray(
+    [[f(x), f2(x)] for x in t],
     t,
     [1.0, 2.0];
     variables = [:a, :b],
     parameters = [:p, :q],
-    independent_variables = [:t])
+    independent_variables = [:t]
+)
 @test dx[:t] == t
 @test dx[:a] == [f(x) for x in t]
 @test dx[:a, 2] ≈ f(t[2])
@@ -43,7 +45,7 @@ get_tuple = getu(dx, (:a, :b))
 @test is_parameter.((dx,), [:a, :b, :p, :q, :t]) == [false, false, true, true, false]
 @test parameter_index.((dx,), [:a, :b, :p, :q, :t]) == [nothing, nothing, 1, 2, nothing]
 @test is_independent_variable.((dx,), [:a, :b, :p, :q, :t]) ==
-      [false, false, false, false, true]
+    [false, false, false, false, true]
 @test variable_symbols(dx) == all_variable_symbols(dx) == [:a, :b]
 @test parameter_symbols(dx) == [:p, :q]
 @test independent_variable_symbols(dx) == [:t]

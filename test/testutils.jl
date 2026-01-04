@@ -4,8 +4,10 @@ using Tables: IteratorInterfaceExtensions
 
 # Test Tables interface with row access + IteratorInterfaceExtensions for QueryVerse
 # (see https://tables.juliadata.org/stable/#Testing-Tables.jl-Implementations)
-function test_tables_interface(x::AbstractDiffEqArray, names::Vector{Symbol},
-        values::Matrix)
+function test_tables_interface(
+        x::AbstractDiffEqArray, names::Vector{Symbol},
+        values::Matrix
+    )
     @assert length(names) == size(values, 2)
 
     # AbstractDiffEqArray is a table with row access
@@ -31,7 +33,7 @@ function test_tables_interface(x::AbstractDiffEqArray, names::Vector{Symbol},
         @test propertynames(row) == Tables.columnnames(row) == names
         for (j, name) in enumerate(names)
             @test getproperty(row, name) == Tables.getcolumn(row, name) ==
-                  Tables.getcolumn(row, j) == values[i, j]
+                Tables.getcolumn(row, j) == values[i, j]
         end
     end
 
@@ -46,7 +48,7 @@ function test_tables_interface(x::AbstractDiffEqArray, names::Vector{Symbol},
     @test propertynames(coltbl) == Tables.columnnames(coltbl) == Tuple(names)
     for (i, name) in enumerate(names)
         @test getproperty(coltbl, name) == Tables.getcolumn(coltbl, name) ==
-              Tables.getcolumn(coltbl, i) == values[:, i]
+            Tables.getcolumn(coltbl, i) == values[:, i]
     end
 
     # IteratorInterfaceExtensions
@@ -60,5 +62,5 @@ function test_tables_interface(x::AbstractDiffEqArray, names::Vector{Symbol},
         end
     end
 
-    nothing
+    return nothing
 end

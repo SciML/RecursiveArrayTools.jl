@@ -2,11 +2,11 @@ using RecursiveArrayTools, Zygote, ForwardDiff, Test
 using SciMLBase
 
 function loss(x)
-    sum(abs2, Array(VectorOfArray([x .* i for i in 1:5])))
+    return sum(abs2, Array(VectorOfArray([x .* i for i in 1:5])))
 end
 
 function loss2(x)
-    sum(abs2, Array(DiffEqArray([x .* i for i in 1:5], 1:5)))
+    return sum(abs2, Array(DiffEqArray([x .* i for i in 1:5], 1:5)))
 end
 
 function loss3(x)
@@ -16,7 +16,7 @@ function loss3(x)
 
         tmp += y[i, j]
     end
-    tmp
+    return tmp
 end
 
 function loss4(x)
@@ -26,17 +26,17 @@ function loss4(x)
 
         tmp += y[i, j]
     end
-    tmp
+    return tmp
 end
 
 function loss5(x)
-    sum(abs2, Array(ArrayPartition([x .* i for i in 1:5]...)))
+    return sum(abs2, Array(ArrayPartition([x .* i for i in 1:5]...)))
 end
 
 function loss6(x)
     _x = ArrayPartition([x .* i for i in 1:5]...)
     _prob = ODEProblem((u, p, t) -> u, _x, (0, 1))
-    sum(abs2, Array(_prob.u0))
+    return sum(abs2, Array(_prob.u0))
 end
 
 function loss7(x)
@@ -89,7 +89,7 @@ loss(x)
 @test Zygote.gradient(loss7, x)[1] == ForwardDiff.gradient(loss7, x)
 @test Zygote.gradient(loss8, x)[1] == ForwardDiff.gradient(loss8, x)
 @test ForwardDiff.derivative(loss9, 0.0) ==
-      VectorOfArray([collect((3i):(3i + 3)) for i in 1:5])
+    VectorOfArray([collect((3i):(3i + 3)) for i in 1:5])
 @test Zygote.gradient(loss10, x)[1] == ForwardDiff.gradient(loss10, x)
 @test Zygote.gradient(loss11, x)[1] == ForwardDiff.gradient(loss11, x)
 

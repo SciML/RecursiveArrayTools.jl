@@ -7,7 +7,7 @@ using RecursiveArrayTools, ArrayInterface, Test
     @test typeof(similar(x)) <: NamedArrayPartition
     @test typeof(similar(x, Int)) <: NamedArrayPartition
     @test x.a ≈ ones(10)
-    @test typeof(x .+ x[1:end]) <: Vector # test broadcast precedence 
+    @test typeof(x .+ x[1:end]) <: Vector # test broadcast precedence
     @test all(x .== x[1:end])
     @test ArrayInterface.zeromatrix(x) isa Matrix
     @test size(ArrayInterface.zeromatrix(x)) == (30, 30)
@@ -28,8 +28,10 @@ using RecursiveArrayTools, ArrayInterface, Test
 
     using StructArrays
     using StaticArrays: SVector
-    x = NamedArrayPartition(a = StructArray{SVector{2, Float64}}((ones(5), 2 * ones(5))),
-        b = StructArray{SVector{2, Float64}}((3 * ones(2, 2), 4 * ones(2, 2))))
+    x = NamedArrayPartition(
+        a = StructArray{SVector{2, Float64}}((ones(5), 2 * ones(5))),
+        b = StructArray{SVector{2, Float64}}((3 * ones(2, 2), 4 * ones(2, 2)))
+    )
     @test typeof(x.a) <: StructVector{<:SVector{2}}
     @test typeof(x.b) <: StructArray{<:SVector{2}, 2}
     @test typeof((x -> x[1]).(x)) <: NamedArrayPartition

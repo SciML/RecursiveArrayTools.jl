@@ -2,7 +2,7 @@ using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface, Static
 function lorenz(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
-    du[3] = u[1] * u[2] - (8 / 3) * u[3]
+    return du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
 u0 = ArrayPartition([1.0, 0.0], [0.0])
 @test ArrayInterface.zeromatrix(u0) isa Matrix
@@ -22,6 +22,7 @@ function mymodel(F, vars)
         F.x[i][2, 1] = (x[2, 1] + 3) * (x[2, 2]^3 - 7) + 19.0
         F.x[i][2, 2] = sin(x[2, 2] * exp(x[2, 1]) - 3)
     end
+    return
 end
 # To show that the function works
 F = ArrayPartition([0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0])
@@ -32,28 +33,40 @@ nlsolve(mymodel, u0)
 # Nested ArrayPartition solves
 
 function dyn(u, p, t)
-    ArrayPartition(ArrayPartition(zeros(1), [0.0]),
-        ArrayPartition(zeros(1), [0.0]))
+    return ArrayPartition(
+        ArrayPartition(zeros(1), [0.0]),
+        ArrayPartition(zeros(1), [0.0])
+    )
 end
 
 @test solve(
-    ODEProblem(dyn,
-        ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
-            ArrayPartition(zeros(1), [0.75])),
-        (0.0, 1.0)),
-    AutoTsit5(Rodas5())).retcode == ReturnCode.Success
+    ODEProblem(
+        dyn,
+        ArrayPartition(
+            ArrayPartition(zeros(1), [-1.0]),
+            ArrayPartition(zeros(1), [0.75])
+        ),
+        (0.0, 1.0)
+    ),
+    AutoTsit5(Rodas5())
+).retcode == ReturnCode.Success
 
 @test_broken solve(
-    ODEProblem(dyn,
-        ArrayPartition(ArrayPartition(zeros(1), [-1.0]),
-            ArrayPartition(zeros(1), [0.75])),
-        (0.0, 1.0)),
-    Rodas5()).retcode == ReturnCode.Success
+    ODEProblem(
+        dyn,
+        ArrayPartition(
+            ArrayPartition(zeros(1), [-1.0]),
+            ArrayPartition(zeros(1), [0.75])
+        ),
+        (0.0, 1.0)
+    ),
+    Rodas5()
+).retcode == ReturnCode.Success
 
 function rhs!(duu::VectorOfArray, uu::VectorOfArray, p, t)
     du = parent(duu)
     u = parent(uu)
-    du .= u
+    return du .= u
 end
 
 u = fill(SVector{2}(ones(2)), 2, 3)

@@ -89,8 +89,10 @@ arrvb = Array(testvb)
 # view
 testvc = VectorOfArray([rand(1:10, 3, 3) for _ in 1:3])
 arrvc = Array(testvc)
-for idxs in [(2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, :, :), (:, :, :),
-    (1:2, 1:2, Bool[1, 0, 1]), (1:2, Bool[1, 0, 1], 1:2), (Bool[1, 0, 1], 1:2, 1:2)]
+for idxs in [
+        (2, 2, :), (2, :, 2), (:, 2, 2), (:, :, 2), (:, 2, :), (2, :, :), (:, :, :),
+        (1:2, 1:2, Bool[1, 0, 1]), (1:2, Bool[1, 0, 1], 1:2), (Bool[1, 0, 1], 1:2, 1:2),
+    ]
     arr_view = view(arrvc, idxs...)
     voa_view = view(testvc, idxs...)
     @test size(arr_view) == size(voa_view)
@@ -101,10 +103,10 @@ testvc = VectorOfArray(collect(1:10))
 arrvc = Array(testvc)
 bool_idx = rand(Bool, 10)
 for (voaidx, arridx) in [
-    ((:,), (:,)),
-    ((3:5,), (3:5,)),
-    ((bool_idx,), (bool_idx,))
-]
+        ((:,), (:,)),
+        ((3:5,), (3:5,)),
+        ((bool_idx,), (bool_idx,)),
+    ]
     arr_view = view(arrvc, arridx...)
     voa_view = view(testvc.u, voaidx...)
     @test size(arr_view) == size(voa_view)
@@ -117,7 +119,7 @@ end
 
 testva = VectorOfArray([VectorOfArray([ones(2, 2), 2ones(2, 2)]), 3ones(2, 2, 2)])
 @test stack(testva) ==
-      [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
+    [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
 
 # convert array from VectorOfArray/DiffEqArray
 t = 1:8
@@ -167,21 +169,29 @@ testva = VectorOfArray([i * ones(3, 2) for i in 1:4])
 arr = rand(3, 2, 4)
 copyto!(testva, arr)
 @test Array(testva) == arr
-testva = VectorOfArray([
-    ones(3, 2, 2),
-    VectorOfArray([
-        2ones(3, 2),
-        VectorOfArray([3ones(3), 4ones(3)])
-    ]),
-    DiffEqArray([
-            5ones(3, 2),
-            VectorOfArray([
-                6ones(3),
-                7ones(3)
-            ])
-        ], [0.1, 0.2],
-        [100.0, 200.0], SymbolCache([:x, :y], [:a, :b], :t))
-])
+testva = VectorOfArray(
+    [
+        ones(3, 2, 2),
+        VectorOfArray(
+            [
+                2ones(3, 2),
+                VectorOfArray([3ones(3), 4ones(3)]),
+            ]
+        ),
+        DiffEqArray(
+            [
+                5ones(3, 2),
+                VectorOfArray(
+                    [
+                        6ones(3),
+                        7ones(3),
+                    ]
+                ),
+            ], [0.1, 0.2],
+            [100.0, 200.0], SymbolCache([:x, :y], [:a, :b], :t)
+        ),
+    ]
+)
 arr = rand(3, 2, 2, 3)
 copyto!(testva, arr)
 @test Array(testva) == arr
@@ -235,7 +245,7 @@ u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})
 u3 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
 
 function f(u1, u2, u3)
-    u3 .= u1 .+ u2
+    return u3 .= u1 .+ u2
 end
 f(u1, u2, u3)
 @test (@allocated f(u1, u2, u3)) == 0
@@ -249,7 +259,7 @@ z .= zz
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
 
 function f!(z, zz)
-    z .= zz
+    return z .= zz
 end
 f!(z, zz)
 @test (@allocated f!(z, zz)) == 0
@@ -258,13 +268,13 @@ z .= 0.1
 @test z == VectorOfArray([fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})])
 
 function f2!(z)
-    z .= 0.1
+    return z .= 0.1
 end
 f2!(z)
 @test (@allocated f2!(z)) == 0
 
 function f3!(z, zz)
-    @.. broadcast=false z=zz
+    return @.. broadcast = false z = zz
 end
 f3!(z, zz)
 @test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
