@@ -174,7 +174,10 @@ end
 #Overwrite ArrayInterface zeromatrix to work with NamedArrayPartitions & implicit solvers within OrdinaryDiffEq
 function ArrayInterface.zeromatrix(A::NamedArrayPartition)
     B = ArrayPartition(A)
-    x = reduce(vcat, vec.(B.x))
+    # Use foldl with explicit init to preserve array type (important for GPU arrays)
+    vecs = vec.(B.x)
+    rest = Base.tail(vecs)
+    x = isempty(rest) ? vecs[1] : foldl(vcat, rest; init = vecs[1])
     return x .* x' .* false
 end
 

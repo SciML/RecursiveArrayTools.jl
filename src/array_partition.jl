@@ -548,7 +548,11 @@ end
 ## Linear Algebra
 
 function ArrayInterface.zeromatrix(A::ArrayPartition)
-    x = reduce(vcat, vec.(A.x))
+    # Use foldl with explicit init to preserve array type (important for GPU arrays)
+    # Starting with vec of first element ensures the result type matches the input
+    vecs = vec.(A.x)
+    rest = Base.tail(vecs)
+    x = isempty(rest) ? vecs[1] : foldl(vcat, rest; init = vecs[1])
     return x .* x' .* false
 end
 
