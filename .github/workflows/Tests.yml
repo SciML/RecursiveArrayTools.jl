@@ -31,8 +31,6 @@ jobs:
           - "Downstream"
           - "nopre"
         exclude:
-          - version: "lts"
-            group: "nopre"
           - version: "pre"
             group: "nopre"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
