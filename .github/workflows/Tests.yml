@@ -29,13 +29,8 @@ jobs:
         group:
           - "Core"
           - "Downstream"
-          - "JET"
           - "nopre"
         exclude:
-          - version: "lts"
-            group: "JET"
-          - version: "pre"
-            group: "JET"
           - version: "lts"
             group: "nopre"
           - version: "pre"
