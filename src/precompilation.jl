@@ -68,5 +68,31 @@ using PrecompileTools
         _ = size(va)
         _ = ndims(va)
         _ = size(ap)
+
+        # NamedArrayPartition with Float64 vectors
+        nap = NamedArrayPartition(a = [1.0, 2.0], b = [3.0, 4.0, 5.0])
+
+        # NamedArrayPartition operations
+        _ = nap.a
+        _ = nap.b
+        _ = nap[1]
+        _ = length(nap)
+
+        # NamedArrayPartition broadcasting
+        nap2 = nap .+ 1.0
+        nap3 = nap .* 2.0
+
+        # similar for NamedArrayPartition
+        _ = similar(nap)
+
+        # Float32 support for ArrayPartition (commonly used in scientific computing)
+        ap32 = ArrayPartition(Float32[1.0, 2.0], Float32[3.0, 4.0, 5.0])
+        _ = ap32[1]
+        ap32_2 = ap32 .+ Float32(1.0)
+        ap32_3 = ap32 .* Float32(2.0)
+        ap32_4 = ap32 .+ ap32
+        _ = similar(ap32)
+        _ = recursive_mean(ap32)
+        _ = recursivecopy(ap32)
     end
 end
