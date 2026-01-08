@@ -57,7 +57,7 @@ end
         @time @safetestset "ArrayPartition GPU" include("gpu/arraypartition_gpu.jl")
     end
 
-    if GROUP == "JET" || GROUP == "All"
+    if GROUP == "JET" || GROUP == "nopre"
         @time @safetestset "JET Tests" include("jet_tests.jl")
     end
 end
