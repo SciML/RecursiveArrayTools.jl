@@ -29,7 +29,10 @@ jobs:
         group:
           - "Core"
           - "Downstream"
-          - "JET"
+          - "nopre"
+        exclude:
+          - version: "pre"
+            group: "nopre"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       group: "${{ matrix.group }}"

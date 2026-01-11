@@ -17,6 +17,12 @@ function activate_gpu_env()
     return Pkg.instantiate()
 end
 
+function activate_nopre_env()
+    Pkg.activate("nopre")
+    Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    return Pkg.instantiate()
+end
+
 @time begin
     if GROUP == "Core" || GROUP == "All"
         @time @safetestset "Quality Assurance" include("qa.jl")
@@ -57,7 +63,8 @@ end
         @time @safetestset "ArrayPartition GPU" include("gpu/arraypartition_gpu.jl")
     end
 
-    if GROUP == "JET" || GROUP == "All"
+    if GROUP == "nopre"
+        activate_nopre_env()
         @time @safetestset "JET Tests" include("jet_tests.jl")
     end
 end
