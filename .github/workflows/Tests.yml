@@ -31,11 +31,6 @@ jobs:
           - "Downstream"
           - "nopre"
         exclude:
-          # JET is a test dependency that doesn't support pre-release Julia
-          - version: "pre"
-            group: "Core"
-          - version: "pre"
-            group: "Downstream"
           - version: "pre"
             group: "nopre"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
