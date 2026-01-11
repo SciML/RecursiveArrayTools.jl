@@ -12,6 +12,7 @@ on:
       - 'docs/**'
 jobs:
   test:
+    if: false  # Disabled: JET test dependency incompatible with downgrade. See issue #522 for details.
     runs-on: ubuntu-latest
     strategy:
       matrix:
