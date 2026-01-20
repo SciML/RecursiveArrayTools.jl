@@ -179,6 +179,7 @@ ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
 @test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]
 @test ragged[:, end] == [6.0, 7.0, 8.0, 9.0]
 @test ragged[:, 2:end] == VectorOfArray(ragged.u[2:end])
+@test ragged[:, end - 1:end] == VectorOfArray(ragged.u[end - 1:end])
 
 ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
 @test ragged2[end, 1] == 4.0
@@ -199,6 +200,7 @@ ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
 @test ragged2[1:(end - 1), 1] == [1.0, 2.0, 3.0]
 @test ragged2[1:(end - 1), 2] == [5.0]
 @test ragged2[1:(end - 1), 3] == [7.0, 8.0]
+@test ragged2[:, end - 1:end] == VectorOfArray(ragged2.u[end - 1:end])
 
 # Test that RaggedEnd and RaggedRange broadcast as scalars
 # (fixes issue with SymbolicIndexingInterface where broadcasting over RaggedEnd would fail)
