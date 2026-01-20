@@ -568,6 +568,12 @@ end
 function Base.:(:)(start::RaggedEnd, step::Integer, stop::RaggedEnd)
     return RaggedRange(stop.dim, start.offset, Int(step), stop.offset)
 end
+function Base.:(:)(start::RaggedEnd, stop::Integer)
+    return RaggedRange(start.dim, start.offset, 1, Int(stop))
+end
+function Base.:(:)(start::RaggedEnd, step::Integer, stop::Integer)
+    return RaggedRange(start.dim, start.offset, Int(step), Int(stop))
+end
 Base.broadcastable(x::RaggedRange) = Ref(x)
 
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
