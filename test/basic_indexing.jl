@@ -413,25 +413,25 @@ foo!(u_vector)
 
 # test efficiency
 num_allocs = @allocations foo!(u_matrix)
-# @test num_allocs == 0
+@test num_allocs == 0
 
-# # issue 354
-# @test VectorOfArray(ones(1))[:] == ones(1)
+# issue 354
+@test VectorOfArray(ones(1))[:] == ones(1)
 
-# # check VectorOfArray indexing for a StructArray of mutable structs
-# using StructArrays
-# using StaticArrays: MVector, SVector
-# x = VectorOfArray(StructArray{MVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
-# y = 2 * x
+# check VectorOfArray indexing for a StructArray of mutable structs
+using StructArrays
+using StaticArrays: MVector, SVector
+x = VectorOfArray(StructArray{MVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
+y = 2 * x
 
-# # check mutable VectorOfArray assignment and broadcast
-# x[1, 1] = 10
-# @test x[1, 1] == 10
-# @. x = y
-# @test all(all.(y .== x))
+# check mutable VectorOfArray assignment and broadcast
+x[1, 1] = 10
+@test x[1, 1] == 10
+@. x = y
+@test all(all.(y .== x))
 
-# # check immutable VectorOfArray broadcast
-# x = VectorOfArray(StructArray{SVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
-# y = 2 * x
-# @. x = y
-# @test all(all.(y .== x))
+# check immutable VectorOfArray broadcast
+x = VectorOfArray(StructArray{SVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
+y = 2 * x
+@. x = y
+@test all(all.(y .== x))
