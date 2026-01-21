@@ -77,7 +77,12 @@ diffeq = DiffEqArray(recs, t)
 @test diffeq[:, 1] == testa[:, 1]
 @test diffeq.u == recs
 @test diffeq[:, end] == testa[:, end]
-@test diffeq[:, 2:end] == DiffEqArray([recs[i] for i in 2:length(recs)], t)
+@test diffeq[:, 2:end] == DiffEqArray([recs[i] for i in 2:length(recs)], t[2:end])
+@test diffeq[:, 2:end].t == t[2:end]
+@test diffeq[:, (end - 1):end] == DiffEqArray([recs[i] for i in (length(recs) - 1):length(recs)], t[(length(t) - 1):length(t)])
+@test diffeq[:, (end - 1):end].t == t[(length(t) - 1):length(t)]
+@test diffeq[:, (end - 5):8] == DiffEqArray([recs[i] for i in (length(t) - 5):8], t[(length(t) - 5):8])
+@test diffeq[:, (end - 5):8].t == t[(length(t) - 5):8]
 
 # ## (Int, Int)
 @test testa[5, 4] == testva[5, 4]
@@ -148,6 +153,12 @@ diffeq = DiffEqArray(recs, t)
 @test testva[1:2, 1:2] == [1 3; 2 5]
 @test diffeq[:, 1] == recs[1]
 @test diffeq[1:2, 1:2] == [1 3; 2 5]
+@test diffeq[:, 1:2] == DiffEqArray([recs[i] for i in 1:2], t[1:2])
+@test diffeq[:, 1:2].t == t[1:2]
+@test diffeq[:, 2:end] == DiffEqArray([recs[i] for i in 2:3], t[2:end])
+@test diffeq[:, 2:end].t == t[2:end]
+@test diffeq[:, (end - 1):end] == DiffEqArray([recs[i] for i in (length(recs) - 1):length(recs)], t[(length(t) - 1):length(t)])
+@test diffeq[:, (end - 1):end].t == t[(length(t) - 1):length(t)]
 
 # Test views of heterogeneous arrays (issue #453)
 f = VectorOfArray([[1.0], [2.0, 3.0]])
@@ -179,6 +190,7 @@ ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
 @test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]
 @test ragged[:, end] == [6.0, 7.0, 8.0, 9.0]
 @test ragged[:, 2:end] == VectorOfArray(ragged.u[2:end])
+@test ragged[:, (end - 1):end] == VectorOfArray(ragged.u[(end - 1):end])
 
 ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
 @test ragged2[end, 1] == 4.0
@@ -199,6 +211,7 @@ ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
 @test ragged2[1:(end - 1), 1] == [1.0, 2.0, 3.0]
 @test ragged2[1:(end - 1), 2] == [5.0]
 @test ragged2[1:(end - 1), 3] == [7.0, 8.0]
+@test ragged2[:, (end - 1):end] == VectorOfArray(ragged2.u[(end - 1):end])
 
 # Test that RaggedEnd and RaggedRange broadcast as scalars
 # (fixes issue with SymbolicIndexingInterface where broadcasting over RaggedEnd would fail)
@@ -221,6 +234,31 @@ u = VectorOfArray([[1.0], [2.0, 3.0]])
 # broadcast assignment into selected column (last index Int)
 u[:, 2] .= [10.0, 11.0]
 @test u.u[2] == [10.0, 11.0]
+
+# Test DiffEqArray with 2D inner arrays (matrices)
+t = 1:2
+recs_2d = [rand(2, 3), rand(2, 4)]
+diffeq_2d = DiffEqArray(recs_2d, t)
+@test diffeq_2d[:, 1] == recs_2d[1]
+@test diffeq_2d[:, 2] == recs_2d[2]
+@test diffeq_2d[:, 1:2] == DiffEqArray(recs_2d[1:2], t[1:2])
+@test diffeq_2d[:, 1:2].t == t[1:2]
+@test diffeq_2d[:, 2:end] == DiffEqArray(recs_2d[2:end], t[2:end])
+@test diffeq_2d[:, 2:end].t == t[2:end]
+@test diffeq_2d[:, (end - 1):end] == DiffEqArray(recs_2d[(end - 1):end], t[(end - 1):end])
+@test diffeq_2d[:, (end - 1):end].t == t[(end - 1):end]
+
+# Test DiffEqArray with 3D inner arrays (tensors)
+recs_3d = [rand(2, 3, 4), rand(2, 3, 5)]
+diffeq_3d = DiffEqArray(recs_3d, t)
+@test diffeq_3d[:, :, :, 1] == recs_3d[1]
+@test diffeq_3d[:, :, :, 2] == recs_3d[2]
+@test diffeq_3d[:, :, :, 1:2] == DiffEqArray(recs_3d[1:2], t[1:2])
+@test diffeq_3d[:, :, :, 1:2].t == t[1:2]
+@test diffeq_3d[:, :, :, 2:end] == DiffEqArray(recs_3d[2:end], t[2:end])
+@test diffeq_3d[:, :, :, 2:end].t == t[2:end]
+@test diffeq_3d[:, :, :, (end - 1):end] == DiffEqArray(recs_3d[(end - 1):end], t[(end - 1):end])
+@test diffeq_3d[:, :, :, (end - 1):end].t == t[(end - 1):end]
 
 # 2D inner arrays (matrices) with ragged second dimension
 u = VectorOfArray([zeros(1, n) for n in (2, 3)])

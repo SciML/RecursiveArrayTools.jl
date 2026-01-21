@@ -562,6 +562,18 @@ end
 function Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd)
     return RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
 end
+function Base.:(:)(start::RaggedEnd, stop::RaggedEnd)
+    return RaggedRange(stop.dim, start.offset, 1, stop.offset)
+end
+function Base.:(:)(start::RaggedEnd, step::Integer, stop::RaggedEnd)
+    return RaggedRange(stop.dim, start.offset, Int(step), stop.offset)
+end
+function Base.:(:)(start::RaggedEnd, stop::Integer)
+    return RaggedRange(start.dim, start.offset, 1, Int(stop))
+end
+function Base.:(:)(start::RaggedEnd, step::Integer, stop::Integer)
+    return RaggedRange(start.dim, start.offset, Int(step), Int(stop))
+end
 Base.broadcastable(x::RaggedRange) = Ref(x)
 
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
@@ -580,6 +592,12 @@ Base.@propagate_inbounds function _getindex(
 end
 
 Base.@propagate_inbounds function _getindex(
+        A::AbstractDiffEqArray, ::NotSymbolic, ::Colon, I::Int
+    )
+    return A.u[I]
+end
+
+Base.@propagate_inbounds function _getindex(
         A::AbstractVectorOfArray, ::NotSymbolic,
         I::Union{Int, AbstractArray{Int}, AbstractArray{Bool}, Colon}...
     )
@@ -587,6 +605,33 @@ Base.@propagate_inbounds function _getindex(
         A.u[last(I)][Base.front(I)...]
     else
         stack(getindex.(A.u[last(I)], tuple.(Base.front(I))...))
+    end
+end
+
+Base.@propagate_inbounds function _getindex(
+        A::AbstractDiffEqArray, ::NotSymbolic,
+        I::Union{Int, AbstractArray{Int}, AbstractArray{Bool}, Colon}...
+    )
+    return if last(I) isa Int
+        A.u[last(I)][Base.front(I)...]
+    else
+        col_idxs = last(I)
+        # Only preserve DiffEqArray type if all prefix indices are Colons (selecting whole inner arrays)
+        if all(idx -> idx isa Colon, Base.front(I))
+            # For Colon, select all columns
+            if col_idxs isa Colon
+                col_idxs = eachindex(A.u)
+            end
+            # For DiffEqArray, we need to preserve the time values and type
+            # Create a vector of sliced arrays instead of stacking into higher-dim array
+            u_slice = [A.u[col][Base.front(I)...] for col in col_idxs]
+            # Return as DiffEqArray with sliced time values
+            return DiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A))
+        else
+            # Prefix indices are not all Colons - do the same as VectorOfArray
+            # (stack the results into a higher-dimensional array)
+            return stack(getindex.(A.u[col_idxs], tuple.(Base.front(I))...))
+        end
     end
 end
 Base.@propagate_inbounds function _getindex(
@@ -674,6 +719,17 @@ end
     return idx.dim == 0 ? idx.offset : idx
 end
 
+@inline function _column_indices(VA::AbstractVectorOfArray, idx::RaggedRange)
+    # RaggedRange with dim=0 means it's a column range with pre-resolved indices
+    if idx.dim == 0
+        # Create a range with the offset as the stop value
+        return Base.range(idx.start; step = idx.step, stop = idx.offset)
+    else
+        # dim != 0 means it's an inner-dimension range that needs column expansion
+        return idx
+    end
+end
+
 @inline _resolve_ragged_index(idx, ::AbstractVectorOfArray, ::Any) = idx
 @inline function _resolve_ragged_index(idx::RaggedEnd, VA::AbstractVectorOfArray, col)
     if idx.dim == 0
@@ -757,14 +813,30 @@ end
             return (Base.front(args)..., resolved_last)
         end
     elseif args[end] isa RaggedRange
-        resolved_last = _resolve_ragged_index(args[end], A, 1)
-        if length(args) == 1
-            return (resolved_last,)
+        # Only pre-resolve if it's an inner-dimension range (dim != 0)
+        # Column ranges (dim == 0) are handled later by _column_indices
+        if args[end].dim == 0
+            # Column range - let _column_indices handle it
+            return args
         else
-            return (Base.front(args)..., resolved_last)
+            resolved_last = _resolve_ragged_index(args[end], A, 1)
+            if length(args) == 1
+                return (resolved_last,)
+            else
+                return (Base.front(args)..., resolved_last)
+            end
         end
     end
     return args
+end
+
+# Helper function to preserve DiffEqArray type when slicing
+@inline function _preserve_array_type(A::AbstractVectorOfArray, u_slice, col_idxs)
+    return VectorOfArray(u_slice)
+end
+
+@inline function _preserve_array_type(A::AbstractDiffEqArray, u_slice, col_idxs)
+    return DiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A))
 end
 
 @inline function _ragged_getindex(A::AbstractVectorOfArray, I...)
@@ -772,12 +844,23 @@ end
     # Special-case when user provided one fewer index than ndims(A): last index is column selector.
     if length(I) == n - 1
         raw_cols = last(I)
+        # Determine if we're doing column selection (preserve type) or inner-dimension selection (don't preserve)
+        is_column_selection = if raw_cols isa RaggedEnd && raw_cols.dim != 0
+            false  # Inner dimension - don't preserve type
+        elseif raw_cols isa RaggedRange && raw_cols.dim != 0
+            true  # Inner dimension range converted to column range - DO preserve type
+        else
+            true  # Column selection (dim == 0 or not ragged)
+        end
+
         # If the raw selector is a RaggedEnd/RaggedRange referring to inner dims, reinterpret as column selector.
         cols = if raw_cols isa RaggedEnd && raw_cols.dim != 0
             lastindex(A.u) + raw_cols.offset
         elseif raw_cols isa RaggedRange && raw_cols.dim != 0
+            # Convert inner-dimension range to column range by resolving bounds
+            start_val = raw_cols.start < 0 ? lastindex(A.u) + raw_cols.start : raw_cols.start
             stop_val = lastindex(A.u) + raw_cols.offset
-            Base.range(raw_cols.start; step = raw_cols.step, stop = stop_val)
+            Base.range(start_val; step = raw_cols.step, stop = stop_val)
         else
             _column_indices(A, raw_cols)
         end
@@ -800,37 +883,41 @@ end
             end
             return A.u[cols][padded...]
         else
-            return VectorOfArray(
-                [
-                    begin
-                            resolved_prefix = _resolve_ragged_indices(prefix, A, col)
-                            inner_nd = ndims(A.u[col])
-                            n_missing = inner_nd - length(resolved_prefix)
-                            padded = if n_missing > 0
-                                if all(idx -> idx === Colon(), resolved_prefix)
-                                    (
-                                        resolved_prefix...,
-                                        ntuple(_ -> Colon(), n_missing)...,
-                                    )
-                            else
-                                    (
-                                        resolved_prefix...,
-                                        (
-                                            lastindex(
-                                                A.u[col],
-                                                length(resolved_prefix) + i
-                                            ) for i in 1:n_missing
-                                        )...,
-                                    )
-                            end
+            u_slice = [
+                begin
+                        resolved_prefix = _resolve_ragged_indices(prefix, A, col)
+                        inner_nd = ndims(A.u[col])
+                        n_missing = inner_nd - length(resolved_prefix)
+                        padded = if n_missing > 0
+                            if all(idx -> idx === Colon(), resolved_prefix)
+                                (
+                                    resolved_prefix...,
+                                    ntuple(_ -> Colon(), n_missing)...,
+                                )
                         else
-                                resolved_prefix
+                                (
+                                    resolved_prefix...,
+                                    (
+                                        lastindex(
+                                            A.u[col],
+                                            length(resolved_prefix) + i
+                                        ) for i in 1:n_missing
+                                    )...,
+                                )
                         end
-                            A.u[col][padded...]
-                        end
-                        for col in cols
-                ]
-            )
+                    else
+                            resolved_prefix
+                    end
+                        A.u[col][padded...]
+                    end
+                    for col in cols
+            ]
+            # Only preserve DiffEqArray type if we're selecting actual columns, not inner dimensions
+            if is_column_selection
+                return _preserve_array_type(A, u_slice, cols)
+            else
+                return VectorOfArray(u_slice)
+            end
         end
     end
 
@@ -864,7 +951,7 @@ end
             if col_idxs isa Int
                 return A.u[col_idxs]
             else
-                return VectorOfArray(A.u[col_idxs])
+                return _preserve_array_type(A, A.u[col_idxs], col_idxs)
             end
         end
         # If col_idxs resolved to a single Int, handle it directly
