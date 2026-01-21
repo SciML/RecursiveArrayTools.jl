@@ -576,6 +576,37 @@ function Base.:(:)(start::RaggedEnd, step::Integer, stop::Integer)
 end
 Base.broadcastable(x::RaggedRange) = Ref(x)
 
+# Specialized method for type stability when last index is RaggedEnd with dim=0 (resolved column index)
+# This handles the common case: vec[i, end] where end -> RaggedEnd(0, lastindex)
+Base.@propagate_inbounds function Base.getindex(
+        A::AbstractVectorOfArray, i::Int, re::RaggedEnd
+    )
+    if re.dim == 0
+        # Sentinel case: RaggedEnd(0, offset) means offset is the resolved column index
+        return A.u[re.offset][i]
+    else
+        # Non-sentinel case: resolve the ragged index for the last column
+        col = lastindex(A.u)
+        resolved_idx = lastindex(A.u[col], re.dim) + re.offset
+        return A.u[col][i, resolved_idx]
+    end
+end
+
+# Specialized method for type stability when first index is RaggedEnd (row dimension)
+# This handles the common case: vec[end, col] where end -> RaggedEnd(1, 0)
+Base.@propagate_inbounds function Base.getindex(
+        A::AbstractVectorOfArray, re::RaggedEnd, col::Int
+    )
+    if re.dim == 0
+        # Sentinel case: RaggedEnd(0, offset) means offset is a plain index
+        return A.u[col][re.offset]
+    else
+        # Non-sentinel case: resolve the ragged index for the given column
+        resolved_idx = lastindex(A.u[col], re.dim) + re.offset
+        return A.u[col][resolved_idx]
+    end
+end
+
 @inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
     length(VA.u) <= 1 && return false
     first_size = size(VA.u[1], d)
