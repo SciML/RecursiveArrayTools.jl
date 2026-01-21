@@ -66,6 +66,18 @@ push!(testda, [-1, -2, -3, -4])
 @inferred sum(testva)
 @inferred sum(VectorOfArray([VectorOfArray([zeros(4, 4)])]))
 @inferred mapreduce(string, *, testva)
+# Type stability for `end` indexing (issue #525)
+testva_end = VectorOfArray([fill(2.0, 2) for i in 1:10])
+# Use lastindex directly since `end` doesn't work in SafeTestsets
+last_col = lastindex(testva_end, 2)
+@inferred testva_end[1, last_col]
+@test testva_end[1, last_col] == 2.0
+last_col = lastindex(testva_end)
+@inferred testva_end[1, last_col]
+@test testva_end[1, last_col] == 2.0
+last_row = lastindex(testva_end, 1)
+@inferred testva_end[last_row, 1]
+@test testva_end[last_row, 1] == 2.0
 
 # mapreduce
 testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
