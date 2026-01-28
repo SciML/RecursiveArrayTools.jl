@@ -280,7 +280,6 @@ end
 
 # Interface for the linear indexing. This is just a view of the underlying nested structure
 @inline Base.firstindex(A::ArrayPartition) = 1
-@inline Base.lastindex(A::ArrayPartition) = length(A)
 
 Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int)
     @boundscheck checkbounds(A, i)

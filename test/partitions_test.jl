@@ -135,6 +135,7 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 # indexing
 @inferred first(x)
 @inferred last(x)
+@test lastindex(x) == length(x)
 
 # recursive
 @inferred recursive_mean(x)
