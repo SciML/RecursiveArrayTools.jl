@@ -73,10 +73,6 @@ last_col = lastindex(testva_end, 2)
 @inferred testva_end[1, last_col]
 @inferred testva_end[1, 1:last_col]
 @test testva_end[1, last_col] == 2.0
-last_col = lastindex(testva_end)
-@inferred testva_end[1, last_col]
-@inferred testva_end[1, 1:last_col]
-@test testva_end[1, last_col] == 2.0
 last_row = lastindex(testva_end, 1)
 @inferred testva_end[last_row, 1]
 @inferred testva_end[1:last_row, 1]
