@@ -3,7 +3,7 @@ using PrecompileTools
 @setup_workload begin
     @compile_workload begin
         # VectorOfArray with Vector{Float64}
-        u_vec = [rand(3) for _ in 1:5]
+        u_vec = [ones(3) for _ in 1:5]
         va = VectorOfArray(u_vec)
 
         # Basic indexing operations
