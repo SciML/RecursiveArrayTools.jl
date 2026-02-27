@@ -370,3 +370,8 @@ for i in 1:length(part_a.x)
     @test sub_a == sub_b # Test for value equality
     @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end
+
+# ArrayPartition `all` with a functor
+struct TestIsnanFunctor end
+(::TestIsnanFunctor)(x) = isnan(x)
+@test all(TestIsnanFunctor(), ArrayPartition([NaN], [NaN]))
