@@ -141,6 +141,23 @@ end
     @test u1.u[2] isa SVector
 end
 
+@testset "VectorOfArray similar with nested scalar leaves" begin
+    a = VectorOfArray([ones(2), VectorOfArray([1.0, 1.0])])
+    b = similar(a, Float64)
+    @test b isa typeof(a)
+    @test b.u[1] isa Vector{Float64}
+    @test b.u[2] isa typeof(a.u[2])
+    @test b.u[2].u isa Vector{Float64}
+    @test length(b.u[2].u) == 2
+end
+
+@testset "recursivefill! with nested union partitions" begin
+    a = VectorOfArray([ones(2), VectorOfArray([1.0, 1.0])])
+    recursivefill!(a, true)
+    @test a.u[1] == ones(2)
+    @test a.u[2].u == ones(2)
+end
+
 # Test recursivefill! with immutable StaticArrays (issue #461)
 @testset "recursivefill! with immutable StaticArrays (issue #461)" begin
     # Test with only immutable SVectors
