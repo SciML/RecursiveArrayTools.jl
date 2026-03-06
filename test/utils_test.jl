@@ -139,6 +139,16 @@ end
     @test u1.u[2] == [2.0, 2.0]
     @test u1.u[1] isa SVector
     @test u1.u[2] isa SVector
+
+    # mixed/nested partition types create a Union eltype for `u`.
+    # recursivecopy! must not fall back to a shallow copy in this case.
+    a = VectorOfArray([ones(2), VectorOfArray([1.0, 1.0])])
+    b = recursivecopy(a)
+    recursivecopy!(b, a)
+    @test !(b.u[1] === a.u[1])
+    @test !(b.u[2] === a.u[2])
+    b.u[1][1] = 99.0
+    @test a.u[1][1] == 1.0
 end
 
 @testset "VectorOfArray similar with nested scalar leaves" begin

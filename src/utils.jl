@@ -95,12 +95,12 @@ function recursivecopy!(
 end
 
 function recursivecopy!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
-    if ArrayInterface.ismutable(eltype(b.u))
-        @inbounds for i in eachindex(b.u, a.u)
+    @inbounds for i in eachindex(b.u, a.u)
+        if ArrayInterface.ismutable(b.u[i]) || b.u[i] isa AbstractVectorOfArray
             recursivecopy!(b.u[i], a.u[i])
+        else
+            b.u[i] = recursivecopy(a.u[i])
         end
-    else
-        copyto!(b.u, a.u)
     end
     return b
 end
