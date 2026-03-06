@@ -1404,7 +1404,11 @@ function Base.similar(
 end
 
 @inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
-    return VectorOfArray(similar.(VA.u, T))
+    if eltype(VA.u) <: Union{AbstractArray, AbstractVectorOfArray}
+        return VectorOfArray(similar.(VA.u, T))
+    else
+        return VectorOfArray(similar(VA.u, T))
+    end
 end
 
 @inline function Base.similar(VA::VectorOfArray, dims::N) where {N <: Number}
@@ -1420,7 +1424,7 @@ end
 # For DiffEqArray it ignores ts and fills only u
 function Base.fill!(VA::AbstractVectorOfArray, x)
     for i in 1:length(VA.u)
-        if VA[:, i] isa AbstractArray
+        if VA[:, i] isa Union{AbstractArray, AbstractVectorOfArray}
             if ArrayInterface.ismutable(VA.u[i]) || VA.u[i] isa AbstractVectorOfArray
                 fill!(VA[:, i], x)
             else
