@@ -35,7 +35,7 @@ AofSA = [@SVector [2.0, 3.0] for i in 1:5]
 AofuSA = [@SVector [2.0u"kg", 3.0u"kg"] for i in 1:5]
 @test recursive_unitless_eltype(AofuSA) == SVector{2, Float64}
 
-A = [ArrayPartition(ones(1), ones(1))]
+A = [AP[ones(1), ones(1)]]
 
 function test_recursive_bottom_eltype()
     function test_value(val::Any, expected_type::Type)
@@ -124,16 +124,16 @@ recursivefill!(x, true)
 end
 
 @testset "VectorOfArray recursivecopy!" begin
-    u1 = VectorOfArray([fill(2, MVector{2, Float64}), ones(MVector{2, Float64})])
-    u2 = VectorOfArray([fill(4, MVector{2, Float64}), 2 .* ones(MVector{2, Float64})])
+    u1 = VA[fill(2, MVector{2, Float64}), ones(MVector{2, Float64})]
+    u2 = VA[fill(4, MVector{2, Float64}), 2 .* ones(MVector{2, Float64})]
     recursivecopy!(u1, u2)
     @test u1.u[1] == [4.0, 4.0]
     @test u1.u[2] == [2.0, 2.0]
     @test u1.u[1] isa MVector
     @test u1.u[2] isa MVector
 
-    u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
-    u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+    u1 = VA[fill(2, SVector{2, Float64}), ones(SVector{2, Float64})]
+    u2 = VA[fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})]
     recursivecopy!(u1, u2)
     @test u1.u[1] == [4.0, 4.0]
     @test u1.u[2] == [2.0, 2.0]
@@ -142,7 +142,7 @@ end
 
     # mixed/nested partition types create a Union eltype for `u`.
     # recursivecopy! must not fall back to a shallow copy in this case.
-    a = VectorOfArray([ones(2), VectorOfArray([1.0, 1.0])])
+    a = VA[ones(2), VA[1.0, 1.0]]
     b = recursivecopy(a)
     recursivecopy!(b, a)
     @test !(b.u[1] === a.u[1])
@@ -152,7 +152,7 @@ end
 end
 
 @testset "VectorOfArray similar with nested scalar leaves" begin
-    a = VectorOfArray([ones(2), VectorOfArray([1.0, 1.0])])
+    a = VA[ones(2), VA[1.0, 1.0]]
     b = similar(a, Float64)
     @test b isa typeof(a)
     @test b.u[1] isa Vector{Float64}
@@ -162,7 +162,7 @@ end
 end
 
 @testset "recursivefill! with nested union partitions" begin
-    a = VectorOfArray([ones(2), VectorOfArray([1.0, 1.0])])
+    a = VA[ones(2), VA[1.0, 1.0]]
     recursivefill!(a, true)
     @test a.u[1] == ones(2)
     @test a.u[2].u == ones(2)
@@ -171,26 +171,26 @@ end
 # Test recursivefill! with immutable StaticArrays (issue #461)
 @testset "recursivefill! with immutable StaticArrays (issue #461)" begin
     # Test with only immutable SVectors
-    x = VectorOfArray([SVector{2}(ones(2)), SVector{2}(ones(2))])
+    x = VA[SVector{2}(ones(2)), SVector{2}(ones(2))]
     recursivefill!(x, 0.0)
     @test all(x.u[i] == SVector{2}(zeros(2)) for i in 1:2)
     @test all(x.u[i] isa SVector for i in 1:2)
 
     # Test with mixed immutable and mutable StaticArrays
-    x = VectorOfArray([SVector{2}(ones(2)), MVector{2}(ones(2))])
+    x = VA[SVector{2}(ones(2)), MVector{2}(ones(2))]
     recursivefill!(x, 0.0)
     @test all(x.u[i] == [0.0, 0.0] for i in 1:2)
     @test x.u[1] isa SVector
     @test x.u[2] isa MVector
 
     # Test fill! on VectorOfArray with immutable SVectors
-    x = VectorOfArray([SVector{2}(ones(2)), SVector{2}(ones(2))])
+    x = VA[SVector{2}(ones(2)), SVector{2}(ones(2))]
     fill!(x, 0.0)
     @test all(x.u[i] == SVector{2}(zeros(2)) for i in 1:2)
     @test all(x.u[i] isa SVector for i in 1:2)
 
     # Test fill! on VectorOfArray with mixed types
-    x = VectorOfArray([SVector{2}(ones(2)), MVector{2}(ones(2))])
+    x = VA[SVector{2}(ones(2)), MVector{2}(ones(2))]
     fill!(x, 0.0)
     @test all(x.u[i] == [0.0, 0.0] for i in 1:2)
     @test x.u[1] isa SVector

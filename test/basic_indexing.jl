@@ -6,6 +6,9 @@ testa = cat(recs..., dims = 2)
 testva = VectorOfArray(recs)
 @test maximum(testva) == maximum(maximum.(recs))
 
+testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+@test maximum(testva) == maximum(maximum.(recs))
+
 # broadcast with array
 X = rand(3, 3)
 mulX = sqrt.(abs.(testva .* X))
@@ -161,7 +164,7 @@ diffeq = DiffEqArray(recs, t)
 @test diffeq[:, (end - 1):end].t == t[(length(t) - 1):length(t)]
 
 # Test views of heterogeneous arrays (issue #453)
-f = VectorOfArray([[1.0], [2.0, 3.0]])
+f = VA[[1.0], [2.0, 3.0]]
 @test length(view(f, :, 1)) == 1
 @test length(view(f, :, 2)) == 2
 @test view(f, :, 1) == [1.0]
@@ -169,7 +172,7 @@ f = VectorOfArray([[1.0], [2.0, 3.0]])
 @test collect(view(f, :, 1)) == f[:, 1]
 @test collect(view(f, :, 2)) == f[:, 2]
 
-f2 = VectorOfArray([[1.0, 2.0], [3.0]])
+f2 = VA[[1.0, 2.0], [3.0]]
 @test length(view(f2, :, 1)) == 2
 @test length(view(f2, :, 2)) == 1
 @test view(f2, :, 1) == [1.0, 2.0]
@@ -178,7 +181,7 @@ f2 = VectorOfArray([[1.0, 2.0], [3.0]])
 @test collect(view(f2, :, 2)) == f2[:, 2]
 
 # Test `end` with ragged arrays
-ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
+ragged = VA[[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]]
 @test ragged[end, 1] == 2.0
 @test ragged[end, 2] == 5.0
 @test ragged[end, 3] == 9.0
@@ -192,7 +195,7 @@ ragged = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
 @test ragged[:, 2:end] == VectorOfArray(ragged.u[2:end])
 @test ragged[:, (end - 1):end] == VectorOfArray(ragged.u[(end - 1):end])
 
-ragged2 = VectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
+ragged2 = VA[[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]]
 @test ragged2[end, 1] == 4.0
 @test ragged2[end, 2] == 6.0
 @test ragged2[end, 3] == 9.0
@@ -228,7 +231,7 @@ ragged_range_idx = 1:lastindex(ragged, 1)
 @test identity.(ragged_range_idx) === ragged_range_idx
 
 # Broadcasting of heterogeneous arrays (issue #454)
-u = VectorOfArray([[1.0], [2.0, 3.0]])
+u = VA[[1.0], [2.0, 3.0]]
 @test length(view(u, :, 1)) == 1
 @test length(view(u, :, 2)) == 2
 # broadcast assignment into selected column (last index Int)
@@ -293,7 +296,7 @@ u[1:2, 1, [1, 3], 2] .= [1.0 3.0; 2.0 4.0]
 @test u[end, 1, end] == u.u[end][end, 1, end]
 
 # Test that views can be modified
-f3 = VectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
+f3 = VA[[1.0, 2.0], [3.0, 4.0, 5.0]]
 v = view(f3, :, 2)
 @test length(v) == 3
 v[1] = 10.0
@@ -384,7 +387,7 @@ mulX .= sqrt.(abs.(testva .* testvb))
 @test mulX == ref
 
 # https://github.com/SciML/RecursiveArrayTools.jl/issues/49
-a = ArrayPartition(1:5, 1:6)
+a = AP[1:5, 1:6]
 a[1:8]
 a[[1, 3, 8]]
 

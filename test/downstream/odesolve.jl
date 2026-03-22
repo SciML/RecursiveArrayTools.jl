@@ -4,7 +4,7 @@ function lorenz(du, u, p, t)
     du[2] = u[1] * (28.0 - u[3]) - u[2]
     return du[3] = u[1] * u[2] - (8 / 3) * u[3]
 end
-u0 = ArrayPartition([1.0, 0.0], [0.0])
+u0 = AP[[1.0, 0.0], [0.0]]
 @test ArrayInterface.zeromatrix(u0) isa Matrix
 tspan = (0.0, 100.0)
 prob = ODEProblem(lorenz, u0, tspan)
@@ -25,8 +25,8 @@ function mymodel(F, vars)
     return
 end
 # To show that the function works
-F = ArrayPartition([0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0])
-u0 = ArrayPartition([0.1 1.2; 0.1 1.2], [0.1 1.2; 0.1 1.2])
+F = AP[[0.0 0.0; 0.0 0.0], [0.0 0.0; 0.0 0.0]]
+u0 = AP[[0.1 1.2; 0.1 1.2], [0.1 1.2; 0.1 1.2]]
 result = mymodel(F, u0)
 nlsolve(mymodel, u0)
 
@@ -34,8 +34,8 @@ nlsolve(mymodel, u0)
 
 function dyn(u, p, t)
     return ArrayPartition(
-        ArrayPartition(zeros(1), [0.0]),
-        ArrayPartition(zeros(1), [0.0])
+        AP[zeros(1), [0.0]],
+        AP[zeros(1), [0.0]]
     )
 end
 
@@ -43,8 +43,8 @@ end
     ODEProblem(
         dyn,
         ArrayPartition(
-            ArrayPartition(zeros(1), [-1.0]),
-            ArrayPartition(zeros(1), [0.75])
+            AP[zeros(1), [-1.0]],
+            AP[zeros(1), [0.75]]
         ),
         (0.0, 1.0)
     ),
@@ -55,8 +55,8 @@ end
     ODEProblem(
         dyn,
         ArrayPartition(
-            ArrayPartition(zeros(1), [-1.0]),
-            ArrayPartition(zeros(1), [0.75])
+            AP[zeros(1), [-1.0]],
+            AP[zeros(1), [0.75]]
         ),
         (0.0, 1.0)
     ),
