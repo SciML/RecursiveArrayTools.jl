@@ -722,3 +722,6 @@ end
 function Adapt.adapt_structure(to, ap::ArrayPartition)
     return ArrayPartition(map(x -> Adapt.adapt(to, x), ap.x)...)
 end
+
+struct AP end
+Base.getindex(::Type{AP}, xs...) = ArrayPartition(xs...)

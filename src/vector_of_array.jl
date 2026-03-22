@@ -1655,3 +1655,6 @@ end
 end
 unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
 unpack_args_voa(::Any, args::Tuple{}) = ()
+
+struct VA end
+Base.getindex(::Type{VA}, xs...) = VectorOfArray(collect(xs))
