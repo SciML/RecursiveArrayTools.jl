@@ -1656,5 +1656,30 @@ end
 unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
 unpack_args_voa(::Any, args::Tuple{}) = ()
 
+"""
+```julia
+VA[ matrices, ]
+```
+
+Create an `VectorOfArray` using vector syntax. Equivalent to `VectorOfArray([matrices])`, but looks nicer with nesting.
+
+# Simple example:
+```julia
+VectorOfArray([[1,2,3], [1 2;3 4]]) == VA[[1,2,3], [1 2;3 4]] # true
+```
+
+# All the layers:
+```julia
+nested = VA[
+    fill(1, 2, 3),
+    VA[
+        VA[8, [1, 2, 3], [1 2;3 4], VA[1, 2, 3]],
+        fill(2, 3, 4),
+        VA[3ones(3), zeros(3)],
+    ],
+]
+```
+
+"""
 struct VA end
 Base.getindex(::Type{VA}, xs...) = VectorOfArray(collect(xs))
