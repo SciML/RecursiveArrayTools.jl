@@ -2,6 +2,8 @@ using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
 
 @test length(ArrayPartition()) == 0
 @test isempty(ArrayPartition())
+@test length(AP[]) == 0
+@test isempty(AP[])
 
 # Test undef initializer for single-partition ArrayPartition
 p_undef = ArrayPartition{Float64, Tuple{Vector{Float64}}}(undef, 10)
@@ -17,12 +19,20 @@ p = ArrayPartition(A)
 @inferred p[1]
 @test (p.x[1][1], p.x[2][1]) == (p[1], p[6])
 
+q = AP[rand(5), rand(5)]
+@inferred q[1]
+@test (q.x[1][1], q.x[2][1]) == (q[1], q[6])
+
 p = ArrayPartition(A, Val{true})
 @test !(p.x[1] === A[1])
 
 p2 = similar(p)
 p2[1] = 1
 @test p2.x[1] != p.x[1]
+
+q2 = similar(q)
+q2[1] = 1
+@test q2.x[1] != q.x[1]
 
 C = rand(10)
 p3 = similar(p, axes(p))
@@ -55,7 +65,7 @@ y = p .* p'
 @test y[1:5, 6:10] == p.x[1] .* p.x[2]'
 @test y[6:10, 1:5] == p.x[2] .* p.x[1]'
 
-a = ArrayPartition([1], [2])
+a = AP[[1], [2]]
 a .= [10, 20]
 
 b = rand(10)
@@ -75,8 +85,8 @@ resize!(p, (6, 7))
 
 ## inference tests
 
-x = ArrayPartition([1, 2], [3.0, 4.0])
-y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
+x = AP[[1, 2], [3.0, 4.0]]
+y = ArrayPartition(AP[[1], [2.0]], AP[[3], [4.0]])
 @test x[:, 1] == (1, 3.0)
 
 # similar partitions
@@ -142,7 +152,7 @@ y = ArrayPartition(ArrayPartition([1], [2.0]), ArrayPartition([3], [4.0]))
 @inferred recursive_one(x)
 @inferred recursive_bottom_eltype(x)
 
-src_voa = VectorOfArray([[1.0, 2.0], [3.0, 4.0]])
+src_voa = VA[[1.0, 2.0], [3.0, 4.0]]
 src_ap = ArrayPartition(src_voa)
 
 copied_ap = recursivecopy(src_ap)
@@ -151,7 +161,7 @@ copied_ap = recursivecopy(src_ap)
 @test copied_ap.x[1].u[1] !== src_ap.x[1].u[1]
 @test copied_ap.x[1].u[2] !== src_ap.x[1].u[2]
 
-dest_voa = VectorOfArray([zeros(2), zeros(2)])
+dest_voa = VA[zeros(2), zeros(2)]
 dest_ap = ArrayPartition(dest_voa)
 recursivecopy!(dest_ap, src_ap)
 @test dest_ap.x[1].u[1] == src_ap.x[1].u[1]
@@ -161,30 +171,30 @@ recursivecopy!(dest_ap, src_ap)
 
 # mapreduce
 @inferred Union{Int, Float64} sum(x)
-@inferred sum(ArrayPartition(ArrayPartition(zeros(4, 4))))
-@inferred sum(ArrayPartition(ArrayPartition(zeros(4))))
-@inferred sum(ArrayPartition(zeros(4, 4)))
+@inferred sum(AP[AP[zeros(4, 4)]])
+@inferred sum(AP[AP[zeros(4)]])
+@inferred sum(AP[zeros(4, 4)])
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
 # any
-@test !any(isnan, ArrayPartition([1, 2], [3.0, 4.0]))
-@test !any(isnan, ArrayPartition([3.0, 4.0]))
-@test any(isnan, ArrayPartition([NaN], [3.0, 4.0]))
-@test any(isnan, ArrayPartition([NaN]))
-@test any(isnan, ArrayPartition(ArrayPartition([NaN])))
-@test any(isnan, ArrayPartition([2], [NaN]))
-@test any(isnan, ArrayPartition([2], ArrayPartition([NaN])))
+@test !any(isnan, AP[[1, 2], [3.0, 4.0]])
+@test !any(isnan, AP[[3.0, 4.0]])
+@test  any(isnan, AP[[NaN], [3.0, 4.0]])
+@test  any(isnan, AP[[NaN]])
+@test  any(isnan, AP[AP[[NaN]]])
+@test  any(isnan, AP[[2], [NaN]])
+@test  any(isnan, AP[[2], AP[[NaN]]])
 
 # all
-@test !all(isnan, ArrayPartition([1, 2], [3.0, 4.0]))
-@test !all(isnan, ArrayPartition([3.0, 4.0]))
-@test !all(isnan, ArrayPartition([NaN], [3.0, 4.0]))
-@test all(isnan, ArrayPartition([NaN]))
-@test all(isnan, ArrayPartition(ArrayPartition([NaN])))
-@test !all(isnan, ArrayPartition([2], [NaN]))
-@test all(isnan, ArrayPartition([NaN], [NaN]))
-@test all(isnan, ArrayPartition([NaN], ArrayPartition([NaN])))
+@test !all(isnan, AP[[1, 2], [3.0, 4.0]])
+@test !all(isnan, AP[[3.0, 4.0]])
+@test !all(isnan, AP[[NaN], [3.0, 4.0]])
+@test  all(isnan, AP[[NaN]])
+@test  all(isnan, AP[AP[[NaN]]])
+@test !all(isnan, AP[[2], [NaN]])
+@test  all(isnan, AP[[NaN], [NaN]])
+@test  all(isnan, AP[[NaN], AP[[NaN]]])
 
 # broadcasting
 _scalar_op(y) = y + 1
@@ -194,10 +204,10 @@ _broadcast_wrapper(y) = _scalar_op.(y)
 @inferred _broadcast_wrapper(x)
 
 # Testing map
-@test map(x -> x^2, x) == ArrayPartition(x.x[1] .^ 2, x.x[2] .^ 2)
+@test map(x -> x^2, x) == AP[x.x[1] .^ 2, x.x[2] .^ 2]
 
 # Testing filter
-@test filter(x -> iseven(round(Int, x)), x) == ArrayPartition([2], [4.0])
+@test filter(x -> iseven(round(Int, x)), x) == AP[[2], [4.0]]
 
 #### testing copyto!
 S = [
@@ -207,8 +217,8 @@ S = [
 ]
 
 for sizes in S
-    local x = ArrayPartition(randn.(sizes[1]))
-    local y = ArrayPartition(zeros.(sizes[2]))
+    local x = AP[randn.(sizes[1])]
+    local y = AP[zeros.(sizes[2])]
     y_array = zeros(length(x))
     copyto!(y, x)           #testing Base.copyto!(dest::ArrayPartition,A::ArrayPartition)
     copyto!(y_array, x)     #testing Base.copyto!(dest::Array,A::ArrayPartition)
@@ -217,7 +227,7 @@ for sizes in S
 end
 
 # Non-allocating broadcast
-xce0 = ArrayPartition(zeros(2), [0.0])
+xce0 = AP[zeros(2), [0.0]]
 xcde0 = copy(xce0)
 function foo(y, x)
     y .= y .+ x
@@ -264,7 +274,7 @@ find_mt(::Tuple{}) = nothing
 find_mt(a::MyType, rest) = a
 find_mt(::Any, rest) = find_mt(rest)
 
-ap = ArrayPartition(MyType(ones(10)), collect(1:2))
+ap = AP[MyType(ones(10)), collect(1:2)]
 up = ap .+ 1
 @test typeof(ap) == typeof(up)
 
@@ -272,14 +282,14 @@ up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
 # Test that `zeros()` does not get screwed up
-ap = ArrayPartition(zeros(), [1.0])
+ap = AP[zeros(), [1.0]]
 up = ap .+ 1
 @test typeof(ap) == typeof(up)
 
 up = 2 .* ap .+ 1
 @test typeof(ap) == typeof(up)
 
-@testset "ArrayInterface.ismutable(ArrayPartition($a, $b)) == $r" for (a, b, r) in (
+@testset "ArrayInterface.ismutable(AP[$a, $b]) == $r" for (a, b, r) in (
         (
             1,
             2,
@@ -302,12 +312,12 @@ up = 2 .* ap .+ 1
             true,
         ),
     )
-    @test ArrayInterface.ismutable(ArrayPartition(a, b)) == r
+    @test ArrayInterface.ismutable(AP[a, b]) == r
 end
 
 # Test unary minus
 
-x = ArrayPartition(ArrayPartition([1, 2]), [3, 4])
+x = AP[AP[[1, 2]], [3, 4]]
 @test -x == 0 - x
 @test typeof(x) === typeof(-x)
 
@@ -315,12 +325,12 @@ x = ArrayPartition(ArrayPartition([1, 2]), [3, 4])
 begin
     b = [1, 2, 3]
     c = [1 2; 3 4]
-    d = ArrayPartition(view(b, :), c)
+    d = AP[view(b, :), c]
 
     new_type = ArrayPartition{Float64, Tuple{Vector{Float64}, Matrix{Float64}}}
     @test (@inferred convert(new_type, d)) isa new_type
     @test convert(new_type, d) == d
-    @test_throws MethodError convert(new_type, ArrayPartition(view(b, :), c, c))
+    @test_throws MethodError convert(new_type, AP[view(b, :), c, c])
 end
 
 @testset "Copy and zero with type changing array" begin
@@ -336,31 +346,31 @@ end
     )
     Base.zero(::TypeChangingArray{T, N}) where {T, N} = zeros(T, ntuple(_ -> 0, N))
 
-    a = ArrayPartition(TypeChangingArray{Int, 2}(), TypeChangingArray{Float32, 2}())
-    @test copy(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
-    @test zero(a) == ArrayPartition(zeros(Int, 0, 0), zeros(Float32, 0, 0))
+    a = AP[TypeChangingArray{Int, 2}(), TypeChangingArray{Float32, 2}()]
+    @test copy(a) == AP[zeros(Int, 0, 0), zeros(Float32, 0, 0)]
+    @test zero(a) == AP[zeros(Int, 0, 0), zeros(Float32, 0, 0)]
 end
 
-@test !iszero(ArrayPartition([2], [3, 4]))
+@test !iszero(AP[[2], [3, 4]])
 @testset "Cartesian indexing" begin
-    @test ArrayPartition([1, 2], [3])[1:3, 1] == [1, 2, 3]
+    @test AP[[1, 2], [3]][1:3, 1] == [1, 2, 3]
 end
 
 @testset "Scalar copyto!" begin
     u = [2.0, 1.0]
-    copyto!(u, ArrayPartition(1.0, -1.2))
+    copyto!(u, AP[1.0, -1.2])
     @test u == [1.0, -1.2]
 end
 
 # Test adapt on ArrayPartition from Float64 to Float32 arrays
 a = Float64.([1.0, 2.0, 3.0, 4.0])
 b = Float64.([1.0, 2.0, 3.0, 4.0])
-part_a_64 = ArrayPartition(a, b)
+part_a_64 = AP[a, b]
 part_a = adapt(Array{Float32}, part_a_64)
 
 c = Float32.([1.0, 2.0, 3.0, 4.0])
 d = Float32.([1.0, 2.0, 3.0, 4.0])
-part_b = ArrayPartition(c, d)
+part_b = AP[c, d]
 
 @test part_a == part_b # Test equality of partitions
 
@@ -374,4 +384,4 @@ end
 # ArrayPartition `all` with a functor
 struct TestIsnanFunctor end
 (::TestIsnanFunctor)(x) = isnan(x)
-@test all(TestIsnanFunctor(), ArrayPartition([NaN], [NaN]))
+@test all(TestIsnanFunctor(), AP[[NaN], [NaN]])

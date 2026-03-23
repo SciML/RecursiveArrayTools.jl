@@ -133,14 +133,14 @@ module RecursiveArrayTools
     Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
     (T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray) = T(Array(VA))
 
-    export VectorOfArray, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
+    export VectorOfArray, VA, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
         AllObserved, vecarr_to_vectors, tuples
 
     export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_push!,
         vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
         recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
-    export ArrayPartition, NamedArrayPartition
+    export ArrayPartition, AP, NamedArrayPartition
 
     include("precompilation.jl")
 

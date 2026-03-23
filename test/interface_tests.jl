@@ -3,7 +3,7 @@ using FastBroadcast
 using SymbolicIndexingInterface: SymbolCache
 
 t = 1:3
-testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], t)
 
 for (i, elem) in enumerate(testva)
@@ -64,7 +64,7 @@ push!(testda, [-1, -2, -3, -4])
 
 # Type inference
 @inferred sum(testva)
-@inferred sum(VectorOfArray([VectorOfArray([zeros(4, 4)])]))
+@inferred sum(VA[VA[zeros(4, 4)]])
 @inferred mapreduce(string, *, testva)
 # Type stability for `end` indexing (issue #525)
 testva_end = VectorOfArray(fill(fill(2.0, 2), 10))
@@ -79,7 +79,7 @@ last_row = lastindex(testva_end, 1)
 @test testva_end[last_row, 1] == 2.0
 
 # mapreduce
-testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 @test mapreduce(x -> string(x) * "q", *, testva) == "1q2q3q4q5q6q7q8q9q"
 
 testvb = VectorOfArray([rand(1:10, 3, 3, 3) for _ in 1:4])
@@ -128,7 +128,7 @@ end
 @test stack(testva) == [1 4 7; 2 5 8; 3 6 9]
 @test stack(testva; dims = 1) == [1 2 3; 4 5 6; 7 8 9]
 
-testva = VectorOfArray([VectorOfArray([ones(2, 2), 2ones(2, 2)]), 3ones(2, 2, 2)])
+testva = VA[VA[ones(2, 2), 2ones(2, 2)], 3ones(2, 2, 2)]
 @test stack(testva) ==
     [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
 
@@ -180,29 +180,22 @@ testva = VectorOfArray([i * ones(3, 2) for i in 1:4])
 arr = rand(3, 2, 4)
 copyto!(testva, arr)
 @test Array(testva) == arr
-testva = VectorOfArray(
-    [
-        ones(3, 2, 2),
-        VectorOfArray(
-            [
-                2ones(3, 2),
-                VectorOfArray([3ones(3), 4ones(3)]),
-            ]
-        ),
-        DiffEqArray(
-            [
-                5ones(3, 2),
-                VectorOfArray(
-                    [
-                        6ones(3),
-                        7ones(3),
-                    ]
-                ),
-            ], [0.1, 0.2],
-            [100.0, 200.0], SymbolCache([:x, :y], [:a, :b], :t)
-        ),
-    ]
-)
+testva = VA[
+    ones(3, 2, 2),
+    VA[
+        2ones(3, 2),
+        VA[3ones(3), 4ones(3)],
+    ],
+    DiffEqArray(
+        [
+            5ones(3, 2),
+            VA[6ones(3), 7ones(3)],
+        ],
+        [0.1, 0.2],
+        [100.0, 200.0],
+        SymbolCache([:x, :y], [:a, :b], :t)
+    ),
+]
 arr = rand(3, 2, 2, 3)
 copyto!(testva, arr)
 @test Array(testva) == arr
@@ -244,16 +237,16 @@ resize!(u, 3)
 @test pointer(u) === pointer(u.u)
 
 # Ensure broadcast (including assignment) works with StaticArrays
-x = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
-y = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
-z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+x = VA[fill(2, SVector{2, Float64}), ones(SVector{2, Float64})]
+y = VA[fill(2, SVector{2, Float64}), ones(SVector{2, Float64})]
+z = VA[zeros(SVector{2, Float64}), zeros(SVector{2, Float64})]
 z .= x .+ y
 
-@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+@test z == VA[fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})]
 
-u1 = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
-u2 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
-u3 = VectorOfArray([fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})])
+u1 = VA[fill(2, SVector{2, Float64}), ones(SVector{2, Float64})]
+u2 = VA[fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})]
+u3 = VA[fill(4, SVector{2, Float64}), 2 .* ones(SVector{2, Float64})]
 
 function f(u1, u2, u3)
     return u3 .= u1 .+ u2
@@ -265,9 +258,9 @@ yy = [2.0 1.0; 2.0 1.0]
 zz = x .+ yy
 @test zz == [4.0 2.0; 4.0 2.0]
 
-z = VectorOfArray([zeros(SVector{2, Float64}), zeros(SVector{2, Float64})])
+z = VA[zeros(SVector{2, Float64}), zeros(SVector{2, Float64})]
 z .= zz
-@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+@test z == VA[fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})]
 
 function f!(z, zz)
     return z .= zz
@@ -276,7 +269,7 @@ f!(z, zz)
 @test (@allocated f!(z, zz)) == 0
 
 z .= 0.1
-@test z == VectorOfArray([fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})])
+@test z == VA[fill(0.1, SVector{2, Float64}), fill(0.1, SVector{2, Float64})]
 
 function f2!(z)
     return z .= 0.1
@@ -288,7 +281,7 @@ function f3!(z, zz)
     return @.. broadcast = false z = zz
 end
 f3!(z, zz)
-@test z == VectorOfArray([fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})])
+@test z == VA[fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})]
 @test (@allocated f3!(z, zz)) == 0
 
 struct ImmutableVectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
@@ -329,7 +322,7 @@ end
     using SparseArrays
 
     # Test that issparse returns false for VectorOfArray
-    testva = VectorOfArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     @test issparse(testva) == false
 
     # Test that issparse returns false for DiffEqArray
@@ -342,6 +335,6 @@ end
     @test issparse(testview) == false
 
     # Test with nested VectorOfArray
-    nested_voa = VectorOfArray([testva, testva])
+    nested_voa = VA[testva, testva]
     @test issparse(nested_voa) == false
 end

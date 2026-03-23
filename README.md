@@ -32,6 +32,12 @@ vA = VectorOfArray(a)
 vB = VectorOfArray(b)
 
 vA .* vB # Now all standard array stuff works!
+
+# you can also create it directly with a vector-like syntax:
+c = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+d = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+
+c .* d
 ```
 
 ### ArrayPartition
@@ -44,15 +50,15 @@ pB = ArrayPartition(b)
 
 pA .* pB # Now all standard array stuff works!
 
-# or do:
+# or using the vector syntax:
 x0 = rand(3, 3)
 v0 = rand(3, 3)
 a0 = rand(3, 3)
-u0 = ArrayPartition(x0, v0, a0)
-u0.x[1] == x0 # true
+u0 = AP[x0, v0, a0]
+u0.x[1] === x0 # true
 
 u0 .+= 1
-u0.x[2] == v0 # still true
+u0.x[2] === v0 # still true
 
 # do some calculations creating a new partitioned array
 unew = u0 * 10

@@ -722,3 +722,28 @@ end
 function Adapt.adapt_structure(to, ap::ArrayPartition)
     return ArrayPartition(map(x -> Adapt.adapt(to, x), ap.x)...)
 end
+
+"""
+```julia
+AP[ matrices, ]
+```
+
+Create an `ArrayPartition` using vector syntax. Equivalent to `ArrayPartition(matrices)`, but looks nicer with nesting.
+
+# Examples:
+
+Simple examples:
+```julia
+ArrayPartition([1,2,3], [1 2;3 4]) == AP[[1,2,3], [1 2;3 4]] # true
+AP[1u"m/s^2", 1u"m/s", 1u"m"]
+```
+
+With an ODEProblem:
+```julia
+func(u, p, t) = AP[5u.x[1], u.x[2]./2]
+ODEProblem(func, AP[ [1.,2.,3.], [1. 2.;3. 4.] ], (0, 1)) |> solve
+```
+
+"""
+struct AP end
+Base.getindex(::Type{AP}, xs...) = ArrayPartition(xs...)
