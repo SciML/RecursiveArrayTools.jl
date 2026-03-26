@@ -5,67 +5,15 @@ using RecursiveArrayTools
 using Zygote
 using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
 
-# Define a new species of projection operator for this type:
-# ChainRulesCore.ProjectTo(x::VectorOfArray) = ChainRulesCore.ProjectTo{VectorOfArray}()
-
 function ChainRulesCore.rrule(
         T::Type{<:RecursiveArrayTools.GPUArraysCore.AbstractGPUArray},
         xs::AbstractVectorOfArray
     )
-    return T(xs), ȳ -> (ChainRulesCore.NoTangent(), ȳ)
+    return T(xs), ȳ -> (ChainRulesCore.NoTangent(), ȳ)
 end
 
-@adjoint function getindex(
-        VA::AbstractVectorOfArray,
-        i::Union{BitArray, AbstractArray{Bool}}
-    )
-    function AbstractVectorOfArray_getindex_adjoint(Δ)
-        Δ′ = [
-            (i[j] ? Δ[j] : FillArrays.Fill(zero(eltype(x)), size(x)))
-                for (x, j) in zip(VA.u, 1:length(VA))
-        ]
-        (VectorOfArray(Δ′), nothing)
-    end
-    VA[:, i], AbstractVectorOfArray_getindex_adjoint
-end
-
-@adjoint function getindex(VA::AbstractVectorOfArray, i::AbstractArray{Int})
-    function AbstractVectorOfArray_getindex_adjoint(Δ)
-        iter = 0
-        Δ′ = [
-            (j ∈ i ? Δ[iter += 1] : FillArrays.Fill(zero(eltype(x)), size(x)))
-                for (x, j) in zip(VA.u, 1:length(VA))
-        ]
-        (VectorOfArray(Δ′), nothing)
-    end
-    VA[:, i], AbstractVectorOfArray_getindex_adjoint
-end
-
-@adjoint function getindex(VA::AbstractVectorOfArray, i::Colon)
-    function AbstractVectorOfArray_getindex_adjoint(Δ)
-        (VectorOfArray(Δ), nothing)
-    end
-    VA.u[i], AbstractVectorOfArray_getindex_adjoint
-end
-
-@adjoint function getindex(
-        VA::AbstractVectorOfArray, i::Int,
-        j::Union{
-            Int, AbstractArray{Int}, CartesianIndex,
-            Colon, BitArray, AbstractArray{Bool},
-        }...
-    )
-    function AbstractVectorOfArray_getindex_adjoint(Δ)
-        Δ′ = VectorOfArray([zero(x) for (x, j) in zip(VA.u, 1:length(VA))])
-        if isempty(j)
-            Δ′.u[i] = Δ
-        else
-            Δ′[i, j...] = Δ
-        end
-        (Δ′, nothing, map(_ -> nothing, j)...)
-    end
-    VA[i, j...], AbstractVectorOfArray_getindex_adjoint
-end
+# getindex adjoints are inherited from Zygote's AbstractArray rules
+# since AbstractVectorOfArray <: AbstractArray
 
 @adjoint function ArrayPartition(
         x::S,
@@ -88,15 +36,20 @@ end
 @adjoint function VectorOfArray(u)
     VectorOfArray(u),
         y -> begin
-            y isa Ref && (y = VectorOfArray(y[].u))
-            (
-                VectorOfArray(
-                    [
+            if y isa Ref
+                y = VectorOfArray(y[].u)
+            end
+            # Return a plain Vector of arrays as gradient for `u`, not wrapped in VectorOfArray.
+            # This avoids issues with downstream pullbacks that index into the gradient
+            # using linear indexing (which now returns scalar elements for VectorOfArray).
+            if y isa AbstractVectorOfArray
+                (y.u,)
+            else
+                ([
                         y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
                         for i in 1:size(y)[end]
-                    ]
-                ),
-            )
+                    ],)
+            end
         end
 end
 
@@ -108,17 +61,19 @@ end
 @adjoint function DiffEqArray(u, t)
     DiffEqArray(u, t),
         y -> begin
-            y isa Ref && (y = VectorOfArray(y[].u))
-            (
-                DiffEqArray(
-                    [
+            if y isa Ref
+                y = VectorOfArray(y[].u)
+            end
+            if y isa AbstractVectorOfArray
+                (y.u, nothing)
+            else
+                ([
                         y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
                         for i in 1:size(y)[end]
                     ],
-                    t
-                ),
-                nothing,
-            )
+                    nothing,
+                )
+            end
         end
 end
 
@@ -156,52 +111,13 @@ end
 @adjoint function Base.Array(VA::AbstractVectorOfArray)
     adj = let VA = VA
         function Array_adjoint(y)
+            # Return a VectorOfArray so it flows correctly back through VectorOfArray constructor
             VA = recursivecopy(VA)
             copyto!(VA, y)
             return (VA,)
         end
     end
     Array(VA), adj
-end
-
-@adjoint function Base.view(A::AbstractVectorOfArray, I::Colon...)
-    view_adjoint = let A = A, I = I
-        function (y)
-            A = recursivecopy(A)
-            copyto!(A, y)
-            return (A, map(_ -> nothing, I)...)
-        end
-    end
-    return view(A, I...), view_adjoint
-end
-
-@adjoint function Base.view(A::AbstractVectorOfArray, I...)
-    view_adjoint = let A = A, I = I
-        function (y)
-            A = recursivecopy(A)
-            recursivefill!(A, zero(eltype(A)))
-            v = view(A, I...)
-            copyto!(v, y)
-            return (A, map(_ -> nothing, I)...)
-        end
-    end
-    view(A, I...), view_adjoint
-end
-
-# Since AbstractVectorOfArray <: AbstractArray, Zygote's built-in AbstractArray
-# broadcast rules apply. We only keep specific overrides that don't conflict.
-
-_minus(Δ) = .-Δ
-_minus(::Nothing) = nothing
-
-function Zygote.unbroadcast(x::AbstractVectorOfArray, x̄)
-    N = ndims(x̄)
-    return if length(x) == length(x̄)
-        Zygote._project(x, x̄)
-    else
-        dims = ntuple(d -> size(x, d) == 1 ? d : ndims(x̄) + 1, ndims(x̄))
-        Zygote._project(x, Zygote.accum_sum(x̄; dims = dims))
-    end
 end
 
 end # module

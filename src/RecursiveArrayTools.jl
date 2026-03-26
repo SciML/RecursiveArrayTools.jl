@@ -129,9 +129,10 @@ module RecursiveArrayTools
     include("array_partition.jl")
     include("named_array_partition.jl")
 
-    function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
+    function Base.show(io::IO, x::ArrayPartition)
         return invoke(show, Tuple{typeof(io), Any}, io, x)
     end
+    # AbstractVectorOfArray uses AbstractArray's show
 
     import GPUArraysCore
     Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
