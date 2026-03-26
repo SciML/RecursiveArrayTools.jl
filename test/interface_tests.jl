@@ -160,9 +160,10 @@ testva2 = similar(testva)
 @test typeof(testva2) == typeof(testva)
 @test size(testva2) == size(testva)
 
+# similar(VA, dims) returns a regular Array (AbstractArray behavior)
 testva3 = similar(testva, 10)
-@test typeof(testva3) == typeof(testva)
-@test length(testva3.u) == 10  # 10 inner arrays
+@test testva3 isa Vector{Float64}
+@test length(testva3) == 10
 
 # Fill AbstractVectorOfArray and check all
 testval = 3.0
