@@ -504,14 +504,9 @@ function SymbolicIndexingInterface.get_parameter_timeseries_collection(A::Abstra
     return get_discretes(A)
 end
 
-Base.IndexStyle(A::AbstractVectorOfArray) = Base.IndexStyle(typeof(A))
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 
-# lastindex with dimension: use size(VA, d) since we now use rectangular interpretation
-# RaggedEnd is still used internally for ragged column access via A.u
-@inline function Base.lastindex(VA::AbstractVectorOfArray, d::Integer)
-    return size(VA, Int(d))
-end
+## lastindex inherited from AbstractArray (uses size)
 
 ## Linear indexing: convert to Cartesian and dispatch to the N-ary getindex
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N}, i::Int) where {T, N}
@@ -1030,17 +1025,17 @@ end
     end
 end
 
-# Handle mixed Int + CartesianIndex by flattening to plain indices
-# This is needed for sum(A; dims=d) and similar operations
-Base.@propagate_inbounds function Base.getindex(
-        A::AbstractVectorOfArray, i::Int, ci::CartesianIndex
-    )
+## Mixed Int + CartesianIndex (needed for sum(A; dims=d) etc.)
+## Use @inline to avoid invalidation issues with overly broad signatures
+@inline Base.@propagate_inbounds function Base.getindex(
+        A::AbstractVectorOfArray{T, N}, i::Int, ci::CartesianIndex
+    ) where {T, N}
     return A[i, Tuple(ci)...]
 end
 
-Base.@propagate_inbounds function Base.setindex!(
-        A::AbstractVectorOfArray, v, i::Int, ci::CartesianIndex
-    )
+@inline Base.@propagate_inbounds function Base.setindex!(
+        A::AbstractVectorOfArray{T, N}, v, i::Int, ci::CartesianIndex
+    ) where {T, N}
     return A[i, Tuple(ci)...] = v
 end
 
@@ -1164,9 +1159,7 @@ end
     end
     return (leading..., length(VA.u))
 end
-@inline Base.size(VA::AbstractVectorOfArray, i) = size(VA)[i]
 @inline Base.size(A::Adjoint{T, <:AbstractVectorOfArray}) where {T} = reverse(size(A.parent))
-@inline Base.size(A::Adjoint{T, <:AbstractVectorOfArray}, i) where {T} = size(A)[i]
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -1319,36 +1312,14 @@ function Base.SubArray(parent::AbstractVectorOfArray, indices::Tuple)
         Base.ensure_indexable(indices), Base.index_dimsum(indices...)
     )
 end
-Base.isassigned(VA::AbstractVectorOfArray, idxs...) = checkbounds(Bool, VA, idxs...)
+## isassigned, ndims, eltype inherited from AbstractArray
 function Base.check_parent_index_match(
         ::RecursiveArrayTools.AbstractVectorOfArray{T, N}, ::NTuple{N, Bool}
     ) where {T, N}
     return nothing
 end
-# ndims and eltype inherited from AbstractArray{T, N}
 
-# checkbounds: Use size(VA) for bounds checking (which uses max sizes for ragged).
-# This means indices within the "virtual" rectangular shape are valid,
-# and out-of-ragged-bounds returns zero on getindex.
-# The default AbstractArray checkbounds handles most cases via size(VA).
-# We only need a custom method for RaggedEnd/RaggedRange indices.
-function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
-    if _has_ragged_end(idx...)
-        return _checkbounds_ragged(Bool, VA, idx...)
-    end
-    # For non-ragged indices, delegate to the standard AbstractArray checkbounds
-    # which uses axes(VA) derived from size(VA)
-    s = size(VA)
-    if length(idx) == length(s)
-        return all(checkbounds(Bool, Base.OneTo(s[d]), idx[d]) for d in 1:length(s))
-    elseif length(idx) == 1
-        # Linear index
-        return checkbounds(Bool, 1:prod(s), idx[1])
-    else
-        # Let Julia's standard machinery handle it
-        return Base.checkbounds_indices(Bool, axes(VA), idx)
-    end
-end
+## checkbounds inherited from AbstractArray (uses axes derived from size)
 function Base.copyto!(
         dest::AbstractVectorOfArray{T, N},
         src::AbstractVectorOfArray{T2, N}
@@ -1381,45 +1352,13 @@ function Base.copyto!(
     copyto!(dest.u, src)
     return dest
 end
-# Required for broadcasted setindex! when slicing across subarrays
-# E.g. if `va = VectorOfArray([rand(3, 3) for i in 1:5])`
-# Need this method for `va[2, :, :] .= 3.0`
-Base.@propagate_inbounds function Base.maybeview(A::AbstractVectorOfArray, I...)
-    return view(A, I...)
-end
+## maybeview inherited from AbstractArray
 
-# Operations
-function Base.isapprox(
-        A::AbstractVectorOfArray,
-        B::Union{AbstractVectorOfArray, AbstractArray};
-        kwargs...
-    )
-    return all(isapprox.(A, B; kwargs...))
-end
+## isapprox inherited from AbstractArray
 
-function Base.isapprox(A::AbstractArray, B::AbstractVectorOfArray; kwargs...)
-    return all(isapprox.(A, B; kwargs...))
-end
+## Arithmetic (+, -, *, /) inherited from AbstractArray / broadcasting
 
-for op in [:(Base.:-), :(Base.:+)]
-    @eval function ($op)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
-        return ($op).(A, B)
-    end
-end
-
-for op in [:(Base.:/), :(Base.:\), :(Base.:*)]
-    if op !== :(Base.:/)
-        @eval ($op)(A::Number, B::AbstractVectorOfArray) = ($op).(A, B)
-    end
-    if op !== :(Base.:\)
-        @eval ($op)(A::AbstractVectorOfArray, B::Number) = ($op).(A, B)
-    end
-end
-
-function Base.CartesianIndices(VA::AbstractVectorOfArray)
-    # Use size(VA) which handles ragged arrays via maximum sizes
-    return CartesianIndices(size(VA))
-end
+## CartesianIndices inherited from AbstractArray (uses axes/size)
 
 # Tools for creating similar objects
 # eltype is inherited from AbstractArray{T, N}
@@ -1492,21 +1431,18 @@ function Base.fill!(VA::AbstractVectorOfArray, x)
     return VA
 end
 
-Base.reshape(A::AbstractVectorOfArray, dims...) = Base.reshape(Array(A), dims...)
+## reshape inherited from AbstractArray
 
 # any/all inherited from AbstractArray (iterates over all elements including ragged zeros)
 
 # conversion tools
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u[1])]
-Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array, VA)) # Allocates
-# Convert to dense Array, zero-padding ragged arrays
-function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
-    return Array(VA)
-end
+## vec inherited from AbstractArray
+## convert(Array, VA) inherited from AbstractArray (calls Array(VA))
 
 # sum, prod inherited from AbstractArray
 
-@inline Base.adjoint(VA::AbstractVectorOfArray) = Adjoint(VA)
+## adjoint inherited from AbstractArray
 
 # linear algebra
 ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
