@@ -133,7 +133,7 @@ function recursivefill!(
         T <: StaticArraysCore.StaticArray,
         T2 <: StaticArraysCore.StaticArray, N,
     }
-    return @inbounds for b in bs, i in eachindex(b)
+    return @inbounds for b in bs.u, i in eachindex(b)
 
         b[i] = copy(a)
     end
@@ -159,7 +159,7 @@ function recursivefill!(
         T <: StaticArraysCore.SArray,
         T2 <: Union{Number, Bool}, N,
     }
-    return @inbounds for b in bs, i in eachindex(b)
+    return @inbounds for b in bs.u, i in eachindex(b)
 
         # Preserve static array shape while replacing all entries with the scalar
         b[i] = map(_ -> a, b[i])

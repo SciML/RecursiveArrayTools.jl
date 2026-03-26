@@ -6,11 +6,13 @@ t = 1:3
 testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], t)
 
-for (i, elem) in enumerate(testva)
+# Iteration now goes over elements (AbstractArray behavior)
+# To iterate over columns, use .u
+for (i, elem) in enumerate(testva.u)
     @test elem == testva[:, i]
 end
 
-for (i, elem) in enumerate(testda)
+for (i, elem) in enumerate(testda.u)
     @test elem == testda[:, i]
 end
 
@@ -160,7 +162,7 @@ testva2 = similar(testva)
 
 testva3 = similar(testva, 10)
 @test typeof(testva3) == typeof(testva)
-@test length(testva3) == 10
+@test length(testva3.u) == 10  # 10 inner arrays
 
 # Fill AbstractVectorOfArray and check all
 testval = 3.0
@@ -225,11 +227,13 @@ emptyva = VectorOfArray(Array{Vector{Float64}}([]))
 emptyda = DiffEqArray(Array{Vector{Float64}}([]), Vector{Float64}())
 @test isempty(emptyda)
 
+# map now works element-wise (AbstractArray behavior)
+# To map over inner arrays, use .u
 A = VectorOfArray(map(i -> rand(2, 4), 1:7))
-@test map(x -> maximum(x), A) isa Vector
+@test map(x -> maximum(x), A.u) isa Vector
 
 DA = DiffEqArray(map(i -> rand(2, 4), 1:7), 1:7)
-@test map(x -> maximum(x), DA) isa Vector
+@test map(x -> maximum(x), DA.u) isa Vector
 
 u = VectorOfArray([fill(2, SVector{2, Float64}), ones(SVector{2, Float64})])
 @test typeof(zero(u)) <: typeof(u)

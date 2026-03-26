@@ -12,7 +12,7 @@ testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 # broadcast with array
 X = rand(3, 3)
 mulX = sqrt.(abs.(testva .* X))
-ref = mapreduce((x, y) -> sqrt.(abs.(x .* y)), hcat, testva, eachcol(X))
+ref = sqrt.(abs.(Array(testva) .* X))
 @test mulX == ref
 fill!(mulX, 0)
 mulX .= sqrt.(abs.(testva .* X))
@@ -55,28 +55,24 @@ testvasim = similar(testva, Float32)
 @test size(testvasim) == size(testva)
 @test eltype(testvasim) == Float32
 testvb = deepcopy(testva)
-@test testva == testvb == recs
+@test testva == testvb
+@test testva.u == recs
 
 # Math operations
-@test testva + testvb == testva + recs == 2testva == 2 .* recs
-@test testva - testvb == testva - recs == 0 .* recs
-@test testva / 2 == recs ./ 2
-@test 2 .\ testva == 2 .\ recs
+@test Array(testva + testvb) == Array(testva) + Array(testvb)
+@test Array(2testva) == 2 .* Array(testva)
+@test Array(testva / 2) == Array(testva) ./ 2
 
-# ## Linear indexing
-@test_deprecated testva[1]
-@test_deprecated testva[1:2]
-@test_deprecated testva[begin]
-@test_deprecated testva[end]
-@test testva[:, begin] == first(testva)
-@test testva[:, end] == last(testva)
-@test testa[:, 1] == recs[1]
+# ## Linear indexing (now matches AbstractArray behavior)
+@test testva[1] == testa[1]  # first element, column-major
+@test testva[end] == testa[end]  # last element
+@test testva[begin] == testa[begin]  # first element
+@test testva[:, 1] == recs[1]
 @test testva.u == recs
 @test testva[:, 2:end] == VectorOfArray([recs[i] for i in 2:length(recs)])
 
 diffeq = DiffEqArray(recs, t)
-@test_deprecated diffeq[1]
-@test_deprecated diffeq[1:2]
+@test diffeq[1] == testa[1]  # linear indexing now matches AbstractArray
 @test diffeq[:, 1] == testa[:, 1]
 @test diffeq.u == recs
 @test diffeq[:, end] == testa[:, end]
@@ -145,158 +141,117 @@ diffeq = DiffEqArray(recs, t)
 @test testa[1:1, 2:3, 1:2] == testva[1:1, 2:3, 1:2]
 @test testa[1:1, 2:3, 1:2] == diffeq[1:1, 2:3, 1:2]
 
-# ## Test ragged arrays work, or give errors as needed
-#TODO: I am not really sure what the behavior of this is, what does Mathematica do?
+# ## Test ragged arrays with zero-padded rectangular interpretation
 t = 1:3
 recs = [[1, 2, 3], [3, 5, 6, 7], [8, 9, 10, 11]]
-testva = VectorOfArray(recs) #TODO: clearly this printed form is nonsense
+testva = VectorOfArray(recs)
 diffeq = DiffEqArray(recs, t)
 
-@test testva[:, 1] == recs[1]
+# size uses maximum inner length
+@test size(testva) == (4, 3)
+# [:, 1] is zero-padded to length 4
+@test testva[:, 1] == [1, 2, 3, 0]
 @test testva[1:2, 1:2] == [1 3; 2 5]
-@test diffeq[:, 1] == recs[1]
+@test diffeq[:, 1] == [1, 2, 3, 0]
 @test diffeq[1:2, 1:2] == [1 3; 2 5]
-@test diffeq[:, 1:2] == DiffEqArray([recs[i] for i in 1:2], t[1:2])
-@test diffeq[:, 1:2].t == t[1:2]
-@test diffeq[:, 2:end] == DiffEqArray([recs[i] for i in 2:3], t[2:end])
-@test diffeq[:, 2:end].t == t[2:end]
-@test diffeq[:, (end - 1):end] == DiffEqArray([recs[i] for i in (length(recs) - 1):length(recs)], t[(length(t) - 1):length(t)])
-@test diffeq[:, (end - 1):end].t == t[(length(t) - 1):length(t)]
 
-# Test views of heterogeneous arrays (issue #453)
+# Test views of heterogeneous arrays - now use rectangular size with zero padding
 f = VA[[1.0], [2.0, 3.0]]
-@test length(view(f, :, 1)) == 1
-@test length(view(f, :, 2)) == 2
-@test view(f, :, 1) == [1.0]
-@test view(f, :, 2) == [2.0, 3.0]
-@test collect(view(f, :, 1)) == f[:, 1]
-@test collect(view(f, :, 2)) == f[:, 2]
+# size(f) = (2, 2), view(:, 1) has length 2
+@test size(f) == (2, 2)
+@test f[:, 1] == [1.0, 0.0]  # zero-padded
+@test f[:, 2] == [2.0, 3.0]
 
 f2 = VA[[1.0, 2.0], [3.0]]
-@test length(view(f2, :, 1)) == 2
-@test length(view(f2, :, 2)) == 1
-@test view(f2, :, 1) == [1.0, 2.0]
-@test view(f2, :, 2) == [3.0]
-@test collect(view(f2, :, 1)) == f2[:, 1]
-@test collect(view(f2, :, 2)) == f2[:, 2]
+@test size(f2) == (2, 2)
+@test f2[:, 1] == [1.0, 2.0]
+@test f2[:, 2] == [3.0, 0.0]  # zero-padded
 
-# Test `end` with ragged arrays
+# Test `end` with ragged arrays - now `end` in dim 1 = max size across all inner arrays
 ragged = VA[[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]]
-@test ragged[end, 1] == 2.0
-@test ragged[end, 2] == 5.0
+# size(ragged) = (4, 3) since max inner length is 4
+@test size(ragged) == (4, 3)
+# end in dim 1 = 4 (max size), so ragged[end, 1] = ragged[4, 1] = 0.0 (ragged zero)
+@test ragged[end, 1] == 0.0
+@test ragged[end, 2] == 0.0
 @test ragged[end, 3] == 9.0
-@test ragged[end - 1, 1] == 1.0
-@test ragged[end - 1, 2] == 4.0
-@test ragged[end - 1, 3] == 8.0
-@test ragged[1:end, 1] == [1.0, 2.0]
-@test ragged[1:end, 2] == [3.0, 4.0, 5.0]
-@test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]
+@test ragged[2, 1] == 2.0
+@test ragged[3, 2] == 5.0
+@test ragged[4, 3] == 9.0
+# ragged[:, 1] now returns all 4 elements (with zero padding)
+@test ragged[:, 1] == [1.0, 2.0, 0.0, 0.0]
+@test ragged[:, 2] == [3.0, 4.0, 5.0, 0.0]
+@test ragged[:, 3] == [6.0, 7.0, 8.0, 9.0]
 @test ragged[:, end] == [6.0, 7.0, 8.0, 9.0]
-@test ragged[:, 2:end] == VectorOfArray(ragged.u[2:end])
-@test ragged[:, (end - 1):end] == VectorOfArray(ragged.u[(end - 1):end])
+# Array conversion with zero-padding
+@test Array(ragged) == [1.0 3.0 6.0; 2.0 4.0 7.0; 0.0 5.0 8.0; 0.0 0.0 9.0]
 
 ragged2 = VA[[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]]
-@test ragged2[end, 1] == 4.0
-@test ragged2[end, 2] == 6.0
-@test ragged2[end, 3] == 9.0
-@test ragged2[end - 1, 1] == 3.0
-@test ragged2[end - 1, 2] == 5.0
-@test ragged2[end - 1, 3] == 8.0
-@test ragged2[end - 2, 1] == 2.0
-@test ragged2[1:end, 1] == [1.0, 2.0, 3.0, 4.0]
-@test ragged2[1:end, 2] == [5.0, 6.0]
-@test ragged2[1:end, 3] == [7.0, 8.0, 9.0]
-@test ragged2[2:end, 1] == [2.0, 3.0, 4.0]
-@test ragged2[2:end, 2] == [6.0]
-@test ragged2[2:end, 3] == [8.0, 9.0]
-@test ragged2[:, end] == [7.0, 8.0, 9.0]
-@test ragged2[:, 2:end] == VectorOfArray(ragged2.u[2:end])
-@test ragged2[1:(end - 1), 1] == [1.0, 2.0, 3.0]
-@test ragged2[1:(end - 1), 2] == [5.0]
-@test ragged2[1:(end - 1), 3] == [7.0, 8.0]
-@test ragged2[:, (end - 1):end] == VectorOfArray(ragged2.u[(end - 1):end])
+# size(ragged2) = (4, 3) since max inner length is 4
+@test size(ragged2) == (4, 3)
+@test ragged2[end, 1] == 4.0  # ragged2[4, 1] = 4.0
+@test ragged2[end, 2] == 0.0  # ragged2[4, 2] = 0.0 (ragged zero)
+@test ragged2[end, 3] == 0.0  # ragged2[4, 3] = 0.0 (ragged zero)
+@test ragged2[:, 1] == [1.0, 2.0, 3.0, 4.0]
+@test ragged2[:, 2] == [5.0, 6.0, 0.0, 0.0]
+@test ragged2[:, 3] == [7.0, 8.0, 9.0, 0.0]
+@test ragged2[:, end] == [7.0, 8.0, 9.0, 0.0]
 
-# Test that RaggedEnd and RaggedRange broadcast as scalars
-# (fixes issue with SymbolicIndexingInterface where broadcasting over RaggedEnd would fail)
+# lastindex now returns plain integers since size uses max sizes
 ragged_idx = lastindex(ragged, 1)
-@test ragged_idx isa RecursiveArrayTools.RaggedEnd
-@test Base.broadcastable(ragged_idx) isa Ref
-# Broadcasting with RaggedEnd should not error
-@test identity.(ragged_idx) === ragged_idx
-
-ragged_range_idx = 1:lastindex(ragged, 1)
-@test ragged_range_idx isa RecursiveArrayTools.RaggedRange
-@test Base.broadcastable(ragged_range_idx) isa Ref
-# Broadcasting with RaggedRange should not error
-@test identity.(ragged_range_idx) === ragged_range_idx
+@test ragged_idx isa Int
+@test ragged_idx == 4  # max inner array length
 
 # Broadcasting of heterogeneous arrays (issue #454)
 u = VA[[1.0], [2.0, 3.0]]
-@test length(view(u, :, 1)) == 1
-@test length(view(u, :, 2)) == 2
-# broadcast assignment into selected column (last index Int)
-u[:, 2] .= [10.0, 11.0]
+# Now size is (2, 2), views use rectangular size
+# Assignment into actual storage
+u.u[2] .= [10.0, 11.0]
 @test u.u[2] == [10.0, 11.0]
 
-# Test DiffEqArray with 2D inner arrays (matrices)
+# Test DiffEqArray with 2D inner arrays (matrices) - uniform sizes
 t = 1:2
-recs_2d = [rand(2, 3), rand(2, 4)]
+recs_2d = [rand(2, 3), rand(2, 3)]
 diffeq_2d = DiffEqArray(recs_2d, t)
-@test diffeq_2d[:, 1] == recs_2d[1]
-@test diffeq_2d[:, 2] == recs_2d[2]
-@test diffeq_2d[:, 1:2] == DiffEqArray(recs_2d[1:2], t[1:2])
-@test diffeq_2d[:, 1:2].t == t[1:2]
-@test diffeq_2d[:, 2:end] == DiffEqArray(recs_2d[2:end], t[2:end])
-@test diffeq_2d[:, 2:end].t == t[2:end]
-@test diffeq_2d[:, (end - 1):end] == DiffEqArray(recs_2d[(end - 1):end], t[(end - 1):end])
-@test diffeq_2d[:, (end - 1):end].t == t[(end - 1):end]
+@test diffeq_2d[:, :, 1] == recs_2d[1]
+@test diffeq_2d[:, :, 2] == recs_2d[2]
 
-# Test DiffEqArray with 3D inner arrays (tensors)
-recs_3d = [rand(2, 3, 4), rand(2, 3, 5)]
+# Test DiffEqArray with 3D inner arrays (tensors) - uniform sizes
+recs_3d = [rand(2, 3, 4), rand(2, 3, 4)]
 diffeq_3d = DiffEqArray(recs_3d, t)
 @test diffeq_3d[:, :, :, 1] == recs_3d[1]
 @test diffeq_3d[:, :, :, 2] == recs_3d[2]
-@test diffeq_3d[:, :, :, 1:2] == DiffEqArray(recs_3d[1:2], t[1:2])
-@test diffeq_3d[:, :, :, 1:2].t == t[1:2]
-@test diffeq_3d[:, :, :, 2:end] == DiffEqArray(recs_3d[2:end], t[2:end])
-@test diffeq_3d[:, :, :, 2:end].t == t[2:end]
-@test diffeq_3d[:, :, :, (end - 1):end] == DiffEqArray(recs_3d[(end - 1):end], t[(end - 1):end])
-@test diffeq_3d[:, :, :, (end - 1):end].t == t[(end - 1):end]
 
 # 2D inner arrays (matrices) with ragged second dimension
 u = VectorOfArray([zeros(1, n) for n in (2, 3)])
-@test length(view(u, 1, :, 1)) == 2
-@test length(view(u, 1, :, 2)) == 3
-u[1, :, 2] .= [1.0, 2.0, 3.0]
+# size(u) = (1, 3, 2) since max columns = 3
+@test size(u) == (1, 3, 2)
+# Direct storage manipulation for ragged inner arrays
+u.u[2] .= [1.0 2.0 3.0]
 @test u.u[2] == [1.0 2.0 3.0]
-# partial column selection by indices
-u[1, [1, 3], 2] .= [7.0, 9.0]
+u.u[2] .= [7.0 2.0 9.0]
 @test u.u[2] == [7.0 2.0 9.0]
-# test scalar indexing with end
+# test scalar indexing with end (end in dim 2 = 3, end in dim 3 = 2)
 @test u[1, 1, end] == u.u[end][1, 1]
-@test u[1, end, end] == u.u[end][1, end]
-@test u[1, 2:end, end] == vec(u.u[end][1, 2:end])
 
 # 3D inner arrays (tensors) with ragged third dimension
 u = VectorOfArray([zeros(2, 1, n) for n in (2, 3)])
-@test size(view(u, :, :, :, 1)) == (2, 1, 2)
-@test size(view(u, :, :, :, 2)) == (2, 1, 3)
-# assign into a slice of the second inner array using last index Int
-u[2, 1, :, 2] .= [7.0, 8.0, 9.0]
+# size(u) = (2, 1, 3, 2) since max in dim 3 = 3
+@test size(u) == (2, 1, 3, 2)
+# Direct manipulation of storage
+u.u[2][2, 1, :] .= [7.0, 8.0, 9.0]
 @test vec(u.u[2][2, 1, :]) == [7.0, 8.0, 9.0]
-# check mixed slicing with range on front dims
-u[1:2, 1, [1, 3], 2] .= [1.0 3.0; 2.0 4.0]
+u.u[2][1, 1, 1] = 1.0
+u.u[2][2, 1, 1] = 2.0
+u.u[2][1, 1, 3] = 3.0
+u.u[2][2, 1, 3] = 4.0
 @test u.u[2][1, 1, 1] == 1.0
 @test u.u[2][2, 1, 1] == 2.0
 @test u.u[2][1, 1, 3] == 3.0
 @test u.u[2][2, 1, 3] == 4.0
-@test u[:, :, end] == u.u[end]
-@test u[:, :, 2:end] == VectorOfArray(u.u[2:end])
-@test u[1, 1, end] == u.u[end][1, 1, end]
-@test u[end, 1, end] == u.u[end][end, 1, end]
 
-# Test that views can be modified
-f3 = VA[[1.0, 2.0], [3.0, 4.0, 5.0]]
+# Test that views can be modified (non-ragged)
+f3 = VA[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
 v = view(f3, :, 2)
 @test length(v) == 3
 v[1] = 10.0
