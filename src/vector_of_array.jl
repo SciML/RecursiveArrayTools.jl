@@ -527,60 +527,7 @@ Base.@propagate_inbounds function Base.setindex!(A::AbstractVectorOfArray{T, N},
     return @inbounds A[ci] = v
 end
 
-__parameterless_type(T) = Base.typename(T).wrapper
-
-# `end` support for ragged inner arrays
-# Use runtime fields instead of type parameters for type stability
-struct RaggedEnd
-    dim::Int
-    offset::Int
-end
-RaggedEnd(dim::Int) = RaggedEnd(dim, 0)
-
-Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset + Int(n))
-Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset - Int(n))
-Base.:+(n::Integer, re::RaggedEnd) = re + n
-
-# Make RaggedEnd and RaggedRange broadcast as scalars to avoid
-# issues with collect/length in broadcasting contexts (e.g., SymbolicIndexingInterface)
-Base.broadcastable(x::RaggedEnd) = Ref(x)
-
-struct RaggedRange
-    dim::Int
-    start::Int
-    step::Int
-    offset::Int
-end
-
-Base.:(:)(stop::RaggedEnd) = RaggedRange(stop.dim, 1, 1, stop.offset)
-function Base.:(:)(start::Integer, stop::RaggedEnd)
-    return RaggedRange(stop.dim, Int(start), 1, stop.offset)
-end
-function Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd)
-    return RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
-end
-function Base.:(:)(start::RaggedEnd, stop::RaggedEnd)
-    return RaggedRange(stop.dim, start.offset, 1, stop.offset)
-end
-function Base.:(:)(start::RaggedEnd, step::Integer, stop::RaggedEnd)
-    return RaggedRange(stop.dim, start.offset, Int(step), stop.offset)
-end
-function Base.:(:)(start::RaggedEnd, stop::Integer)
-    return RaggedRange(start.dim, start.offset, 1, Int(stop))
-end
-function Base.:(:)(start::RaggedEnd, step::Integer, stop::Integer)
-    return RaggedRange(start.dim, start.offset, Int(step), Int(stop))
-end
-Base.broadcastable(x::RaggedRange) = Ref(x)
-
-@inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
-    length(VA.u) <= 1 && return false
-    first_size = size(VA.u[1], d)
-    @inbounds for idx in 2:length(VA.u)
-        size(VA.u[idx], d) == first_size || return true
-    end
-    return false
-end
+## RaggedEnd/RaggedRange types removed — lastindex now returns plain Ints from AbstractArray
 
 Base.@propagate_inbounds function _getindex(
         A::AbstractVectorOfArray{T, N}, ::NotSymbolic, ::Colon, I::Int
@@ -743,286 +690,49 @@ Base.@propagate_inbounds function _getindex(
     return getindex(A, all_variable_symbols(A), args...)
 end
 
-@inline _column_indices(VA::AbstractVectorOfArray, idx) = idx
-@inline _column_indices(VA::AbstractVectorOfArray, idx::Colon) = eachindex(VA.u)
-@inline function _column_indices(VA::AbstractVectorOfArray, idx::AbstractArray{Bool})
-    return findall(idx)
-end
-@inline function _column_indices(VA::AbstractVectorOfArray, idx::RaggedEnd)
-    # RaggedEnd with dim=0 means it's just a plain index stored in offset
-    return idx.dim == 0 ? idx.offset : idx
-end
+## RaggedEnd/RaggedRange resolution machinery removed — lastindex returns plain Ints now
 
-@inline function _column_indices(VA::AbstractVectorOfArray, idx::RaggedRange)
-    # RaggedRange with dim=0 means it's a column range with pre-resolved indices
-    if idx.dim == 0
-        # Create a range with the offset as the stop value
-        return Base.range(idx.start; step = idx.step, stop = idx.offset)
-    else
-        # dim != 0 means it's an inner-dimension range that needs column expansion
-        return idx
+# CartesianIndex with more dimensions than ndims(A) — for heterogeneous inner arrays
+# where (inner_indices..., column_index) may have more entries than ndims(A)
+Base.@propagate_inbounds function Base.getindex(
+        A::AbstractVectorOfArray{T, N}, ii::CartesianIndex
+    ) where {T, N}
+    ti = Tuple(ii)
+    if length(ti) == N
+        # Standard case: let AbstractArray handle via the N-ary method
+        return A[ti...]
     end
-end
-
-@inline _resolve_ragged_index(idx, ::AbstractVectorOfArray, ::Any) = idx
-@inline function _resolve_ragged_index(idx::RaggedEnd, VA::AbstractVectorOfArray, col)
-    if idx.dim == 0
-        # Special case: dim=0 means the offset contains the actual index value
-        return idx.offset
-    else
-        return lastindex(VA.u[col], idx.dim) + idx.offset
-    end
-end
-@inline function _resolve_ragged_index(idx::RaggedRange, VA::AbstractVectorOfArray, col)
-    stop_val = if idx.dim == 0
-        # dim == 0 is the sentinel for an already-resolved plain index stored in offset
-        idx.offset
-    else
-        lastindex(VA.u[col], idx.dim) + idx.offset
-    end
-    return Base.range(idx.start; step = idx.step, stop = stop_val)
-end
-@inline function _resolve_ragged_index(
-        idx::AbstractRange{<:RaggedEnd}, VA::AbstractVectorOfArray, col
-    )
-    return Base.range(
-        _resolve_ragged_index(first(idx), VA, col); step = step(idx),
-        stop = _resolve_ragged_index(last(idx), VA, col)
-    )
-end
-@inline function _resolve_ragged_index(idx::Base.Slice, VA::AbstractVectorOfArray, col)
-    return Base.Slice(_resolve_ragged_index(idx.indices, VA, col))
-end
-@inline function _resolve_ragged_index(idx::CartesianIndex, VA::AbstractVectorOfArray, col)
-    return CartesianIndex(_resolve_ragged_indices(Tuple(idx), VA, col)...)
-end
-@inline function _resolve_ragged_index(
-        idx::AbstractArray{<:RaggedEnd}, VA::AbstractVectorOfArray, col
-    )
-    return map(i -> _resolve_ragged_index(i, VA, col), idx)
-end
-@inline function _resolve_ragged_index(
-        idx::AbstractArray{<:RaggedRange}, VA::AbstractVectorOfArray, col
-    )
-    return map(i -> _resolve_ragged_index(i, VA, col), idx)
-end
-@inline function _resolve_ragged_index(idx::AbstractArray, VA::AbstractVectorOfArray, col)
-    return _has_ragged_end(idx) ? map(i -> _resolve_ragged_index(i, VA, col), idx) : idx
-end
-
-@inline function _resolve_ragged_indices(idxs::Tuple, VA::AbstractVectorOfArray, col)
-    return map(i -> _resolve_ragged_index(i, VA, col), idxs)
-end
-
-@inline function _has_ragged_end(x)
-    x isa RaggedEnd && return true
-    x isa RaggedRange && return true
-    x isa Base.Slice && return _has_ragged_end(x.indices)
-    x isa CartesianIndex && return _has_ragged_end(Tuple(x))
-    x isa AbstractRange && return eltype(x) <: Union{RaggedEnd, RaggedRange}
-    if x isa AbstractArray
-        el = eltype(x)
-        return el <: Union{RaggedEnd, RaggedRange} ||
-            (el === Any && any(_has_ragged_end, x))
-    end
-    x isa Tuple && return any(_has_ragged_end, x)
-    return false
-end
-@inline _has_ragged_end(x, xs...) = _has_ragged_end(x) || _has_ragged_end(xs)
-
-# Helper function to resolve RaggedEnd objects in a tuple of arguments
-@inline function _resolve_ragged_end_args(A::AbstractVectorOfArray, args::Tuple)
-    # Handle empty tuple case
-    length(args) == 0 && return args
-    if !_has_ragged_end(args...)
-        return args
-    end
-    # For now, we need to resolve only the last argument if it's RaggedEnd (column selector)
-    # This handles the common case sol[:x, end] where end gets converted to RaggedEnd(0, lastindex)
-    if args[end] isa RaggedEnd
-        resolved_last = _column_indices(A, args[end])
-        if length(args) == 1
-            return (resolved_last,)
-        else
-            return (Base.front(args)..., resolved_last)
-        end
-    elseif args[end] isa RaggedRange
-        # Only pre-resolve if it's an inner-dimension range (dim != 0)
-        # Column ranges (dim == 0) are handled later by _column_indices
-        if args[end].dim == 0
-            # Column range - let _column_indices handle it
-            return args
-        else
-            resolved_last = _resolve_ragged_index(args[end], A, 1)
-            if length(args) == 1
-                return (resolved_last,)
-            else
-                return (Base.front(args)..., resolved_last)
-            end
+    # Heterogeneous case: last element is column, rest are inner indices
+    col = last(ti)
+    inner_I = Base.front(ti)
+    u_col = A.u[col]
+    for d in 1:length(inner_I)
+        if inner_I[d] > size(u_col, d)
+            return zero(T)
         end
     end
-    return args
+    return u_col[CartesianIndex(inner_I)]
 end
 
-# Helper function to preserve DiffEqArray type when slicing
-@inline function _preserve_array_type(A::AbstractVectorOfArray, u_slice, col_idxs)
-    return VectorOfArray(u_slice)
-end
-
-@inline function _preserve_array_type(A::AbstractDiffEqArray, u_slice, col_idxs)
-    return DiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A))
-end
-
-@inline function _ragged_getindex(A::AbstractVectorOfArray, I...)
-    n = ndims(A)
-    # Special-case when user provided one fewer index than ndims(A): last index is column selector.
-    if length(I) == n - 1
-        return _ragged_getindex_nm1dims(A, I...)
-    else
-        return _ragged_getindex_full(A, I...)
+Base.@propagate_inbounds function Base.setindex!(
+        A::AbstractVectorOfArray{T, N}, x, ii::CartesianIndex
+    ) where {T, N}
+    ti = Tuple(ii)
+    if length(ti) == N
+        return A[ti...] = x
     end
-end
-
-@inline function _ragged_getindex_nm1dims(A::AbstractVectorOfArray, I...)
-    raw_cols = last(I)
-    # Determine if we're doing column selection (preserve type) or inner-dimension selection (don't preserve)
-    is_column_selection = if raw_cols isa RaggedEnd && raw_cols.dim != 0
-        false  # Inner dimension - don't preserve type
-    elseif raw_cols isa RaggedRange && raw_cols.dim != 0
-        true  # Inner dimension range converted to column range - DO preserve type
-    else
-        true  # Column selection (dim == 0 or not ragged)
-    end
-
-    # If the raw selector is a RaggedEnd/RaggedRange referring to inner dims, reinterpret as column selector.
-    cols = if raw_cols isa RaggedEnd && raw_cols.dim != 0
-        lastindex(A.u) + raw_cols.offset
-    elseif raw_cols isa RaggedRange && raw_cols.dim != 0
-        # Convert inner-dimension range to column range by resolving bounds
-        start_val = raw_cols.start < 0 ? lastindex(A.u) + raw_cols.start : raw_cols.start
-        stop_val = lastindex(A.u) + raw_cols.offset
-        Base.range(start_val; step = raw_cols.step, stop = stop_val)
-    else
-        _column_indices(A, raw_cols)
-    end
-    prefix = Base.front(I)
-    if cols isa Int
-        resolved_prefix = _resolve_ragged_indices(prefix, A, cols)
-        inner_nd = ndims(A.u[cols])
-        n_missing = inner_nd - length(resolved_prefix)
-        padded = if n_missing > 0
-            if all(idx -> idx === Colon(), resolved_prefix)
-                (resolved_prefix..., ntuple(_ -> Colon(), n_missing)...)
-            else
-                (
-                    resolved_prefix...,
-                    (lastindex(A.u[cols], length(resolved_prefix) + i) for i in 1:n_missing)...,
-                )
-            end
-        else
-            resolved_prefix
-        end
-        return A.u[cols][padded...]
-    else
-        u_slice = [
-            begin
-                    resolved_prefix = _resolve_ragged_indices(prefix, A, col)
-                    inner_nd = ndims(A.u[col])
-                    n_missing = inner_nd - length(resolved_prefix)
-                    padded = if n_missing > 0
-                        if all(idx -> idx === Colon(), resolved_prefix)
-                            (
-                                resolved_prefix...,
-                                ntuple(_ -> Colon(), n_missing)...,
-                            )
-                    else
-                            (
-                                resolved_prefix...,
-                                (
-                                    lastindex(
-                                        A.u[col],
-                                        length(resolved_prefix) + i
-                                    ) for i in 1:n_missing
-                                )...,
-                            )
-                    end
-                else
-                        resolved_prefix
-                end
-                    A.u[col][padded...]
-                end
-                for col in cols
-        ]
-        # Only preserve DiffEqArray type if we're selecting actual columns, not inner dimensions
-        if is_column_selection
-            return _preserve_array_type(A, u_slice, cols)
-        else
-            return VectorOfArray(u_slice)
+    col = last(ti)
+    inner_I = Base.front(ti)
+    u_col = A.u[col]
+    for d in 1:length(inner_I)
+        if inner_I[d] > size(u_col, d)
+            iszero(x) && return x
+            throw(ArgumentError(
+                "Cannot set non-zero value at index $ii: outside ragged storage bounds."
+            ))
         end
     end
-end
-
-@inline function _padded_resolved_indices(prefix, A::AbstractVectorOfArray, col)
-    resolved = _resolve_ragged_indices(prefix, A, col)
-    inner_nd = ndims(A.u[col])
-    padded = (resolved..., ntuple(_ -> Colon(), max(inner_nd - length(resolved), 0))...)
-    return padded
-end
-
-@inline function _ragged_getindex_full(A::AbstractVectorOfArray, I...)
-    # Otherwise, use the full-length interpretation (last index is column selector; missing columns default to Colon()).
-    n = ndims(A)
-    cols, prefix = if length(I) == n
-        last(I), Base.front(I)
-    else
-        Colon(), I
-    end
-    if cols isa Int
-        if all(idx -> idx === Colon(), prefix)
-            return A.u[cols]
-        end
-        return A.u[cols][_padded_resolved_indices(prefix, A, cols)...]
-    else
-        col_idxs = _column_indices(A, cols)
-        # Resolve sentinel RaggedEnd/RaggedRange (dim==0) for column selection
-        if col_idxs isa RaggedEnd || col_idxs isa RaggedRange
-            col_idxs = _resolve_ragged_index(col_idxs, A, 1)
-        end
-        # If we're selecting whole inner arrays (all leading indices are Colons),
-        # keep the result as a VectorOfArray to match non-ragged behavior.
-        if all(idx -> idx === Colon(), prefix)
-            if col_idxs isa Int
-                return A.u[col_idxs]
-            else
-                return _preserve_array_type(A, A.u[col_idxs], col_idxs)
-            end
-        end
-        # If col_idxs resolved to a single Int, handle it directly
-        vals = map(col_idxs) do col
-            A.u[col][_padded_resolved_indices(prefix, A, col)...]
-        end
-        if col_idxs isa Int
-            return vals
-        else
-            return stack(vals)
-        end
-    end
-end
-
-@inline function _checkbounds_ragged(::Type{Bool}, VA::AbstractVectorOfArray, idxs...)
-    cols = _column_indices(VA, last(idxs))
-    prefix = Base.front(idxs)
-    if cols isa Int
-        resolved = _resolve_ragged_indices(prefix, VA, cols)
-        return checkbounds(Bool, VA.u, cols) && checkbounds(Bool, VA.u[cols], resolved...)
-    else
-        for col in cols
-            resolved = _resolve_ragged_indices(prefix, VA, col)
-            checkbounds(Bool, VA.u, col) || return false
-            checkbounds(Bool, VA.u[col], resolved...) || return false
-        end
-        return true
-    end
+    return u_col[CartesianIndex(inner_I)] = x
 end
 
 ## Mixed Int + CartesianIndex (needed for sum(A; dims=d) etc.)
@@ -1044,9 +754,6 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     elsymtype = symbolic_type(eltype(_arg))
 
     return if symtype == NotSymbolic() && elsymtype == NotSymbolic()
-        if _has_ragged_end(_arg, args...)
-            return _ragged_getindex(A, _arg, args...)
-        end
         if _arg isa Union{Tuple, AbstractArray} &&
                 any(x -> symbolic_type(x) != NotSymbolic(), _arg)
             _getindex(A, symtype, elsymtype, _arg, args...)
@@ -1054,17 +761,11 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
             _getindex(A, symtype, _arg, args...)
         end
     else
-        # Resolve any RaggedEnd objects in args before passing to symbolic indexing
-        resolved_args = _resolve_ragged_end_args(A, args)
-        _getindex(A, symtype, elsymtype, _arg, resolved_args...)
+        _getindex(A, symtype, elsymtype, _arg, args...)
     end
 end
 
-Base.@propagate_inbounds function Base.getindex(
-        A::Adjoint{T, <:AbstractVectorOfArray}, idxs...
-    ) where {T}
-    return getindex(A.parent, reverse(to_indices(A, idxs))...)
-end
+## Adjoint getindex inherited from AbstractArray (Adjoint <: AbstractMatrix)
 
 function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
     return observed(A, sym)(A.u[i], A.p, A.t[i])
@@ -1112,26 +813,7 @@ Base.@propagate_inbounds function Base.setindex!(
     end
     return v
 end
-Base.@propagate_inbounds function Base.setindex!(
-        VA::AbstractVectorOfArray{T, N}, x,
-        ii::CartesianIndex
-    ) where {T, N}
-    ti = Tuple(ii)
-    col = last(ti)
-    inner_I = Base.front(ti)
-    u_col = VA.u[col]
-    # Check ragged bounds
-    for d in 1:length(inner_I)
-        if inner_I[d] > size(u_col, d)
-            iszero(x) && return x
-            throw(ArgumentError(
-                "Cannot set non-zero value at index $ii: outside ragged storage bounds."
-            ))
-        end
-    end
-    jj = CartesianIndex(inner_I)
-    return u_col[jj] = x
-end
+## CartesianIndex setindex! handled by AbstractArray flattening to Int... method
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N},
@@ -1159,7 +841,7 @@ end
     end
     return (leading..., length(VA.u))
 end
-@inline Base.size(A::Adjoint{T, <:AbstractVectorOfArray}) where {T} = reverse(size(A.parent))
+## Adjoint size inherited from LinearAlgebra (Adjoint <: AbstractMatrix)
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -1305,19 +987,8 @@ function Base.view(A::AbstractVectorOfArray, I::Vararg{Any, M}) where {M}
     @boundscheck checkbounds(A, J...)
     return SubArray(A, J)
 end
-function Base.SubArray(parent::AbstractVectorOfArray, indices::Tuple)
-    @inline
-    return SubArray(
-        IndexStyle(Base.viewindexing(indices), IndexStyle(parent)), parent,
-        Base.ensure_indexable(indices), Base.index_dimsum(indices...)
-    )
-end
-## isassigned, ndims, eltype inherited from AbstractArray
-function Base.check_parent_index_match(
-        ::RecursiveArrayTools.AbstractVectorOfArray{T, N}, ::NTuple{N, Bool}
-    ) where {T, N}
-    return nothing
-end
+## SubArray constructor inherited from AbstractArray
+## isassigned, ndims, eltype, check_parent_index_match inherited from AbstractArray
 
 ## checkbounds inherited from AbstractArray (uses axes derived from size)
 function Base.copyto!(
@@ -1477,13 +1148,7 @@ end
 # map is inherited from AbstractArray (maps over elements)
 # To map over inner arrays, use `map(f, A.u)`
 
-# mapreduce inherited from AbstractArray for N > 1
-# For N == 1, the VectorOfArray wraps scalars directly
-function Base.mapreduce(
-        f, op, A::AbstractVectorOfArray{T, 1, <:AbstractVector{T}}; kwargs...
-    ) where {T}
-    return mapreduce(f, op, A.u; kwargs...)
-end
+## mapreduce inherited from AbstractArray
 
 ## broadcasting
 
@@ -1514,8 +1179,7 @@ end
 function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N}
     return VectorOfArrayStyle{N}()
 end
-# make vectorofarrays broadcastable so they aren't collected
-Broadcast.broadcastable(x::AbstractVectorOfArray) = x
+## broadcastable inherited from AbstractArray
 
 # recurse through broadcast arguments and return a parent array for
 # the first VoA or DiffEqArray in the bc arguments
