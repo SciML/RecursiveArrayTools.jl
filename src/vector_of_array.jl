@@ -1074,15 +1074,7 @@ end
     return similar(Array{T}, dims)
 end
 
-# similar(VA, dims::Int) - create VectorOfArray with given number of inner arrays
-@inline function Base.similar(VA::VectorOfArray, dims::Integer)
-    l = length(VA.u)
-    return if dims <= l
-        VectorOfArray(similar.(VA.u[1:dims]))
-    else
-        VectorOfArray([similar.(VA.u); [similar(VA.u[end]) for _ in (l + 1):dims]])
-    end
-end
+## similar(VA, dims) inherited from AbstractArray (returns Array)
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
