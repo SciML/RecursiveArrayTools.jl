@@ -1,0 +1,10 @@
+name = "RecursiveArrayToolsArrayPartitionAnyAll"
+uuid = "172d604e-c495-4f00-97bf-d70957099afa"
+version = "1.0.0"
+
+[deps]
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+
+[compat]
+RecursiveArrayTools = "3.48"
+julia = "1.10"
