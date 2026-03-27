@@ -1315,4 +1315,5 @@ nested = VA[
 
 """
 struct VA end
-Base.getindex(::Type{VA}, xs...) = VectorOfArray(collect(xs))
+# VA[...] shorthand moved to RecursiveArrayTools.ShorthandConstructors to avoid invalidations.
+# `using RecursiveArrayTools.ShorthandConstructors` to enable.

@@ -1,4 +1,5 @@
 using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
+using RecursiveArrayToolsShorthandConstructors
 
 @test length(ArrayPartition()) == 0
 @test isempty(ArrayPartition())
