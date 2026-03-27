@@ -7,7 +7,7 @@ using RecursiveArrayTools, ArrayInterface, Test
     @test typeof(similar(x)) <: NamedArrayPartition
     @test typeof(similar(x, Int)) <: NamedArrayPartition
     @test x.a ≈ ones(10)
-    @test typeof(x .+ x[1:end]) <: Vector # test broadcast precedence
+    @test typeof(x .+ x[1:end]) <: NamedArrayPartition # x[1:end] preserves type
     @test all(x .== x[1:end])
     @test ArrayInterface.zeromatrix(x) isa Matrix
     @test size(ArrayInterface.zeromatrix(x)) == (30, 30)
