@@ -1,4 +1,7 @@
 using Pkg
+# Install the ShorthandConstructors subpackage for tests that need VA[...]/AP[...] syntax
+Pkg.develop(PackageSpec(
+    path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors")))
 using RecursiveArrayTools
 using Test
 using SafeTestsets

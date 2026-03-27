@@ -36,8 +36,8 @@ function f(p)
 end
 Zygote.gradient(f, p)
 
-# Check conversion preserves device
-va_cu = convert(AbstractArray, va)
+# Check conversion to dense GPU array
+va_cu = stack(va.u)
 
 @test va_cu isa CuArray
 @test size(va_cu) == size(x)

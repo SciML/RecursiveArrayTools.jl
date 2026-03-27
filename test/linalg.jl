@@ -1,4 +1,5 @@
 using RecursiveArrayTools, Test, Random
+using RecursiveArrayToolsShorthandConstructors
 using LinearAlgebra, ArrayInterface
 
 n, m = 5, 6

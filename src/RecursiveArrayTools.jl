@@ -26,9 +26,13 @@ module RecursiveArrayTools
 
     !!! note
 
-        In 2023 the linear indexing `A[i]` was deprecated. It previously had the behavior that `A[i] = A.u[i]`. However, this is incompatible with standard `AbstractArray` interfaces, Since if `A = VectorOfArray([[1,2],[3,4]])` and `A` is supposed to act like `[1 3; 2 4]`, then there is a difference `A[1] = [1,2]` for the VectorOfArray while `A[1] = 1` for the matrix. This causes many issues if `AbstractVectorOfArray <: AbstractArray`. Thus we plan in 2026 to complete the deprecation and thus have a breaking update where `A[i]` matches the linear indexing of an`AbstractArray`, and then making `AbstractVectorOfArray <: AbstractArray`. Until then, `AbstractVectorOfArray` due to
-        this interface break but manually implements an `AbstractArray`-like interface for
-        future compatibility.
+        As of v4.0, `AbstractVectorOfArray <: AbstractArray`. Linear indexing `A[i]`
+        now returns the `i`th element in column-major order, matching standard Julia
+        `AbstractArray` behavior. To access the `i`th inner array, use `A.u[i]` or
+        `A[:, i]`. For ragged arrays (inner arrays of different sizes), `size(A)`
+        reports the maximum size in each dimension and out-of-bounds elements are
+        interpreted as zero (sparse representation). This means all standard linear
+        algebra operations work out of the box.
 
     ## Fields
 
@@ -99,7 +103,7 @@ module RecursiveArrayTools
     to make the array type match the internal array type (for example, if `A` is an array
     of GPU arrays, `stack(A)` will be a GPU array).
     """
-    abstract type AbstractVectorOfArray{T, N, A} end
+    abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
 
     """
         AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
@@ -125,9 +129,10 @@ module RecursiveArrayTools
     include("array_partition.jl")
     include("named_array_partition.jl")
 
-    function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
+    function Base.show(io::IO, x::ArrayPartition)
         return invoke(show, Tuple{typeof(io), Any}, io, x)
     end
+    # AbstractVectorOfArray uses AbstractArray's show
 
     import GPUArraysCore
     Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)

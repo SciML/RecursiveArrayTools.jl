@@ -87,7 +87,20 @@ function Base.Array(
             <:AbstractVector,
         },
     }
-    return reduce(hcat, VA.u)
+    if allequal(length.(VA.u))
+        return reduce(hcat, VA.u)
+    else
+        # Ragged: zero-padded
+        s = size(VA)
+        result = zeros(T, s)
+        for j in 1:length(VA.u)
+            u_j = VA.u[j]
+            for i in 1:length(u_j)
+                result[i, j] = u_j[i]
+            end
+        end
+        return result
+    end
 end
 function Base.Array(
         VA::AbstractVectorOfArray{
@@ -156,16 +169,40 @@ function Base.Vector(
     }
     return VA.u
 end
-function Base.Array(VA::AbstractVectorOfArray)
-    vecs = vec.(VA.u)
-    return Array(reshape(reduce(hcat, vecs), size(VA.u[1])..., length(VA.u)))
+function Base.Array(VA::AbstractVectorOfArray{T, N}) where {T, N}
+    if allequal(size.(VA.u))
+        vecs = vec.(VA.u)
+        return Array(reshape(reduce(hcat, vecs), size(VA.u[1])..., length(VA.u)))
+    else
+        # Ragged: create zero-padded dense array
+        s = size(VA)
+        result = zeros(T, s)
+        for j in 1:length(VA.u)
+            u_j = VA.u[j]
+            for ci in CartesianIndices(size(u_j))
+                result[ci, j] = u_j[ci]
+            end
+        end
+        return result
+    end
 end
-function Base.Array{U}(VA::AbstractVectorOfArray) where {U}
-    vecs = vec.(VA.u)
-    return Array(reshape(reduce(hcat, vecs), size(VA.u[1])..., length(VA.u)))
+function Base.Array{U}(VA::AbstractVectorOfArray{T, N}) where {U, T, N}
+    if allequal(size.(VA.u))
+        vecs = vec.(VA.u)
+        return Array{U}(reshape(reduce(hcat, vecs), size(VA.u[1])..., length(VA.u)))
+    else
+        s = size(VA)
+        result = zeros(U, s)
+        for j in 1:length(VA.u)
+            u_j = VA.u[j]
+            for ci in CartesianIndices(size(u_j))
+                result[ci, j] = U(u_j[ci])
+            end
+        end
+        return result
+    end
 end
 
-Base.convert(::Type{AbstractArray}, VA::AbstractVectorOfArray) = stack(VA.u)
 
 function Adapt.adapt_structure(to, VA::AbstractVectorOfArray)
     return VectorOfArray(Adapt.adapt.((to,), VA.u))
@@ -456,145 +493,78 @@ end
 SymbolicIndexingInterface.state_values(A::AbstractDiffEqArray) = A.u
 SymbolicIndexingInterface.current_time(A::AbstractDiffEqArray) = A.t
 SymbolicIndexingInterface.parameter_values(A::AbstractDiffEqArray) = A.p
+# Need explicit 2-arg method since AbstractDiffEqArray <: AbstractArray
+# and SymbolicIndexingInterface defines parameter_values(::AbstractArray, i) = arr[i]
+function SymbolicIndexingInterface.parameter_values(A::AbstractDiffEqArray, i)
+    return parameter_values(A.p, i)
+end
 SymbolicIndexingInterface.symbolic_container(A::AbstractDiffEqArray) = A.sys
 function SymbolicIndexingInterface.get_parameter_timeseries_collection(A::AbstractDiffEqArray)
     return get_discretes(A)
 end
 
-Base.IndexStyle(A::AbstractVectorOfArray) = Base.IndexStyle(typeof(A))
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 
-@inline Base.length(VA::AbstractVectorOfArray) = length(VA.u)
-@inline function Base.eachindex(VA::AbstractVectorOfArray)
-    return eachindex(VA.u)
+
+## Linear indexing: convert to Cartesian and dispatch to the N-ary getindex
+Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N}, i::Int) where {T, N}
+    @boundscheck checkbounds(A, i)
+    if N == 1
+        return @inbounds A.u[i]
+    end
+    return @inbounds A[CartesianIndices(size(A))[i]]
 end
-@inline function Base.eachindex(
-        ::IndexLinear, VA::AbstractVectorOfArray{T, N, <:AbstractVector{T}}
+
+Base.@propagate_inbounds function Base.setindex!(A::AbstractVectorOfArray{T, N}, v, i::Int) where {T, N}
+    @boundscheck checkbounds(A, i)
+    if N == 1
+        A.u[i] = v
+        return v
+    end
+    ci = CartesianIndices(size(A))[i]
+    return @inbounds A[ci] = v
+end
+
+
+Base.@propagate_inbounds function _getindex(
+        A::AbstractVectorOfArray{T, N}, ::NotSymbolic, ::Colon, I::Int
     ) where {T, N}
-    return eachindex(IndexLinear(), VA.u)
-end
-@inline Base.IteratorSize(::Type{<:AbstractVectorOfArray}) = Base.HasLength()
-@inline Base.first(VA::AbstractVectorOfArray) = first(VA.u)
-@inline Base.last(VA::AbstractVectorOfArray) = last(VA.u)
-function Base.firstindex(VA::AbstractVectorOfArray{T, N, A}) where {T, N, A}
-    N > 1 && Base.depwarn(
-        "Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",
-        :firstindex
-    )
-    return firstindex(VA.u)
-end
-
-function Base.lastindex(VA::AbstractVectorOfArray{T, N, A}) where {T, N, A}
-    N > 1 && Base.depwarn(
-        "Linear indexing of `AbstractVectorOfArray` is deprecated. Change `A[i]` to `A.u[i]` ",
-        :lastindex
-    )
-    return lastindex(VA.u)
-end
-
-# Always return RaggedEnd for type stability. Use dim=0 to indicate a plain index stored in offset.
-# _resolve_ragged_index and _column_indices handle the dim=0 case to extract the actual index value.
-@inline function Base.lastindex(VA::AbstractVectorOfArray, d::Integer)
-    if d == ndims(VA)
-        return RaggedEnd(0, Int(lastindex(VA.u)))
-    elseif d < ndims(VA)
-        isempty(VA.u) && return RaggedEnd(0, 0)
-        return RaggedEnd(Int(d), 0)
-    else
-        return RaggedEnd(0, 1)
+    u_col = A.u[I]
+    s = size(A)
+    leading_size = Base.front(s)
+    # If inner array matches the rectangular size, return directly
+    if size(u_col) == leading_size
+        return u_col
     end
-end
-
-Base.getindex(A::AbstractVectorOfArray, I::Int) = A.u[I]
-Base.getindex(A::AbstractVectorOfArray, I::AbstractArray{Int}) = A.u[I]
-Base.getindex(A::AbstractDiffEqArray, I::Int) = A.u[I]
-Base.getindex(A::AbstractDiffEqArray, I::AbstractArray{Int}) = A.u[I]
-
-@deprecate Base.getindex(
-    VA::AbstractVectorOfArray{T, N, A},
-    I::Int
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
-
-@deprecate Base.getindex(
-    VA::AbstractVectorOfArray{T, N, A},
-    I::AbstractArray{Int}
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
-
-@deprecate Base.getindex(
-    VA::AbstractDiffEqArray{T, N, A},
-    I::AbstractArray{Int}
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[I] false
-
-@deprecate Base.getindex(
-    VA::AbstractDiffEqArray{T, N, A},
-    i::Int
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} VA.u[i] false
-
-__parameterless_type(T) = Base.typename(T).wrapper
-
-# `end` support for ragged inner arrays
-# Use runtime fields instead of type parameters for type stability
-struct RaggedEnd
-    dim::Int
-    offset::Int
-end
-RaggedEnd(dim::Int) = RaggedEnd(dim, 0)
-
-Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset + Int(n))
-Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset - Int(n))
-Base.:+(n::Integer, re::RaggedEnd) = re + n
-
-# Make RaggedEnd and RaggedRange broadcast as scalars to avoid
-# issues with collect/length in broadcasting contexts (e.g., SymbolicIndexingInterface)
-Base.broadcastable(x::RaggedEnd) = Ref(x)
-
-struct RaggedRange
-    dim::Int
-    start::Int
-    step::Int
-    offset::Int
-end
-
-Base.:(:)(stop::RaggedEnd) = RaggedRange(stop.dim, 1, 1, stop.offset)
-function Base.:(:)(start::Integer, stop::RaggedEnd)
-    return RaggedRange(stop.dim, Int(start), 1, stop.offset)
-end
-function Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd)
-    return RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
-end
-function Base.:(:)(start::RaggedEnd, stop::RaggedEnd)
-    return RaggedRange(stop.dim, start.offset, 1, stop.offset)
-end
-function Base.:(:)(start::RaggedEnd, step::Integer, stop::RaggedEnd)
-    return RaggedRange(stop.dim, start.offset, Int(step), stop.offset)
-end
-function Base.:(:)(start::RaggedEnd, stop::Integer)
-    return RaggedRange(start.dim, start.offset, 1, Int(stop))
-end
-function Base.:(:)(start::RaggedEnd, step::Integer, stop::Integer)
-    return RaggedRange(start.dim, start.offset, Int(step), Int(stop))
-end
-Base.broadcastable(x::RaggedRange) = Ref(x)
-
-@inline function _is_ragged_dim(VA::AbstractVectorOfArray, d::Integer)
-    length(VA.u) <= 1 && return false
-    first_size = size(VA.u[1], d)
-    @inbounds for idx in 2:length(VA.u)
-        size(VA.u[idx], d) == first_size || return true
+    # If inner array has different ndims, return as-is (can't meaningfully reshape)
+    if ndims(u_col) != N - 1
+        return u_col
     end
-    return false
+    # Zero-padded for ragged arrays with same ndims but different sizes
+    result = zeros(T, leading_size)
+    for ci in CartesianIndices(size(u_col))
+        result[ci] = u_col[ci]
+    end
+    return result
 end
 
 Base.@propagate_inbounds function _getindex(
-        A::AbstractVectorOfArray, ::NotSymbolic, ::Colon, I::Int
-    )
-    return A.u[I]
-end
-
-Base.@propagate_inbounds function _getindex(
-        A::AbstractDiffEqArray, ::NotSymbolic, ::Colon, I::Int
-    )
-    return A.u[I]
+        A::AbstractDiffEqArray{T, N}, ::NotSymbolic, ::Colon, I::Int
+    ) where {T, N}
+    u_col = A.u[I]
+    s = size(A)
+    leading_size = Base.front(s)
+    if size(u_col) == leading_size
+        return u_col
+    end
+    if ndims(u_col) != N - 1
+        return u_col
+    end
+    result = zeros(T, leading_size)
+    for ci in CartesianIndices(size(u_col))
+        result[ci] = u_col[ci]
+    end
+    return result
 end
 
 Base.@propagate_inbounds function _getindex(
@@ -635,12 +605,20 @@ Base.@propagate_inbounds function _getindex(
     end
 end
 Base.@propagate_inbounds function _getindex(
-        VA::AbstractVectorOfArray, ::NotSymbolic, ii::CartesianIndex
-    )
+        VA::AbstractVectorOfArray{T}, ::NotSymbolic, ii::CartesianIndex
+    ) where {T}
     ti = Tuple(ii)
-    i = last(ti)
-    jj = CartesianIndex(Base.front(ti))
-    return VA.u[i][jj]
+    col = last(ti)
+    inner_I = Base.front(ti)
+    u_col = VA.u[col]
+    # Return zero for indices outside ragged storage
+    for d in 1:length(inner_I)
+        if inner_I[d] > size(u_col, d)
+            return zero(T)
+        end
+    end
+    jj = CartesianIndex(inner_I)
+    return u_col[jj]
 end
 
 Base.@propagate_inbounds function _getindex(
@@ -709,296 +687,60 @@ Base.@propagate_inbounds function _getindex(
     return getindex(A, all_variable_symbols(A), args...)
 end
 
-@inline _column_indices(VA::AbstractVectorOfArray, idx) = idx
-@inline _column_indices(VA::AbstractVectorOfArray, idx::Colon) = eachindex(VA.u)
-@inline function _column_indices(VA::AbstractVectorOfArray, idx::AbstractArray{Bool})
-    return findall(idx)
-end
-@inline function _column_indices(VA::AbstractVectorOfArray, idx::RaggedEnd)
-    # RaggedEnd with dim=0 means it's just a plain index stored in offset
-    return idx.dim == 0 ? idx.offset : idx
-end
 
-@inline function _column_indices(VA::AbstractVectorOfArray, idx::RaggedRange)
-    # RaggedRange with dim=0 means it's a column range with pre-resolved indices
-    if idx.dim == 0
-        # Create a range with the offset as the stop value
-        return Base.range(idx.start; step = idx.step, stop = idx.offset)
-    else
-        # dim != 0 means it's an inner-dimension range that needs column expansion
-        return idx
+# CartesianIndex with more dimensions than ndims(A) — for heterogeneous inner arrays
+# where (inner_indices..., column_index) may have more entries than ndims(A)
+Base.@propagate_inbounds function Base.getindex(
+        A::AbstractVectorOfArray{T, N}, ii::CartesianIndex
+    ) where {T, N}
+    ti = Tuple(ii)
+    if length(ti) == N
+        # Standard case: let AbstractArray handle via the N-ary method
+        return A[ti...]
     end
-end
-
-@inline _resolve_ragged_index(idx, ::AbstractVectorOfArray, ::Any) = idx
-@inline function _resolve_ragged_index(idx::RaggedEnd, VA::AbstractVectorOfArray, col)
-    if idx.dim == 0
-        # Special case: dim=0 means the offset contains the actual index value
-        return idx.offset
-    else
-        return lastindex(VA.u[col], idx.dim) + idx.offset
-    end
-end
-@inline function _resolve_ragged_index(idx::RaggedRange, VA::AbstractVectorOfArray, col)
-    stop_val = if idx.dim == 0
-        # dim == 0 is the sentinel for an already-resolved plain index stored in offset
-        idx.offset
-    else
-        lastindex(VA.u[col], idx.dim) + idx.offset
-    end
-    return Base.range(idx.start; step = idx.step, stop = stop_val)
-end
-@inline function _resolve_ragged_index(
-        idx::AbstractRange{<:RaggedEnd}, VA::AbstractVectorOfArray, col
-    )
-    return Base.range(
-        _resolve_ragged_index(first(idx), VA, col); step = step(idx),
-        stop = _resolve_ragged_index(last(idx), VA, col)
-    )
-end
-@inline function _resolve_ragged_index(idx::Base.Slice, VA::AbstractVectorOfArray, col)
-    return Base.Slice(_resolve_ragged_index(idx.indices, VA, col))
-end
-@inline function _resolve_ragged_index(idx::CartesianIndex, VA::AbstractVectorOfArray, col)
-    return CartesianIndex(_resolve_ragged_indices(Tuple(idx), VA, col)...)
-end
-@inline function _resolve_ragged_index(
-        idx::AbstractArray{<:RaggedEnd}, VA::AbstractVectorOfArray, col
-    )
-    return map(i -> _resolve_ragged_index(i, VA, col), idx)
-end
-@inline function _resolve_ragged_index(
-        idx::AbstractArray{<:RaggedRange}, VA::AbstractVectorOfArray, col
-    )
-    return map(i -> _resolve_ragged_index(i, VA, col), idx)
-end
-@inline function _resolve_ragged_index(idx::AbstractArray, VA::AbstractVectorOfArray, col)
-    return _has_ragged_end(idx) ? map(i -> _resolve_ragged_index(i, VA, col), idx) : idx
-end
-
-@inline function _resolve_ragged_indices(idxs::Tuple, VA::AbstractVectorOfArray, col)
-    return map(i -> _resolve_ragged_index(i, VA, col), idxs)
-end
-
-@inline function _has_ragged_end(x)
-    x isa RaggedEnd && return true
-    x isa RaggedRange && return true
-    x isa Base.Slice && return _has_ragged_end(x.indices)
-    x isa CartesianIndex && return _has_ragged_end(Tuple(x))
-    x isa AbstractRange && return eltype(x) <: Union{RaggedEnd, RaggedRange}
-    if x isa AbstractArray
-        el = eltype(x)
-        return el <: Union{RaggedEnd, RaggedRange} ||
-            (el === Any && any(_has_ragged_end, x))
-    end
-    x isa Tuple && return any(_has_ragged_end, x)
-    return false
-end
-@inline _has_ragged_end(x, xs...) = _has_ragged_end(x) || _has_ragged_end(xs)
-
-# Helper function to resolve RaggedEnd objects in a tuple of arguments
-@inline function _resolve_ragged_end_args(A::AbstractVectorOfArray, args::Tuple)
-    # Handle empty tuple case
-    length(args) == 0 && return args
-    if !_has_ragged_end(args...)
-        return args
-    end
-    # For now, we need to resolve only the last argument if it's RaggedEnd (column selector)
-    # This handles the common case sol[:x, end] where end gets converted to RaggedEnd(0, lastindex)
-    if args[end] isa RaggedEnd
-        resolved_last = _column_indices(A, args[end])
-        if length(args) == 1
-            return (resolved_last,)
-        else
-            return (Base.front(args)..., resolved_last)
-        end
-    elseif args[end] isa RaggedRange
-        # Only pre-resolve if it's an inner-dimension range (dim != 0)
-        # Column ranges (dim == 0) are handled later by _column_indices
-        if args[end].dim == 0
-            # Column range - let _column_indices handle it
-            return args
-        else
-            resolved_last = _resolve_ragged_index(args[end], A, 1)
-            if length(args) == 1
-                return (resolved_last,)
-            else
-                return (Base.front(args)..., resolved_last)
-            end
+    # Heterogeneous case: last element is column, rest are inner indices
+    col = last(ti)
+    inner_I = Base.front(ti)
+    u_col = A.u[col]
+    for d in 1:length(inner_I)
+        if inner_I[d] > size(u_col, d)
+            return zero(T)
         end
     end
-    return args
+    return u_col[CartesianIndex(inner_I)]
 end
 
-# Helper function to preserve DiffEqArray type when slicing
-@inline function _preserve_array_type(A::AbstractVectorOfArray, u_slice, col_idxs)
-    return VectorOfArray(u_slice)
-end
-
-@inline function _preserve_array_type(A::AbstractDiffEqArray, u_slice, col_idxs)
-    return DiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A))
-end
-
-@inline function _ragged_getindex(A::AbstractVectorOfArray, I...)
-    n = ndims(A)
-    # Special-case when user provided one fewer index than ndims(A): last index is column selector.
-    if length(I) == n - 1
-        return _ragged_getindex_nm1dims(A, I...)
-    else
-        return _ragged_getindex_full(A, I...)
+Base.@propagate_inbounds function Base.setindex!(
+        A::AbstractVectorOfArray{T, N}, x, ii::CartesianIndex
+    ) where {T, N}
+    ti = Tuple(ii)
+    if length(ti) == N
+        return A[ti...] = x
     end
-end
-
-@inline function _ragged_getindex_nm1dims(A::AbstractVectorOfArray, I...)
-    raw_cols = last(I)
-    # Determine if we're doing column selection (preserve type) or inner-dimension selection (don't preserve)
-    is_column_selection = if raw_cols isa RaggedEnd && raw_cols.dim != 0
-        false  # Inner dimension - don't preserve type
-    elseif raw_cols isa RaggedRange && raw_cols.dim != 0
-        true  # Inner dimension range converted to column range - DO preserve type
-    else
-        true  # Column selection (dim == 0 or not ragged)
-    end
-
-    # If the raw selector is a RaggedEnd/RaggedRange referring to inner dims, reinterpret as column selector.
-    cols = if raw_cols isa RaggedEnd && raw_cols.dim != 0
-        lastindex(A.u) + raw_cols.offset
-    elseif raw_cols isa RaggedRange && raw_cols.dim != 0
-        # Convert inner-dimension range to column range by resolving bounds
-        start_val = raw_cols.start < 0 ? lastindex(A.u) + raw_cols.start : raw_cols.start
-        stop_val = lastindex(A.u) + raw_cols.offset
-        Base.range(start_val; step = raw_cols.step, stop = stop_val)
-    else
-        _column_indices(A, raw_cols)
-    end
-    prefix = Base.front(I)
-    if cols isa Int
-        resolved_prefix = _resolve_ragged_indices(prefix, A, cols)
-        inner_nd = ndims(A.u[cols])
-        n_missing = inner_nd - length(resolved_prefix)
-        padded = if n_missing > 0
-            if all(idx -> idx === Colon(), resolved_prefix)
-                (resolved_prefix..., ntuple(_ -> Colon(), n_missing)...)
-            else
-                (
-                    resolved_prefix...,
-                    (lastindex(A.u[cols], length(resolved_prefix) + i) for i in 1:n_missing)...,
-                )
-            end
-        else
-            resolved_prefix
-        end
-        return A.u[cols][padded...]
-    else
-        u_slice = [
-            begin
-                    resolved_prefix = _resolve_ragged_indices(prefix, A, col)
-                    inner_nd = ndims(A.u[col])
-                    n_missing = inner_nd - length(resolved_prefix)
-                    padded = if n_missing > 0
-                        if all(idx -> idx === Colon(), resolved_prefix)
-                            (
-                                resolved_prefix...,
-                                ntuple(_ -> Colon(), n_missing)...,
-                            )
-                    else
-                            (
-                                resolved_prefix...,
-                                (
-                                    lastindex(
-                                        A.u[col],
-                                        length(resolved_prefix) + i
-                                    ) for i in 1:n_missing
-                                )...,
-                            )
-                    end
-                else
-                        resolved_prefix
-                end
-                    A.u[col][padded...]
-                end
-                for col in cols
-        ]
-        # Only preserve DiffEqArray type if we're selecting actual columns, not inner dimensions
-        if is_column_selection
-            return _preserve_array_type(A, u_slice, cols)
-        else
-            return VectorOfArray(u_slice)
+    col = last(ti)
+    inner_I = Base.front(ti)
+    u_col = A.u[col]
+    for d in 1:length(inner_I)
+        if inner_I[d] > size(u_col, d)
+            iszero(x) && return x
+            throw(ArgumentError(
+                "Cannot set non-zero value at index $ii: outside ragged storage bounds."
+            ))
         end
     end
-end
-
-@inline function _padded_resolved_indices(prefix, A::AbstractVectorOfArray, col)
-    resolved = _resolve_ragged_indices(prefix, A, col)
-    inner_nd = ndims(A.u[col])
-    padded = (resolved..., ntuple(_ -> Colon(), max(inner_nd - length(resolved), 0))...)
-    return padded
-end
-
-@inline function _ragged_getindex_full(A::AbstractVectorOfArray, I...)
-    # Otherwise, use the full-length interpretation (last index is column selector; missing columns default to Colon()).
-    n = ndims(A)
-    cols, prefix = if length(I) == n
-        last(I), Base.front(I)
-    else
-        Colon(), I
-    end
-    if cols isa Int
-        if all(idx -> idx === Colon(), prefix)
-            return A.u[cols]
-        end
-        return A.u[cols][_padded_resolved_indices(prefix, A, cols)...]
-    else
-        col_idxs = _column_indices(A, cols)
-        # Resolve sentinel RaggedEnd/RaggedRange (dim==0) for column selection
-        if col_idxs isa RaggedEnd || col_idxs isa RaggedRange
-            col_idxs = _resolve_ragged_index(col_idxs, A, 1)
-        end
-        # If we're selecting whole inner arrays (all leading indices are Colons),
-        # keep the result as a VectorOfArray to match non-ragged behavior.
-        if all(idx -> idx === Colon(), prefix)
-            if col_idxs isa Int
-                return A.u[col_idxs]
-            else
-                return _preserve_array_type(A, A.u[col_idxs], col_idxs)
-            end
-        end
-        # If col_idxs resolved to a single Int, handle it directly
-        vals = map(col_idxs) do col
-            A.u[col][_padded_resolved_indices(prefix, A, col)...]
-        end
-        if col_idxs isa Int
-            return vals
-        else
-            return stack(vals)
-        end
-    end
-end
-
-@inline function _checkbounds_ragged(::Type{Bool}, VA::AbstractVectorOfArray, idxs...)
-    cols = _column_indices(VA, last(idxs))
-    prefix = Base.front(idxs)
-    if cols isa Int
-        resolved = _resolve_ragged_indices(prefix, VA, cols)
-        return checkbounds(Bool, VA.u, cols) && checkbounds(Bool, VA.u[cols], resolved...)
-    else
-        for col in cols
-            resolved = _resolve_ragged_indices(prefix, VA, col)
-            checkbounds(Bool, VA.u, col) || return false
-            checkbounds(Bool, VA.u[col], resolved...) || return false
-        end
-        return true
-    end
+    return u_col[CartesianIndex(inner_I)] = x
 end
 
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, args...)
+    # Flatten CartesianIndex arguments (e.g. from sum(A; dims=d)) to plain Ints
+    # so they hit the N-ary getindex method instead of the symbolic dispatch.
+    if _arg isa Int && length(args) == 1 && args[1] isa CartesianIndex
+        return A[_arg, Tuple(args[1])...]
+    end
     symtype = symbolic_type(_arg)
     elsymtype = symbolic_type(eltype(_arg))
 
     return if symtype == NotSymbolic() && elsymtype == NotSymbolic()
-        if _has_ragged_end(_arg, args...)
-            return _ragged_getindex(A, _arg, args...)
-        end
         if _arg isa Union{Tuple, AbstractArray} &&
                 any(x -> symbolic_type(x) != NotSymbolic(), _arg)
             _getindex(A, symtype, elsymtype, _arg, args...)
@@ -1006,17 +748,10 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
             _getindex(A, symtype, _arg, args...)
         end
     else
-        # Resolve any RaggedEnd objects in args before passing to symbolic indexing
-        resolved_args = _resolve_ragged_end_args(A, args)
-        _getindex(A, symtype, elsymtype, _arg, resolved_args...)
+        _getindex(A, symtype, elsymtype, _arg, args...)
     end
 end
 
-Base.@propagate_inbounds function Base.getindex(
-        A::Adjoint{T, <:AbstractVectorOfArray}, idxs...
-    ) where {T}
-    return getindex(A.parent, reverse(to_indices(A, idxs))...)
-end
 
 function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
     return observed(A, sym)(A.u[i], A.p, A.t[i])
@@ -1035,15 +770,6 @@ Base.@propagate_inbounds function Base.setindex!(
     return VA.u[I] = v
 end
 
-Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Int) = Base.setindex!(
-    VA.u, v, I
-)
-@deprecate Base.setindex!(
-    VA::AbstractVectorOfArray{T, N, A}, v,
-    I::Int
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
-    VA.u, v, I
-) false
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -1052,15 +778,6 @@ Base.@propagate_inbounds function Base.setindex!(
     return VA.u[I] = v
 end
 
-Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::Colon) = Base.setindex!(
-    VA.u, v, I
-)
-@deprecate Base.setindex!(
-    VA::AbstractVectorOfArray{T, N, A}, v,
-    I::Colon
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
-    VA.u, v, I
-) false
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -1069,15 +786,6 @@ Base.@propagate_inbounds function Base.setindex!(
     return VA.u[I] = v
 end
 
-Base.@propagate_inbounds Base.setindex!(VA::AbstractVectorOfArray, v, I::AbstractArray{Int}) = Base.setindex!(
-    VA.u, v, I
-)
-@deprecate Base.setindex!(
-    VA::AbstractVectorOfArray{T, N, A}, v,
-    I::AbstractArray{Int}
-) where {T, N, A <: Union{AbstractArray, AbstractVectorOfArray}} Base.setindex!(
-    VA, v, :, I
-) false
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v, i::Int,
@@ -1088,20 +796,11 @@ Base.@propagate_inbounds function Base.setindex!(
     end
     return v
 end
-Base.@propagate_inbounds function Base.setindex!(
-        VA::AbstractVectorOfArray{T, N}, x,
-        ii::CartesianIndex
-    ) where {T, N}
-    ti = Tuple(ii)
-    i = last(ti)
-    jj = CartesianIndex(Base.front(ti))
-    return VA.u[i][jj] = x
-end
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N},
         x,
-        idxs::Union{Int, Colon, CartesianIndex, AbstractArray{Int}, AbstractArray{Bool}}...
+        idxs::Union{Int, Colon, AbstractArray{Int}, AbstractArray{Bool}}...
     ) where {
         T, N,
     }
@@ -1116,34 +815,58 @@ Base.@propagate_inbounds function Base.setindex!(
     return x
 end
 
-# Interface for the two-dimensional indexing, a more standard AbstractArray interface
-@inline Base.size(VA::AbstractVectorOfArray) = (size(VA.u[1])..., length(VA.u))
-@inline Base.size(VA::AbstractVectorOfArray, i) = size(VA)[i]
-@inline Base.size(A::Adjoint{T, <:AbstractVectorOfArray}) where {T} = reverse(size(A.parent))
-@inline Base.size(A::Adjoint{T, <:AbstractVectorOfArray}, i) where {T} = size(A)[i]
-Base.axes(VA::AbstractVectorOfArray) = Base.OneTo.(size(VA))
-Base.axes(VA::AbstractVectorOfArray, d::Int) = Base.OneTo(size(VA)[d])
+# Interface for the AbstractArray interface
+@inline function Base.size(VA::AbstractVectorOfArray{T, N}) where {T, N}
+    isempty(VA.u) && return ntuple(_ -> 0, Val(N))
+    leading = ntuple(Val(N - 1)) do d
+        maximum(size(u, d) for u in VA.u)
+    end
+    return (leading..., length(VA.u))
+end
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
         I::Int...
     ) where {T, N}
-    return VA.u[I[end]][Base.front(I)...] = v
+    col = I[end]
+    inner_I = Base.front(I)
+    u_col = VA.u[col]
+    # Check if within ragged storage bounds
+    for d in 1:length(inner_I)
+        if inner_I[d] > size(u_col, d)
+            iszero(v) && return v
+            throw(ArgumentError(
+                "Cannot set non-zero value at index $I: outside ragged storage bounds. " *
+                "Inner array $col has size $(size(u_col)) but index requires $(inner_I)."
+            ))
+        end
+    end
+    return u_col[inner_I...] = v
+end
+
+# Core N-dimensional getindex for AbstractArray interface
+# Handles ragged arrays by returning zero for out-of-bounds inner indices
+Base.@propagate_inbounds function Base.getindex(
+        A::AbstractVectorOfArray{T, N}, I::Vararg{Int, N}
+    ) where {T, N}
+    @boundscheck checkbounds(A, I...)
+    col = I[N]
+    inner_I = Base.front(I)
+    u_col = A.u[col]
+    # Return zero for indices outside ragged storage
+    for d in 1:N - 1
+        if inner_I[d] > size(u_col, d)
+            return zero(T)
+        end
+    end
+    return @inbounds u_col[inner_I...]
 end
 
 function Base.:(==)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
     return A.u == B.u
 end
-function Base.:(==)(A::AbstractVectorOfArray, B::AbstractArray)
-    return A.u == B
-end
-Base.:(==)(A::AbstractArray, B::AbstractVectorOfArray) = B == A
+# Comparison with plain arrays uses AbstractArray element-wise comparison via default
 
-# The iterator will be over the subarrays of the container, not the individual elements
-# unlike an true AbstractArray
-function Base.iterate(VA::AbstractVectorOfArray, state = 1)
-    return state >= length(VA.u) + 1 ? nothing : (VA[:, state], state + 1)
-end
 tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 
 # Growing the array simply adds to the container vector
@@ -1161,9 +884,10 @@ function Base.copy(VA::AbstractVectorOfArray)
 end
 
 function Base.zero(VA::AbstractVectorOfArray)
-    val = copy(VA)
-    val.u .= zero.(VA.u)
-    return val
+    T = typeof(VA)
+    u_zero = [zero(u) for u in VA.u]
+    fields = [fname == :u ? u_zero : _copyfield(VA, fname) for fname in fieldnames(T)]
+    return T(fields...)
 end
 
 Base.sizehint!(VA::AbstractVectorOfArray{T, N}, i) where {T, N} = sizehint!(VA.u, i)
@@ -1196,7 +920,7 @@ function Base.append!(
         VA::AbstractVectorOfArray{T, N},
         new_item::AbstractVectorOfArray{T, N}
     ) where {T, N}
-    for item in copy(new_item)
+    for item in copy(new_item.u)
         push!(VA, item)
     end
     return VA
@@ -1243,51 +967,7 @@ function Base.view(A::AbstractVectorOfArray, I::Vararg{Any, M}) where {M}
     @boundscheck checkbounds(A, J...)
     return SubArray(A, J)
 end
-function Base.SubArray(parent::AbstractVectorOfArray, indices::Tuple)
-    @inline
-    return SubArray(
-        IndexStyle(Base.viewindexing(indices), IndexStyle(parent)), parent,
-        Base.ensure_indexable(indices), Base.index_dimsum(indices...)
-    )
-end
-Base.isassigned(VA::AbstractVectorOfArray, idxs...) = checkbounds(Bool, VA, idxs...)
-function Base.check_parent_index_match(
-        ::RecursiveArrayTools.AbstractVectorOfArray{T, N}, ::NTuple{N, Bool}
-    ) where {T, N}
-    return nothing
-end
-Base.ndims(::AbstractVectorOfArray{T, N}) where {T, N} = N
-Base.ndims(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N} = N
 
-function Base.checkbounds(
-        ::Type{Bool}, VA::AbstractVectorOfArray{T, N, <:AbstractVector{T}},
-        idxs...
-    ) where {T, N}
-    if _has_ragged_end(idxs...)
-        return _checkbounds_ragged(Bool, VA, idxs...)
-    end
-    if length(idxs) == 2 && (idxs[1] == Colon() || idxs[1] == 1)
-        return checkbounds(Bool, VA.u, idxs[2])
-    end
-    return checkbounds(Bool, VA.u, idxs...)
-end
-function Base.checkbounds(::Type{Bool}, VA::AbstractVectorOfArray, idx...)
-    if _has_ragged_end(idx...)
-        return _checkbounds_ragged(Bool, VA, idx...)
-    end
-    checkbounds(Bool, VA.u, last(idx)) || return false
-    if last(idx) isa Int
-        return checkbounds(Bool, VA.u[last(idx)], Base.front(idx)...)
-    else
-        for i in last(idx)
-            checkbounds(Bool, VA.u[i], Base.front(idx)...) || return false
-        end
-        return true
-    end
-end
-function Base.checkbounds(VA::AbstractVectorOfArray, idx...)
-    return checkbounds(Bool, VA, idx...) || throw(BoundsError(VA, idx))
-end
 function Base.copyto!(
         dest::AbstractVectorOfArray{T, N},
         src::AbstractVectorOfArray{T2, N}
@@ -1320,72 +1000,10 @@ function Base.copyto!(
     copyto!(dest.u, src)
     return dest
 end
-# Required for broadcasted setindex! when slicing across subarrays
-# E.g. if `va = VectorOfArray([rand(3, 3) for i in 1:5])`
-# Need this method for `va[2, :, :] .= 3.0`
-Base.@propagate_inbounds function Base.maybeview(A::AbstractVectorOfArray, I...)
-    return view(A, I...)
-end
-
-# Operations
-function Base.isapprox(
-        A::AbstractVectorOfArray,
-        B::Union{AbstractVectorOfArray, AbstractArray};
-        kwargs...
-    )
-    return all(isapprox.(A, B; kwargs...))
-end
-
-function Base.isapprox(A::AbstractArray, B::AbstractVectorOfArray; kwargs...)
-    return all(isapprox.(A, B; kwargs...))
-end
-
-for op in [:(Base.:-), :(Base.:+)]
-    @eval function ($op)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
-        return ($op).(A, B)
-    end
-    @eval Base.@propagate_inbounds function ($op)(
-            A::AbstractVectorOfArray,
-            B::AbstractArray
-        )
-        @boundscheck length(A) == length(B)
-        return VectorOfArray([($op).(a, b) for (a, b) in zip(A, B)])
-    end
-    @eval Base.@propagate_inbounds function ($op)(
-            A::AbstractArray, B::AbstractVectorOfArray
-        )
-        @boundscheck length(A) == length(B)
-        return VectorOfArray([($op).(a, b) for (a, b) in zip(A, B)])
-    end
-end
-
-for op in [:(Base.:/), :(Base.:\), :(Base.:*)]
-    if op !== :(Base.:/)
-        @eval ($op)(A::Number, B::AbstractVectorOfArray) = ($op).(A, B)
-    end
-    if op !== :(Base.:\)
-        @eval ($op)(A::AbstractVectorOfArray, B::Number) = ($op).(A, B)
-    end
-end
-
-function Base.CartesianIndices(VA::AbstractVectorOfArray)
-    if !allequal(size.(VA.u))
-        error("CartesianIndices only valid for non-ragged arrays")
-    end
-    return CartesianIndices((size(VA.u[1])..., length(VA.u)))
-end
 
 # Tools for creating similar objects
-Base.eltype(::Type{<:AbstractVectorOfArray{T}}) where {T} = T
 
-@inline function Base.similar(VA::AbstractVectorOfArray, args...)
-    if args[end] isa Type
-        return Base.similar(eltype(VA)[], args..., size(VA))
-    else
-        return Base.similar(eltype(VA)[], args...)
-    end
-end
-
+# similar(VA) - same type and size
 function Base.similar(
         vec::VectorOfArray{
             T, N, AT,
@@ -1403,7 +1021,8 @@ function Base.similar(
     return VectorOfArray(similar(Base.parent(vec)))
 end
 
-@inline function Base.similar(VA::VectorOfArray, ::Type{T} = eltype(VA)) where {T}
+# similar(VA, T) - same structure, different element type
+@inline function Base.similar(VA::VectorOfArray, ::Type{T}) where {T}
     if eltype(VA.u) <: Union{AbstractArray, AbstractVectorOfArray}
         return VectorOfArray(similar.(VA.u, T))
     else
@@ -1411,14 +1030,19 @@ end
     end
 end
 
-@inline function Base.similar(VA::VectorOfArray, dims::N) where {N <: Number}
-    l = length(VA)
-    return if dims <= l
-        VectorOfArray(similar.(VA.u[1:dims]))
-    else
-        VectorOfArray([similar.(VA.u); [similar(VA.u[end]) for _ in (l + 1):dims]])
-    end
+# similar(VA, T, dims) - return a regular Array (standard AbstractArray behavior)
+@inline function Base.similar(
+        VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{Vararg{Int}}
+    ) where {T}
+    return Array{T}(undef, dims...)
 end
+@inline function Base.similar(
+        VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{Union{Integer, Base.OneTo},
+            Vararg{Union{Integer, Base.OneTo}}}
+    ) where {T}
+    return similar(Array{T}, dims)
+end
+
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
@@ -1437,36 +1061,8 @@ function Base.fill!(VA::AbstractVectorOfArray, x)
     end
     return VA
 end
-
-Base.reshape(A::AbstractVectorOfArray, dims...) = Base.reshape(Array(A), dims...)
-
-# Need this for ODE_DEFAULT_UNSTABLE_CHECK from DiffEqBase to work properly
-@inline Base.any(f, VA::AbstractVectorOfArray) = any(any(f, u) for u in VA.u)
-@inline Base.all(f, VA::AbstractVectorOfArray) = all(all(f, u) for u in VA.u)
-
 # conversion tools
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u[1])]
-Base.vec(VA::AbstractVectorOfArray) = vec(convert(Array, VA)) # Allocates
-# stack non-ragged arrays to convert them
-function Base.convert(::Type{Array}, VA::AbstractVectorOfArray)
-    if !allequal(size.(VA.u))
-        error("Can only convert non-ragged VectorOfArray to Array")
-    end
-    return Array(VA)
-end
-
-# statistics
-@inline Base.sum(VA::AbstractVectorOfArray; kwargs...) = sum(identity, VA; kwargs...)
-@inline function Base.sum(f, VA::AbstractVectorOfArray; kwargs...)
-    return mapreduce(f, Base.add_sum, VA; kwargs...)
-end
-@inline Base.prod(VA::AbstractVectorOfArray; kwargs...) = prod(identity, VA; kwargs...)
-@inline function Base.prod(f, VA::AbstractVectorOfArray; kwargs...)
-    return mapreduce(f, Base.mul_prod, VA; kwargs...)
-end
-
-@inline Base.adjoint(VA::AbstractVectorOfArray) = Adjoint(VA)
-
 # linear algebra
 ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
 
@@ -1496,18 +1092,6 @@ end
 @recipe function f(VA::DiffEqArray{T, 1}) where {T}
     VA.t, VA.u
 end
-
-Base.map(f, A::RecursiveArrayTools.AbstractVectorOfArray) = map(f, A.u)
-
-function Base.mapreduce(f, op, A::AbstractVectorOfArray; kwargs...)
-    return mapreduce(f, op, view(A, ntuple(_ -> :, ndims(A))...); kwargs...)
-end
-function Base.mapreduce(
-        f, op, A::AbstractVectorOfArray{T, 1, <:AbstractVector{T}}; kwargs...
-    ) where {T}
-    return mapreduce(f, op, A.u; kwargs...)
-end
-
 ## broadcasting
 
 struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
@@ -1537,8 +1121,6 @@ end
 function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N}
     return VectorOfArrayStyle{N}()
 end
-# make vectorofarrays broadcastable so they aren't collected
-Broadcast.broadcastable(x::AbstractVectorOfArray) = x
 
 # recurse through broadcast arguments and return a parent array for
 # the first VoA or DiffEqArray in the bc arguments
@@ -1682,4 +1264,3 @@ nested = VA[
 
 """
 struct VA end
-Base.getindex(::Type{VA}, xs...) = VectorOfArray(collect(xs))
