@@ -1,4 +1,5 @@
 using RecursiveArrayTools, StaticArrays, Test
+using RecursiveArrayToolsShorthandConstructors
 using FastBroadcast
 using SymbolicIndexingInterface: SymbolCache
 

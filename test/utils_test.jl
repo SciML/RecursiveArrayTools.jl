@@ -1,4 +1,5 @@
 using RecursiveArrayTools, StaticArrays
+using RecursiveArrayToolsShorthandConstructors
 using Test
 
 t = collect(range(0, stop = 10, length = 200))
