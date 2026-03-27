@@ -735,21 +735,12 @@ Base.@propagate_inbounds function Base.setindex!(
     return u_col[CartesianIndex(inner_I)] = x
 end
 
-## Mixed Int + CartesianIndex (needed for sum(A; dims=d) etc.)
-## Use @inline to avoid invalidation issues with overly broad signatures
-@inline Base.@propagate_inbounds function Base.getindex(
-        A::AbstractVectorOfArray{T, N}, i::Int, ci::CartesianIndex
-    ) where {T, N}
-    return A[i, Tuple(ci)...]
-end
-
-@inline Base.@propagate_inbounds function Base.setindex!(
-        A::AbstractVectorOfArray{T, N}, v, i::Int, ci::CartesianIndex
-    ) where {T, N}
-    return A[i, Tuple(ci)...] = v
-end
-
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, args...)
+    # Flatten CartesianIndex arguments (e.g. from sum(A; dims=d)) to plain Ints
+    # so they hit the N-ary getindex method instead of the symbolic dispatch.
+    if _arg isa Int && length(args) == 1 && args[1] isa CartesianIndex
+        return A[_arg, Tuple(args[1])...]
+    end
     symtype = symbolic_type(_arg)
     elsymtype = symbolic_type(eltype(_arg))
 
@@ -818,7 +809,7 @@ end
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N},
         x,
-        idxs::Union{Int, Colon, CartesianIndex, AbstractArray{Int}, AbstractArray{Bool}}...
+        idxs::Union{Int, Colon, AbstractArray{Int}, AbstractArray{Bool}}...
     ) where {
         T, N,
     }
