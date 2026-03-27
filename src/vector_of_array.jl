@@ -203,7 +203,6 @@ function Base.Array{U}(VA::AbstractVectorOfArray{T, N}) where {U, T, N}
     end
 end
 
-# AbstractVectorOfArray is already an AbstractArray, so convert is identity
 
 function Adapt.adapt_structure(to, VA::AbstractVectorOfArray)
     return VectorOfArray(Adapt.adapt.((to,), VA.u))
@@ -506,7 +505,6 @@ end
 
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
 
-## lastindex inherited from AbstractArray (uses size)
 
 ## Linear indexing: convert to Cartesian and dispatch to the N-ary getindex
 Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray{T, N}, i::Int) where {T, N}
@@ -527,7 +525,6 @@ Base.@propagate_inbounds function Base.setindex!(A::AbstractVectorOfArray{T, N},
     return @inbounds A[ci] = v
 end
 
-## RaggedEnd/RaggedRange types removed — lastindex now returns plain Ints from AbstractArray
 
 Base.@propagate_inbounds function _getindex(
         A::AbstractVectorOfArray{T, N}, ::NotSymbolic, ::Colon, I::Int
@@ -690,7 +687,6 @@ Base.@propagate_inbounds function _getindex(
     return getindex(A, all_variable_symbols(A), args...)
 end
 
-## RaggedEnd/RaggedRange resolution machinery removed — lastindex returns plain Ints now
 
 # CartesianIndex with more dimensions than ndims(A) — for heterogeneous inner arrays
 # where (inner_indices..., column_index) may have more entries than ndims(A)
@@ -756,7 +752,6 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     end
 end
 
-## Adjoint getindex inherited from AbstractArray (Adjoint <: AbstractMatrix)
 
 function _observed(A::AbstractDiffEqArray{T, N}, sym, i::Int) where {T, N}
     return observed(A, sym)(A.u[i], A.p, A.t[i])
@@ -775,7 +770,6 @@ Base.@propagate_inbounds function Base.setindex!(
     return VA.u[I] = v
 end
 
-## Single-Int setindex! is now handled by the N-ary method via AbstractArray linear indexing
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -784,7 +778,6 @@ Base.@propagate_inbounds function Base.setindex!(
     return VA.u[I] = v
 end
 
-## Colon setindex! for single arg removed - use VA[:, :] = v or VA.u[:] = v
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -793,7 +786,6 @@ Base.@propagate_inbounds function Base.setindex!(
     return VA.u[I] = v
 end
 
-## AbstractArray{Int} setindex! for single arg removed - use VA[:, I] = v or VA.u[I] = v
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v, i::Int,
@@ -804,7 +796,6 @@ Base.@propagate_inbounds function Base.setindex!(
     end
     return v
 end
-## CartesianIndex setindex! handled by AbstractArray flattening to Int... method
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N},
@@ -832,7 +823,6 @@ end
     end
     return (leading..., length(VA.u))
 end
-## Adjoint size inherited from LinearAlgebra (Adjoint <: AbstractMatrix)
 
 Base.@propagate_inbounds function Base.setindex!(
         VA::AbstractVectorOfArray{T, N}, v,
@@ -877,7 +867,6 @@ function Base.:(==)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
 end
 # Comparison with plain arrays uses AbstractArray element-wise comparison via default
 
-# Iteration is inherited from AbstractArray (iterates over elements in linear order)
 tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 
 # Growing the array simply adds to the container vector
@@ -978,10 +967,7 @@ function Base.view(A::AbstractVectorOfArray, I::Vararg{Any, M}) where {M}
     @boundscheck checkbounds(A, J...)
     return SubArray(A, J)
 end
-## SubArray constructor inherited from AbstractArray
-## isassigned, ndims, eltype, check_parent_index_match inherited from AbstractArray
 
-## checkbounds inherited from AbstractArray (uses axes derived from size)
 function Base.copyto!(
         dest::AbstractVectorOfArray{T, N},
         src::AbstractVectorOfArray{T2, N}
@@ -1014,16 +1000,8 @@ function Base.copyto!(
     copyto!(dest.u, src)
     return dest
 end
-## maybeview inherited from AbstractArray
-
-## isapprox inherited from AbstractArray
-
-## Arithmetic (+, -, *, /) inherited from AbstractArray / broadcasting
-
-## CartesianIndices inherited from AbstractArray (uses axes/size)
 
 # Tools for creating similar objects
-# eltype is inherited from AbstractArray{T, N}
 
 # similar(VA) - same type and size
 function Base.similar(
@@ -1065,7 +1043,6 @@ end
     return similar(Array{T}, dims)
 end
 
-## similar(VA, dims) inherited from AbstractArray (returns Array)
 
 # fill!
 # For DiffEqArray it ignores ts and fills only u
@@ -1084,20 +1061,8 @@ function Base.fill!(VA::AbstractVectorOfArray, x)
     end
     return VA
 end
-
-## reshape inherited from AbstractArray
-
-# any/all inherited from AbstractArray (iterates over all elements including ragged zeros)
-
 # conversion tools
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u[1])]
-## vec inherited from AbstractArray
-## convert(Array, VA) inherited from AbstractArray (calls Array(VA))
-
-# sum, prod inherited from AbstractArray
-
-## adjoint inherited from AbstractArray
-
 # linear algebra
 ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
 
@@ -1127,12 +1092,6 @@ end
 @recipe function f(VA::DiffEqArray{T, 1}) where {T}
     VA.t, VA.u
 end
-
-# map is inherited from AbstractArray (maps over elements)
-# To map over inner arrays, use `map(f, A.u)`
-
-## mapreduce inherited from AbstractArray
-
 ## broadcasting
 
 struct VectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end # N is only used when voa sees other abstract arrays
@@ -1162,7 +1121,6 @@ end
 function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {T, N}
     return VectorOfArrayStyle{N}()
 end
-## broadcastable inherited from AbstractArray
 
 # recurse through broadcast arguments and return a parent array for
 # the first VoA or DiffEqArray in the bc arguments
@@ -1306,5 +1264,3 @@ nested = VA[
 
 """
 struct VA end
-# VA[...] shorthand moved to RecursiveArrayTools.ShorthandConstructors to avoid invalidations.
-# `using RecursiveArrayTools.ShorthandConstructors` to enable.

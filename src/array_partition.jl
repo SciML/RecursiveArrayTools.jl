@@ -223,10 +223,6 @@ end
     end
 end
 Base.filter(f, A::ArrayPartition) = ArrayPartition(map(x -> filter(f, x), A.x))
-# Optimized any/all for ArrayPartition (partition-level short-circuiting) moved to
-# RecursiveArrayTools.ShorthandConstructors to avoid invalidations (779 children).
-# The AbstractArray default any/all works correctly, just without partition-level optimization.
-# `using RecursiveArrayTools.ShorthandConstructors` to enable the optimized versions.
 
 for type in [AbstractArray, PermutedDimsArray]
     @eval function Base.copyto!(dest::$(type), A::ArrayPartition)
@@ -744,5 +740,3 @@ ODEProblem(func, AP[ [1.,2.,3.], [1. 2.;3. 4.] ], (0, 1)) |> solve
 
 """
 struct AP end
-# AP[...] shorthand moved to RecursiveArrayTools.ShorthandConstructors to avoid invalidations.
-# `using RecursiveArrayTools.ShorthandConstructors` to enable.
