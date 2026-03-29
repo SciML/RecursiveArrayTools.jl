@@ -1,0 +1,19 @@
+name = "RecursiveArrayToolsRaggedArrays"
+uuid = "c384ba91-639a-44ca-823a-e1d3691ab84a"
+version = "1.0.0"
+
+[deps]
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
+
+[compat]
+RecursiveArrayTools = "3.48"
+SymbolicIndexingInterface = "0.3.35"
+julia = "1.10"
+
+[extras]
+SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["SymbolicIndexingInterface", "Test"]

@@ -62,7 +62,7 @@ A.t
 ```
 """
 mutable struct DiffEqArray{
-        T, N, A, B, F, S, D <: Union{Nothing, ParameterTimeseriesCollection},
+        T, N, A, B, F, S, D <: Union{Nothing, ParameterTimeseriesCollection}, I,
     } <:
     AbstractDiffEqArray{T, N, A}
     u::A # A <: AbstractVector{<: AbstractArray{T, N - 1}}
@@ -70,6 +70,8 @@ mutable struct DiffEqArray{
     p::F
     sys::S
     discretes::D
+    interp::I
+    dense::Bool
 end
 ### Abstract Interface
 struct AllObserved
@@ -245,7 +247,8 @@ Base.parent(vec::VectorOfArray) = vec.u
 # first element representative
 function DiffEqArray(
         vec::AbstractVector, ts::AbstractVector; discretes = nothing,
-        variables = nothing, parameters = nothing, independent_variables = nothing
+        variables = nothing, parameters = nothing, independent_variables = nothing,
+        interp = nothing, dense = false
     )
     sys = SymbolCache(
         something(variables, []),
@@ -262,12 +265,15 @@ function DiffEqArray(
         Nothing,
         typeof(sys),
         typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         nothing,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
@@ -275,7 +281,7 @@ end
 function DiffEqArray(
         vec::AbstractVector{VT}, ts::AbstractVector;
         discretes = nothing, variables = nothing, parameters = nothing,
-        independent_variables = nothing
+        independent_variables = nothing, interp = nothing, dense = false
     ) where {T, N, VT <: AbstractArray{T, N}}
     sys = SymbolCache(
         something(variables, []),
@@ -290,12 +296,15 @@ function DiffEqArray(
         Nothing,
         typeof(sys),
         typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         nothing,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
@@ -304,39 +313,46 @@ end
 # NTuple, T from type
 function DiffEqArray(
         vec::AbstractVector{T}, ts::AbstractVector,
-        ::NTuple{N, Int}; discretes = nothing
+        ::NTuple{N, Int}; discretes = nothing, interp = nothing, dense = false
     ) where {T, N}
     return DiffEqArray{
         eltype(T), N, typeof(vec), typeof(ts), Nothing, Nothing, typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         nothing,
         nothing,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
 # NTuple parameter
 function DiffEqArray(
         vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, Int};
-        discretes = nothing
+        discretes = nothing, interp = nothing, dense = false
     ) where {T, N, VT <: AbstractArray{T, N}, N2}
     return DiffEqArray{
         eltype(T), N + 1, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         nothing,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
 # first element representative
 function DiffEqArray(
         vec::AbstractVector, ts::AbstractVector, p; discretes = nothing,
-        variables = nothing, parameters = nothing, independent_variables = nothing
+        variables = nothing, parameters = nothing, independent_variables = nothing,
+        interp = nothing, dense = false
     )
     sys = SymbolCache(
         something(variables, []),
@@ -353,12 +369,15 @@ function DiffEqArray(
         typeof(p),
         typeof(sys),
         typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
@@ -366,7 +385,7 @@ end
 function DiffEqArray(
         vec::AbstractVector{VT}, ts::AbstractVector, p;
         discretes = nothing, variables = nothing, parameters = nothing,
-        independent_variables = nothing
+        independent_variables = nothing, interp = nothing, dense = false
     ) where {T, N, VT <: AbstractArray{T, N}}
     sys = SymbolCache(
         something(variables, []),
@@ -376,12 +395,15 @@ function DiffEqArray(
     return DiffEqArray{
         eltype(T), N + 1, typeof(vec), typeof(ts),
         typeof(p), typeof(sys), typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
@@ -390,38 +412,45 @@ end
 # NTuple, T from type
 function DiffEqArray(
         vec::AbstractVector{T}, ts::AbstractVector,
-        ::NTuple{N, Int}, p; discretes = nothing
+        ::NTuple{N, Int}, p; discretes = nothing, interp = nothing, dense = false
     ) where {T, N}
     return DiffEqArray{
         eltype(T), N, typeof(vec), typeof(ts), typeof(p), Nothing, typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         nothing,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
 # NTuple parameter
 function DiffEqArray(
         vec::AbstractVector{VT}, ts::AbstractVector, p::NTuple{N2, Int}, sys;
-        discretes = nothing
+        discretes = nothing, interp = nothing, dense = false
     ) where {T, N, VT <: AbstractArray{T, N}, N2}
     return DiffEqArray{
         eltype(T), N + 1, typeof(vec), typeof(ts),
         typeof(p), typeof(sys), typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
 # first element representative
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys; discretes = nothing)
+function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys;
+        discretes = nothing, interp = nothing, dense = false)
     _size = size(vec[1])
     T = eltype(vec[1])
     return DiffEqArray{
@@ -432,29 +461,35 @@ function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys; discretes 
         typeof(p),
         typeof(sys),
         typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
 # T and N from type
 function DiffEqArray(
         vec::AbstractVector{VT}, ts::AbstractVector, p, sys;
-        discretes = nothing
+        discretes = nothing, interp = nothing, dense = false
     ) where {T, N, VT <: AbstractArray{T, N}}
     return DiffEqArray{
         eltype(T), N + 1, typeof(vec), typeof(ts),
         typeof(p), typeof(sys), typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
@@ -463,16 +498,19 @@ end
 # NTuple, T from type
 function DiffEqArray(
         vec::AbstractVector{T}, ts::AbstractVector,
-        ::NTuple{N, Int}, p, sys; discretes = nothing
+        ::NTuple{N, Int}, p, sys; discretes = nothing, interp = nothing, dense = false
     ) where {T, N}
     return DiffEqArray{
         eltype(T), N, typeof(vec), typeof(ts), typeof(p), typeof(sys), typeof(discretes),
+        typeof(interp),
     }(
         vec,
         ts,
         p,
         sys,
-        discretes
+        discretes,
+        interp,
+        dense
     )
 end
 
@@ -484,10 +522,10 @@ function SymbolicIndexingInterface.is_parameter_timeseries(
         ::Type{
             DiffEqArray{
                 T, N, A, B,
-                F, S, D,
+                F, S, D, I,
             },
         }
-    ) where {T, N, A, B, F, S, D <: ParameterIndexingProxy}
+    ) where {T, N, A, B, F, S, D <: ParameterIndexingProxy, I}
     return Timeseries()
 end
 SymbolicIndexingInterface.state_values(A::AbstractDiffEqArray) = A.u
@@ -501,6 +539,20 @@ end
 SymbolicIndexingInterface.symbolic_container(A::AbstractDiffEqArray) = A.sys
 function SymbolicIndexingInterface.get_parameter_timeseries_collection(A::AbstractDiffEqArray)
     return get_discretes(A)
+end
+
+## Callable interface for interpolation
+#
+# Any AbstractDiffEqArray with a non-nothing `interp` field supports `da(t)`.
+# The interpolation object is called as `interp(t, idxs, deriv, p, continuity)`.
+# SciMLBase's more-specific `(::AbstractODESolution)(t,...)` methods win dispatch
+# for solution objects and handle symbolic idxs, discrete params, etc.
+
+function (da::AbstractDiffEqArray)(t, ::Type{deriv} = Val{0};
+        idxs = nothing, continuity = :left) where {deriv}
+    da.interp === nothing &&
+        error("No interpolation data is available. Provide an interpolation object via the `interp` keyword.")
+    return da.interp(t, idxs, deriv, da.p, continuity)
 end
 
 Base.IndexStyle(::Type{<:AbstractVectorOfArray}) = IndexCartesian()
@@ -1082,12 +1134,287 @@ end
 @recipe function f(VA::AbstractVectorOfArray)
     convert(Array, VA)
 end
-@recipe function f(VA::AbstractDiffEqArray)
-    xguide --> isempty(independent_variable_symbols(VA)) ? "" :
-        independent_variable_symbols(VA)[1]
-    label --> isempty(variable_symbols(VA)) ? "" :
-        reshape(string.(variable_symbols(VA)), 1, :)
-    VA.t, VA'
+
+## Plotting helper functions (shared with SciMLBase)
+
+DEFAULT_PLOT_FUNC(x, y) = (x, y)
+DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
+
+plottable_indices(x::AbstractArray) = 1:length(x)
+plottable_indices(x::Number) = 1
+plot_indices(A::AbstractArray) = eachindex(A)
+
+"""
+    getindepsym_defaultt(A)
+
+Return the independent variable symbol for `A`, defaulting to `:t`.
+"""
+function getindepsym_defaultt(A)
+    syms = independent_variable_symbols(A)
+    return isempty(syms) ? :t : first(syms)
+end
+
+"""
+    interpret_vars(vars, A)
+
+Normalize user-provided variable specifications into a standard internal format:
+a list of tuples `(func, xvar, yvar[, zvar])`. Index `0` represents the
+independent variable (time).
+"""
+function interpret_vars(vars, A)
+    if vars === nothing
+        if A[:, 1] isa Union{Tuple, AbstractArray}
+            vars = collect((DEFAULT_PLOT_FUNC, 0, i) for i in plot_indices(A[:, 1]))
+        else
+            vars = [(DEFAULT_PLOT_FUNC, 0, 1)]
+        end
+    end
+
+    if vars isa Base.Integer
+        vars = [(DEFAULT_PLOT_FUNC, 0, vars)]
+    end
+
+    if vars isa AbstractArray
+        tmp = Tuple[]
+        for x in vars
+            if x isa Tuple
+                if x[1] isa Int
+                    push!(tmp, tuple(DEFAULT_PLOT_FUNC, x...))
+                else
+                    push!(tmp, x)
+                end
+            else
+                push!(tmp, (DEFAULT_PLOT_FUNC, 0, x))
+            end
+        end
+        vars = tmp
+    end
+
+    if vars isa Tuple
+        if vars[end - 1] isa AbstractArray
+            if vars[end] isa AbstractArray
+                vars = collect(
+                    zip(
+                        [DEFAULT_PLOT_FUNC for i in eachindex(vars[end - 1])],
+                        vars[end - 1], vars[end]
+                    )
+                )
+            else
+                vars = [(DEFAULT_PLOT_FUNC, x, vars[end]) for x in vars[end - 1]]
+            end
+        else
+            if vars[2] isa AbstractArray
+                vars = [(DEFAULT_PLOT_FUNC, vars[end - 1], y) for y in vars[end]]
+            else
+                if vars[1] isa Int || symbolic_type(vars[1]) != NotSymbolic()
+                    vars = [tuple(DEFAULT_PLOT_FUNC, vars...)]
+                else
+                    vars = [vars]
+                end
+            end
+        end
+    end
+
+    @assert(typeof(vars) <: AbstractArray)
+    @assert(eltype(vars) <: Tuple)
+    return vars
+end
+
+function _var_label(A, x)
+    varsyms = variable_symbols(A)
+    if symbolic_type(x) != NotSymbolic()
+        return string(x)
+    elseif !isempty(varsyms) && x isa Integer && x > 0 && x <= length(varsyms)
+        return string(varsyms[x])
+    elseif x isa Integer
+        return x == 0 ? "t" : "u[$x]"
+    else
+        return string(x)
+    end
+end
+
+function add_labels!(labels, x, dims, A, strs)
+    if ((x[2] isa Integer && x[2] == 0) || isequal(x[2], getindepsym_defaultt(A))) &&
+            dims == 2
+        push!(labels, strs[end])
+    elseif x[1] !== DEFAULT_PLOT_FUNC
+        push!(labels, "f($(join(strs, ',')))")
+    else
+        push!(labels, "($(join(strs, ',')))")
+    end
+    return labels
+end
+
+"""
+    diffeq_to_arrays(A, denseplot, plotdensity, tspan, vars, tscale, plotat)
+
+Convert an `AbstractDiffEqArray` into plot-ready arrays. Returns `(plot_vecs, labels)`.
+"""
+function diffeq_to_arrays(
+        A, denseplot, plotdensity, tspan, vars, tscale, plotat
+    )
+    if tspan === nothing
+        start_idx = 1
+        end_idx = length(A.u)
+    else
+        start_idx = searchsortedfirst(A.t, tspan[1])
+        end_idx = searchsortedlast(A.t, tspan[end])
+    end
+
+    densetspacer = if tscale in [:ln, :log10, :log2]
+        (start, stop, n) -> exp10.(range(log10(start), stop = log10(stop), length = n))
+    else
+        (start, stop, n) -> range(start; stop = stop, length = n)
+    end
+
+    if plotat !== nothing
+        plott = plotat
+    elseif denseplot
+        if tspan === nothing
+            plott = collect(densetspacer(A.t[start_idx], A.t[end_idx], plotdensity))
+        else
+            plott = collect(densetspacer(tspan[1], tspan[end], plotdensity))
+        end
+    else
+        plott = A.t[start_idx:end_idx]
+    end
+
+    dims = length(vars[1]) - 1
+    for var in vars
+        @assert length(var) - 1 == dims
+    end
+    return solplot_vecs_and_labels(dims, vars, plott, A)
+end
+
+function solplot_vecs_and_labels(dims, vars, plott, A)
+    plot_vecs = []
+    labels = String[]
+    batch_symbolic_vars = []
+    for x in vars
+        for j in 2:length(x)
+            if (x[j] isa Integer && x[j] == 0) || isequal(x[j], getindepsym_defaultt(A))
+            else
+                push!(batch_symbolic_vars, x[j])
+            end
+        end
+    end
+    batch_symbolic_vars = identity.(batch_symbolic_vars)
+
+    # Use callable if available, otherwise index directly
+    has_interp = hasproperty(A, :interp) && A.interp !== nothing
+    if has_interp
+        indexed_solution = A(plott; idxs = batch_symbolic_vars)
+    else
+        # For non-interpolating DiffEqArrays, find matching time indices
+        # plott should be a subset of A.t in this case
+        indexed_solution = A
+    end
+
+    idxx = 0
+    for x in vars
+        tmp = []
+        strs = String[]
+        for j in 2:length(x)
+            if (x[j] isa Integer && x[j] == 0) || isequal(x[j], getindepsym_defaultt(A))
+                push!(tmp, plott)
+                push!(strs, "t")
+            else
+                idxx += 1
+                if has_interp
+                    push!(tmp, indexed_solution[idxx, :])
+                else
+                    # Direct indexing: extract component from each time point
+                    idx = batch_symbolic_vars[idxx]
+                    if idx isa Integer
+                        push!(tmp, [A.u[ti][idx] for ti in eachindex(plott)])
+                    else
+                        push!(tmp, [A[idx, ti] for ti in eachindex(plott)])
+                    end
+                end
+                push!(strs, _var_label(A, x[j]))
+            end
+        end
+
+        f = x[1]
+        tmp = map(f, tmp...)
+        tmp = tuple((getindex.(tmp, i) for i in eachindex(tmp[1]))...)
+        for i in eachindex(tmp)
+            if length(plot_vecs) < i
+                push!(plot_vecs, [])
+            end
+            push!(plot_vecs[i], tmp[i])
+        end
+        add_labels!(labels, x, dims, A, strs)
+    end
+
+    plot_vecs = [hcat(x...) for x in plot_vecs]
+    return plot_vecs, labels
+end
+
+@recipe function f(VA::AbstractDiffEqArray;
+        denseplot = (hasproperty(VA, :dense) && VA.dense &&
+                     hasproperty(VA, :interp) && VA.interp !== nothing),
+        plotdensity = max(1000, 10 * length(VA.u)),
+        tspan = nothing, plotat = nothing,
+        idxs = nothing)
+
+    # If the array has no callable interp and it's a simple case, use the fast path
+    has_interp = hasproperty(VA, :interp) && VA.interp !== nothing
+    if !has_interp && idxs === nothing && plotat === nothing
+        # Simple fast path: just plot t vs u
+        indepsyms = independent_variable_symbols(VA)
+        xguide --> (isempty(indepsyms) ? "" : string(indepsyms[1]))
+        varsyms = variable_symbols(VA)
+        label --> (isempty(varsyms) ? "" : reshape(string.(varsyms), 1, :))
+        VA.t, VA'
+    else
+        # Full-featured path: interpret vars, handle phase plots, use callable
+        idxs_input = idxs === nothing ? plottable_indices(VA.u[1]) : idxs
+        if !(idxs_input isa Union{Tuple, AbstractArray})
+            vars = interpret_vars([idxs_input], VA)
+        else
+            vars = interpret_vars(idxs_input, VA)
+        end
+
+        tdir = sign(VA.t[end] - VA.t[1])
+        xflip --> tdir < 0
+        seriestype --> :path
+
+        tscale = get(plotattributes, :xscale, :identity)
+        plot_vecs, labels = diffeq_to_arrays(
+            VA, denseplot, plotdensity, tspan, vars, tscale, plotat
+        )
+
+        # Axis labels for tuple-style idxs
+        if idxs_input isa Tuple && vars[1][1] === DEFAULT_PLOT_FUNC
+            for (guide, idx) in [(:xguide, 2), (:yguide, 3)]
+                if idx <= length(vars[1])
+                    guide --> _var_label(VA, vars[1][idx])
+                end
+            end
+            if length(vars[1]) > 3
+                zguide --> _var_label(VA, vars[1][4])
+            end
+        end
+
+        # Default xguide for time-vs-variable plots
+        if all(x -> (x[2] isa Integer && x[2] == 0) ||
+                    isequal(x[2], getindepsym_defaultt(VA)), vars)
+            xguide --> "$(getindepsym_defaultt(VA))"
+            if tspan === nothing
+                if tdir > 0
+                    xlims --> (VA.t[1], VA.t[end])
+                else
+                    xlims --> (VA.t[end], VA.t[1])
+                end
+            else
+                xlims --> (tspan[1], tspan[end])
+            end
+        end
+
+        label --> reshape(labels, 1, length(labels))
+        (plot_vecs...,)
+    end
 end
 @recipe function f(VA::DiffEqArray{T, 1}) where {T}
     VA.t, VA.u
@@ -1169,13 +1496,17 @@ for (type, N_expr) in [
         bc = Broadcast.flatten(bc)
         N = $N_expr
         @inbounds for i in 1:N
-            if dest[:, i] isa AbstractArray
-                if ArrayInterface.ismutable(dest[:, i])
-                    copyto!(dest[:, i], unpack_voa(bc, i))
+            # Use dest.u[i] directly to get the actual inner array without
+            # zero-padding (dest[:, i] zero-pads ragged arrays, causing
+            # DimensionMismatch when the source inner array has a different size)
+            inner = dest.u[i]
+            if inner isa AbstractArray
+                if ArrayInterface.ismutable(inner)
+                    copyto!(inner, unpack_voa(bc, i))
                 else
                     unpacked = unpack_voa(bc, i)
-                    arr_type = StaticArraysCore.similar_type(dest[:, i])
-                    dest[:, i] = if length(unpacked) == 1 && length(dest[:, i]) == 1
+                    arr_type = StaticArraysCore.similar_type(inner)
+                    dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
                         arr_type(unpacked[1])
                     elseif length(unpacked) == 1
                         fill(copy(unpacked), arr_type)
@@ -1184,7 +1515,7 @@ for (type, N_expr) in [
                     end
                 end
             else
-                dest[:, i] = copy(unpack_voa(bc, i))
+                dest.u[i] = copy(unpack_voa(bc, i))
             end
         end
         return dest

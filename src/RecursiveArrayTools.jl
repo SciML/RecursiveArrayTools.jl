@@ -121,8 +121,49 @@ module RecursiveArrayTools
     An AbstractDiffEqArray adds the following fields:
 
       - `t` which holds the times of each timestep.
+      - `p` which holds the parameter values.
+      - `sys` which holds the symbolic system (e.g. `SymbolCache`).
+      - `discretes` which holds discrete parameter timeseries.
+      - `interp` which holds an interpolation object for dense output (default `nothing`).
+      - `dense` which indicates whether dense interpolation is available (default `false`).
+
+    ## Callable Interface
+
+    When `interp` is not `nothing`, the array supports callable syntax for interpolation:
+
+    ```julia
+    da(t)                           # interpolate at time t
+    da(t, Val{1})                   # first derivative at time t
+    da(t; idxs=1)                   # interpolate component 1
+    da(t; idxs=[1,2])              # interpolate components 1 and 2
+    da(t; continuity=:right)        # right-continuity at discontinuities
+    ```
+
+    The interpolation object is called as `interp(t, idxs, deriv, p, continuity)`.
     """
     abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
+
+    """
+        AbstractRaggedVectorOfArray{T, N, A}
+
+    Abstract supertype for ragged (non-rectangular) vector-of-array types that
+    preserve the true ragged structure without zero-padding. Unlike
+    `AbstractVectorOfArray`, this does **not** subtype `AbstractArray` — indexing
+    returns actual stored data and `A[:, i]` gives the `i`-th inner array with
+    its original size.
+
+    Concrete subtypes live in the `RecursiveArrayToolsRaggedArrays` subpackage
+    to avoid method invalidations on the hot path.
+    """
+    abstract type AbstractRaggedVectorOfArray{T, N, A} end
+
+    """
+        AbstractRaggedDiffEqArray{T, N, A} <: AbstractRaggedVectorOfArray{T, N, A}
+
+    Abstract supertype for ragged diff-eq arrays that carry a time vector `t`,
+    parameters `p`, and symbolic system `sys` alongside ragged solution data.
+    """
+    abstract type AbstractRaggedDiffEqArray{T, N, A} <: AbstractRaggedVectorOfArray{T, N, A} end
 
     include("utils.jl")
     include("vector_of_array.jl")
@@ -140,6 +181,10 @@ module RecursiveArrayTools
 
     export VectorOfArray, VA, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
         AllObserved, vecarr_to_vectors, tuples
+
+    # Plotting helpers (used by SciMLBase recipe delegation)
+    export DEFAULT_PLOT_FUNC, plottable_indices, plot_indices, getindepsym_defaultt,
+        interpret_vars, add_labels!, diffeq_to_arrays, solplot_vecs_and_labels
 
     export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_push!,
         vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,

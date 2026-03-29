@@ -82,6 +82,40 @@ not indices into `A.u`.
 | `map(f, A)` (map over columns) | `map(f, A.u)` |
 | `A == vec_of_vecs` | `A.u == vec_of_vecs` |
 
+## Interpolation Interface on DiffEqArray
+
+`DiffEqArray` now has `interp` and `dense` fields for interpolation support:
+
+```julia
+# Create with interpolation
+da = DiffEqArray(u, t, p, sys; interp = my_interp, dense = true)
+
+# Callable syntax
+da(0.5)                    # interpolate at t=0.5
+da(0.5, Val{1})            # first derivative at t=0.5
+da([0.1, 0.5, 0.9])       # interpolate at multiple times
+da(0.5; idxs = 1)          # interpolate single component
+da(0.5; idxs = [1, 2])    # interpolate subset of components
+```
+
+The interpolation object must be callable as `interp(t, idxs, deriv, p, continuity)`,
+matching the protocol used by SciMLBase's `LinearInterpolation`, `HermiteInterpolation`,
+and `ConstantInterpolation`.
+
+When `dense = true` and `interp` is provided, `plot(da)` automatically generates
+dense interpolated output instead of plotting only the saved time points.
+
+## Ragged Arrays Sublibrary
+
+`RaggedVectorOfArray` and `RaggedDiffEqArray` are available via:
+
+```julia
+using RecursiveArrayToolsRaggedArrays
+```
+
+These types preserve the true ragged structure without zero-padding, and do **not**
+subtype `AbstractArray`. See the `RecursiveArrayToolsRaggedArrays` subpackage for details.
+
 ## Zygote Compatibility
 
 Some Zygote adjoint rules need updating for the new `AbstractArray` subtyping.
