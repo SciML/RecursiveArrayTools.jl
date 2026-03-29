@@ -642,7 +642,7 @@ end
 # Broadcasting — column-wise, preserving ragged structure
 # ═══════════════════════════════════════════════════════════════════════════════
 
-struct RaggedVectorOfArrayStyle{N} <: Broadcast.AbstractArrayStyle{N} end
+struct RaggedVectorOfArrayStyle{N} <: Broadcast.BroadcastStyle end
 RaggedVectorOfArrayStyle{N}(::Val{N}) where {N} = RaggedVectorOfArrayStyle{N}()
 RaggedVectorOfArrayStyle(::Val{N}) where {N} = RaggedVectorOfArrayStyle{N}()
 
@@ -709,7 +709,10 @@ _ragged_unpack_args(::Any, ::Tuple{}) = ()
     return RaggedVectorOfArray(u)
 end
 
-# Override materialize to skip instantiate (which needs axes/size)
+# Override materialize to skip instantiate (which needs axes/size on non-AbstractArray types)
+# This causes 1 invalidation tree from Base.Broadcast.materialize(::Broadcasted), but it's
+# unavoidable for non-AbstractArray types that need custom broadcasting, and this sublibrary
+# is opt-in to isolate exactly this kind of invalidation from the main path.
 @inline function Broadcast.materialize(bc::Broadcast.Broadcasted{<:RaggedVectorOfArrayStyle})
     return copy(bc)
 end

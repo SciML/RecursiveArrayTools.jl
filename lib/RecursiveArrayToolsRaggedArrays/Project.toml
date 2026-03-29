@@ -4,10 +4,12 @@ version = "1.0.0"
 
 [deps]
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+SnoopCompileCore = "e2b509da-e806-4183-be48-004708413034"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 
 [compat]
-RecursiveArrayTools = "3.48"
+RecursiveArrayTools = "4"
+SnoopCompileCore = "3.1.1"
 SymbolicIndexingInterface = "0.3.35"
 julia = "1.10"
 
