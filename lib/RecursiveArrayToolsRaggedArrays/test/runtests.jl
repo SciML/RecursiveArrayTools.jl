@@ -343,6 +343,161 @@ using Test
         @test r4.dense == true
     end
 
+    # ===================================================================
+    # Tests ported from v3 VectorOfArray ragged behavior
+    # These were the standard ragged tests before v4's AbstractArray
+    # subtyping changed VectorOfArray to zero-pad. The ragged sublibrary
+    # preserves the original non-zero-padded behavior.
+    # ===================================================================
+
+    @testset "v3 ragged indexing (ported)" begin
+        recs = [[1, 2, 3], [3, 5, 6, 7], [8, 9, 10, 11]]
+        r = RaggedVectorOfArray(recs)
+        rd = RaggedDiffEqArray(recs, 1:3)
+
+        # Colon indexing returns actual inner array (no zero-padding)
+        @test r[:, 1] == recs[1]
+        @test rd[:, 1] == recs[1]
+
+        # Subarray indexing into compatible region
+        @test r[1, 1] == 1
+        @test r[2, 1] == 2
+        @test r[1, 2] == 3
+        @test r[2, 2] == 5
+
+        # DiffEqArray column slicing preserves time
+        rd_sub = rd[:, 1:2]
+        @test rd_sub isa RaggedDiffEqArray
+        @test rd_sub.t == [1, 2]
+        rd_sub2 = rd[:, 2:3]
+        @test rd_sub2 isa RaggedDiffEqArray
+        @test rd_sub2.t == [2, 3]
+    end
+
+    @testset "v3 heterogeneous views (ported, issue #453)" begin
+        f = RaggedVectorOfArray([[1.0], [2.0, 3.0]])
+        # Column access respects actual inner array size
+        @test length(f[:, 1]) == 1
+        @test length(f[:, 2]) == 2
+        @test f[:, 1] == [1.0]
+        @test f[:, 2] == [2.0, 3.0]
+
+        f2 = RaggedVectorOfArray([[1.0, 2.0], [3.0]])
+        @test length(f2[:, 1]) == 2
+        @test length(f2[:, 2]) == 1
+        @test f2[:, 1] == [1.0, 2.0]
+        @test f2[:, 2] == [3.0]
+    end
+
+    @testset "v3 end indexing with ragged arrays (ported)" begin
+        ragged = RaggedVectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
+        # A[j, i] accesses the j-th element of i-th inner array
+        @test ragged[2, 1] == 2.0
+        @test ragged[3, 2] == 5.0
+        @test ragged[4, 3] == 9.0
+        @test ragged[1, 1] == 1.0
+        @test ragged[2, 2] == 4.0
+        @test ragged[3, 3] == 8.0
+
+        # Colon returns actual arrays
+        @test ragged[:, 1] == [1.0, 2.0]
+        @test ragged[:, 2] == [3.0, 4.0, 5.0]
+        @test ragged[:, 3] == [6.0, 7.0, 8.0, 9.0]
+
+        # Subset selection
+        r_sub = ragged[:, [2, 3]]
+        @test r_sub isa RaggedVectorOfArray
+        @test r_sub[:, 1] == [3.0, 4.0, 5.0]
+        @test r_sub[:, 2] == [6.0, 7.0, 8.0, 9.0]
+
+        ragged2 = RaggedVectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
+        @test ragged2[4, 1] == 4.0
+        @test ragged2[2, 2] == 6.0
+        @test ragged2[3, 3] == 9.0
+        @test ragged2[3, 1] == 3.0
+        @test ragged2[1, 2] == 5.0
+        @test ragged2[2, 3] == 8.0
+        @test ragged2[2, 1] == 2.0
+        @test ragged2[:, 1] == [1.0, 2.0, 3.0, 4.0]
+        @test ragged2[:, 2] == [5.0, 6.0]
+        @test ragged2[:, 3] == [7.0, 8.0, 9.0]
+    end
+
+    @testset "v3 push! making array ragged (ported)" begin
+        r = RaggedVectorOfArray([[1, 2, 3], [4, 5, 6]])
+        push!(r, [-1, -2, -3, -4])
+
+        # Can still index compatible region
+        @test r[1, 1] == 1
+        @test r[2, 1] == 2
+        @test r[1, 2] == 4
+        @test r[2, 2] == 5
+
+        # Out-of-bounds on shorter arrays throws
+        @test_throws BoundsError r[4, 1]
+        @test_throws BoundsError r[4, 2]
+
+        # Full column access of the new ragged element
+        @test r[:, 3] == [-1, -2, -3, -4]
+        @test length(r) == 3
+    end
+
+    @testset "v3 broadcast assignment (ported, issue #454)" begin
+        u = RaggedVectorOfArray([[1.0], [2.0, 3.0]])
+        @test length(u[:, 1]) == 1
+        @test length(u[:, 2]) == 2
+
+        # Broadcast assignment into a column
+        u[:, 2] = [10.0, 11.0]
+        @test u.u[2] == [10.0, 11.0]
+    end
+
+    @testset "v3 DiffEqArray 2D ragged inner arrays (ported)" begin
+        recs_2d = [rand(2, 3), rand(2, 4)]
+        rd = RaggedDiffEqArray(recs_2d, 1:2)
+        @test rd[:, 1] == recs_2d[1]
+        @test rd[:, 2] == recs_2d[2]
+        @test size(rd[:, 1]) == (2, 3)
+        @test size(rd[:, 2]) == (2, 4)
+
+        # Subset preserves time
+        rd_sub = rd[:, [1, 2]]
+        @test rd_sub isa RaggedDiffEqArray
+        @test rd_sub.t == [1, 2]
+        @test rd_sub[:, 1] == recs_2d[1]
+        @test rd_sub[:, 2] == recs_2d[2]
+    end
+
+    @testset "v3 zero and fill on ragged (ported)" begin
+        r = RaggedVectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0]])
+
+        # zero preserves ragged structure
+        r0 = zero(r)
+        @test r0[:, 1] == [0.0, 0.0]
+        @test r0[:, 2] == [0.0, 0.0, 0.0]
+        @test length(r0[:, 1]) == 2
+        @test length(r0[:, 2]) == 3
+
+        # fill! preserves ragged structure
+        fill!(r0, 42.0)
+        @test r0[:, 1] == [42.0, 42.0]
+        @test r0[:, 2] == [42.0, 42.0, 42.0]
+
+        # .= zero works (the exact bug JoshuaLampert reported)
+        r2 = copy(r)
+        r2 .= zero(r2)
+        @test r2[:, 1] == [0.0, 0.0]
+        @test r2[:, 2] == [0.0, 0.0, 0.0]
+    end
+
+    @testset "v3 component timeseries (ported)" begin
+        r = RaggedVectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0]])
+
+        # A[j, :] returns the j-th component across all inner arrays
+        @test r[1, :] == [1.0, 3.0, 6.0]
+        @test r[2, :] == [2.0, 4.0, 7.0]
+    end
+
     @testset "Type hierarchy" begin
         r = RaggedVectorOfArray([[1, 2], [3, 4, 5]])
         @test r isa RecursiveArrayTools.AbstractRaggedVectorOfArray
