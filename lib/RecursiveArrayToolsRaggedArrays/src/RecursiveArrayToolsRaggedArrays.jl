@@ -267,6 +267,21 @@ Base.iterate(r::AbstractRaggedVectorOfArray, state) = iterate(r.u, state)
 Base.firstindex(r::AbstractRaggedVectorOfArray) = firstindex(r.u)
 Base.lastindex(r::AbstractRaggedVectorOfArray) = lastindex(r.u)
 
+# lastindex with dimension — needed for `end` in multi-index expressions like r[end, 2]
+# dim N (last) = number of inner arrays; dim 1..N-1 = ragged, use max across inner arrays
+function Base.lastindex(r::AbstractRaggedVectorOfArray{T, N}, d::Int) where {T, N}
+    if d == N
+        return length(r.u)
+    else
+        return isempty(r.u) ? 0 : maximum(size(u, d) for u in r.u)
+    end
+end
+
+# axes with dimension — needed for `end` translation and range indexing
+function Base.axes(r::AbstractRaggedVectorOfArray{T, N}, d::Int) where {T, N}
+    return Base.OneTo(lastindex(r, d))
+end
+
 Base.keys(r::AbstractRaggedVectorOfArray) = keys(r.u)
 Base.eachindex(r::AbstractRaggedVectorOfArray) = eachindex(r.u)
 
@@ -420,6 +435,45 @@ function Base.getindex(r::RaggedVectorOfArray, i::Int, ::Colon)
 end
 function Base.getindex(r::RaggedDiffEqArray, i::Int, ::Colon)
     return [u[i] for u in r.u]
+end
+
+# Range indexing into inner arrays: r[1:3, i] or r[2:end, i]
+function Base.getindex(
+        r::AbstractRaggedVectorOfArray, I::AbstractRange, col::Int
+    )
+    return r.u[col][I]
+end
+
+# r[1:end, :] — range of components across all columns
+function Base.getindex(
+        r::AbstractRaggedVectorOfArray, I::AbstractRange, ::Colon
+    )
+    return [u[I] for u in r.u]
+end
+
+# A[:, range] — column subset with UnitRange (needed for A[:, 2:end])
+function Base.getindex(
+        r::RaggedVectorOfArray, ::Colon, I::AbstractRange
+    )
+    return RaggedVectorOfArray(r.u[I])
+end
+function Base.getindex(
+        r::RaggedDiffEqArray, ::Colon, I::AbstractRange
+    )
+    return RaggedDiffEqArray(r.u[I], r.t[I], r.p, r.sys;
+        discretes = r.discretes, interp = r.interp, dense = r.dense)
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Views
+# ═══════════════════════════════════════════════════════════════════════════════
+
+function Base.view(r::AbstractRaggedVectorOfArray, ::Colon, i::Int)
+    return view(r.u[i], :)
+end
+
+function Base.view(r::AbstractRaggedVectorOfArray, I, i::Int)
+    return view(r.u[i], I)
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
