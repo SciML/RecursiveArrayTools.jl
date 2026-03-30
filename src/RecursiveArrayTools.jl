@@ -176,9 +176,13 @@ module RecursiveArrayTools
     # AbstractVectorOfArray uses AbstractArray's show
 
     import GPUArraysCore
-    Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
-    # Disambiguate with CuArray(::AbstractArray{T,N}) by providing the typed method
-    (T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray{<:Any, N}) where {N} = T(stack(VA.u))
+    Base.convert(::Type{T}, VA::AbstractVectorOfArray) where {T <: GPUArraysCore.AnyGPUArray} = T(stack(VA.u))
+    # Constructor: CuArray(va) etc. Must disambiguate with CuArray(::AbstractArray{T,N})
+    # from CUDA.jl. AbstractVectorOfArray{T,N} is more specific than AbstractArray{T,N}
+    # on arg2, matching {T,N} ensures equal specificity to CUDA's method.
+    function (::Type{GA})(VA::AbstractVectorOfArray{T, N}) where {T, N, GA <: GPUArraysCore.AbstractGPUArray}
+        return GA(stack(VA.u))
+    end
 
     export VectorOfArray, VA, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
         AllObserved, vecarr_to_vectors, tuples
