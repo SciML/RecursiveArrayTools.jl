@@ -1368,63 +1368,51 @@ end
         tspan = nothing, plotat = nothing,
         idxs = nothing)
 
-    # If the array has no callable interp and it's a simple case, use the fast path
-    has_interp = hasproperty(VA, :interp) && VA.interp !== nothing
-    if !has_interp && idxs === nothing && plotat === nothing
-        # Simple fast path: just plot t vs u
-        indepsyms = independent_variable_symbols(VA)
-        xguide --> (isempty(indepsyms) ? "" : string(indepsyms[1]))
-        varsyms = variable_symbols(VA)
-        label --> (isempty(varsyms) ? "" : reshape(string.(varsyms), 1, :))
-        VA.t, VA'
+    idxs_input = idxs === nothing ? plottable_indices(VA.u[1]) : idxs
+    if !(idxs_input isa Union{Tuple, AbstractArray})
+        vars = interpret_vars([idxs_input], VA)
     else
-        # Full-featured path: interpret vars, handle phase plots, use callable
-        idxs_input = idxs === nothing ? plottable_indices(VA.u[1]) : idxs
-        if !(idxs_input isa Union{Tuple, AbstractArray})
-            vars = interpret_vars([idxs_input], VA)
-        else
-            vars = interpret_vars(idxs_input, VA)
-        end
-
-        tdir = sign(VA.t[end] - VA.t[1])
-        xflip --> tdir < 0
-        seriestype --> :path
-
-        tscale = get(plotattributes, :xscale, :identity)
-        plot_vecs, labels = diffeq_to_arrays(
-            VA, denseplot, plotdensity, tspan, vars, tscale, plotat
-        )
-
-        # Axis labels for tuple-style idxs
-        if idxs_input isa Tuple && vars[1][1] === DEFAULT_PLOT_FUNC
-            for (guide, idx) in [(:xguide, 2), (:yguide, 3)]
-                if idx <= length(vars[1])
-                    guide --> _var_label(VA, vars[1][idx])
-                end
-            end
-            if length(vars[1]) > 3
-                zguide --> _var_label(VA, vars[1][4])
-            end
-        end
-
-        # Default xguide for time-vs-variable plots
-        if all(x -> (x[2] isa Integer && x[2] == 0) ||
-                    isequal(x[2], getindepsym_defaultt(VA)), vars)
-            xguide --> "$(getindepsym_defaultt(VA))"
-            if tspan === nothing
-                if tdir > 0
-                    xlims --> (VA.t[1], VA.t[end])
-                else
-                    xlims --> (VA.t[end], VA.t[1])
-                end
-            else
-                xlims --> (tspan[1], tspan[end])
-            end
-        end
-
-        label --> reshape(labels, 1, length(labels))
-        (plot_vecs...,)
+        vars = interpret_vars(idxs_input, VA)
     end
+
+    tdir = sign(VA.t[end] - VA.t[1])
+    xflip --> tdir < 0
+    seriestype --> :path
+
+    tscale = get(plotattributes, :xscale, :identity)
+    plot_vecs, labels = diffeq_to_arrays(
+        VA, denseplot, plotdensity, tspan, vars, tscale, plotat
+    )
+
+    # Axis labels for tuple-style idxs
+    if idxs_input isa Tuple && vars[1][1] === DEFAULT_PLOT_FUNC
+        for (guide, idx) in [(:xguide, 2), (:yguide, 3)]
+            if idx <= length(vars[1])
+                guide --> _var_label(VA, vars[1][idx])
+            end
+        end
+        if length(vars[1]) > 3
+            zguide --> _var_label(VA, vars[1][4])
+        end
+    end
+
+    # Default xguide for time-vs-variable plots
+    if all(x -> (x[2] isa Integer && x[2] == 0) ||
+                isequal(x[2], getindepsym_defaultt(VA)), vars)
+        xguide --> "$(getindepsym_defaultt(VA))"
+        if tspan === nothing
+            if tdir > 0
+                xlims --> (VA.t[1], VA.t[end])
+            else
+                xlims --> (VA.t[end], VA.t[1])
+            end
+        else
+            xlims --> (tspan[1], tspan[end])
+        end
+    end
+
+    label --> reshape(labels, 1, length(labels))
+    (plot_vecs...,)
 end
 @recipe function f(VA::DiffEqArray{T, 1}) where {T}
     VA.t, VA.u
