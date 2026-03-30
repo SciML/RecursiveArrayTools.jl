@@ -15,6 +15,7 @@ StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 
 [weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
@@ -29,6 +30,7 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [extensions]
+RecursiveArrayToolsCUDAExt = "CUDA"
 RecursiveArrayToolsFastBroadcastExt = "FastBroadcast"
 RecursiveArrayToolsForwardDiffExt = "ForwardDiff"
 RecursiveArrayToolsKernelAbstractionsExt = "KernelAbstractions"
@@ -46,6 +48,7 @@ RecursiveArrayToolsZygoteExt = "Zygote"
 Adapt = "4"
 Aqua = "0.8"
 ArrayInterface = "7.16"
+CUDA = "5"
 DocStringExtensions = "0.9.3"
 FastBroadcast = "0.3.5"
 ForwardDiff = "0.10.38, 1"
