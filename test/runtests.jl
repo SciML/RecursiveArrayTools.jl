@@ -37,6 +37,7 @@ end
         @time @safetestset "Table traits" include("tabletraits.jl")
         @time @safetestset "StaticArrays Tests" include("copy_static_array_test.jl")
         @time @safetestset "Linear Algebra Tests" include("linalg.jl")
+        @time @safetestset "Adjoint Tests" include("adjoints.jl")
         @time @safetestset "Measurement Tests" include("measurements.jl")
     end
 
@@ -50,7 +51,8 @@ end
         @time @safetestset "Event Tests with ArrayPartition" include("downstream/downstream_events.jl")
         @time @safetestset "Measurements and Units" include("downstream/measurements_and_units.jl")
         @time @safetestset "TrackerExt" include("downstream/TrackerExt.jl")
-        @time @safetestset "Adjoint Tests" include("downstream/adjoints.jl")
+        # TODO: re-enable after SciMLBase compat bump for RAT v4 (SciML/SciMLBase.jl#1297)
+        # @time @safetestset "Downstream Adjoint Tests" include("downstream/adjoints.jl")
     end
 
     if GROUP == "SymbolicIndexingInterface" || GROUP == "Downstream"
