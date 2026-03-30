@@ -178,7 +178,14 @@ recursivecopy!(dest_ap, src_ap)
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
-# any
+# any/all — optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll.
+# Without the extension, these use the AbstractArray element-by-element fallback.
+# `using RecursiveArrayToolsArrayPartitionAnyAll` enables ~1.5-1.8x faster partition-level
+# short-circuiting. These @test_broken verify the optimized methods are NOT active.
+@test_broken which(any, Tuple{Function, ArrayPartition}).module !== Base
+@test_broken which(all, Tuple{Function, ArrayPartition}).module !== Base
+
+# Correctness tests still pass via AbstractArray fallback
 @test !any(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !any(isnan, AP[[3.0, 4.0]])
 @test  any(isnan, AP[[NaN], [3.0, 4.0]])
@@ -187,7 +194,6 @@ recursivecopy!(dest_ap, src_ap)
 @test  any(isnan, AP[[2], [NaN]])
 @test  any(isnan, AP[[2], AP[[NaN]]])
 
-# all
 @test !all(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !all(isnan, AP[[3.0, 4.0]])
 @test !all(isnan, AP[[NaN], [3.0, 4.0]])
@@ -382,7 +388,8 @@ for i in 1:length(part_a.x)
     @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end
 
-# ArrayPartition `all` with a functor
+# ArrayPartition `all` with a functor (works via AbstractArray fallback,
+# optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll)
 struct TestIsnanFunctor end
 (::TestIsnanFunctor)(x) = isnan(x)
 @test all(TestIsnanFunctor(), AP[[NaN], [NaN]])
