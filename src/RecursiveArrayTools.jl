@@ -177,7 +177,8 @@ module RecursiveArrayTools
 
     import GPUArraysCore
     Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
-    (T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray) = T(Array(VA))
+    # Disambiguate with CuArray(::AbstractArray{T,N}) by providing the typed method
+    (T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray{<:Any, N}) where {N} = T(stack(VA.u))
 
     export VectorOfArray, VA, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
         AllObserved, vecarr_to_vectors, tuples

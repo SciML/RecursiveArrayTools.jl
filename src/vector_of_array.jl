@@ -1118,6 +1118,16 @@ vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u
 # linear algebra
 ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
 
+# Type-stable sum/mapreduce that avoids inference issues on Julia 1.10
+# with deeply nested VectorOfArray type parameters
+function Base.sum(VA::AbstractVectorOfArray{T}) where {T}
+    return sum(sum, VA.u)::T
+end
+
+function Base.sum(f::F, VA::AbstractVectorOfArray{T}) where {F, T}
+    return sum(u -> sum(f, u), VA.u)
+end
+
 # make it show just like its data
 function Base.show(io::IO, m::MIME"text/plain", x::AbstractVectorOfArray)
     (println(io, summary(x), ':'); show(io, m, x.u))
