@@ -740,3 +740,38 @@ ODEProblem(func, AP[ [1.,2.,3.], [1. 2.;3. 4.] ], (0, 1)) |> solve
 
 """
 struct AP end
+
+# any/all: provide methods that work partition-by-partition to avoid scalar indexing on GPUs.
+# Without RecursiveArrayToolsArrayPartitionAnyAll, the AbstractArray fallback iterates
+# element-by-element, which triggers scalar GPU indexing errors. These methods check for
+# GPU sub-arrays and give a helpful error, or fall through to the partition-level implementation.
+const _ANYALL_HINT = """
+    `any`/`all` on `ArrayPartition` with GPU arrays requires loading the subpackage:
+        using RecursiveArrayToolsArrayPartitionAnyAll
+    This provides optimized partition-level `any`/`all` that avoids scalar GPU indexing.
+    """
+
+function _check_gpu_anyall(A::ArrayPartition)
+    for x in A.x
+        if x isa GPUArraysCore.AnyGPUArray
+            error(_ANYALL_HINT)
+        end
+    end
+end
+
+function Base.any(f::Function, A::ArrayPartition)
+    _check_gpu_anyall(A)
+    return Base.invoke(any, Tuple{Function, AbstractArray}, f, A)
+end
+function Base.all(f::Function, A::ArrayPartition)
+    _check_gpu_anyall(A)
+    return Base.invoke(all, Tuple{Function, AbstractArray}, f, A)
+end
+function Base.any(f, A::ArrayPartition)
+    _check_gpu_anyall(A)
+    return Base.invoke(any, Tuple{Any, AbstractArray}, f, A)
+end
+function Base.all(f, A::ArrayPartition)
+    _check_gpu_anyall(A)
+    return Base.invoke(all, Tuple{Any, AbstractArray}, f, A)
+end

@@ -178,14 +178,16 @@ recursivecopy!(dest_ap, src_ap)
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
-# any/all — optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll.
-# Without the extension, these use the AbstractArray element-by-element fallback.
-# `using RecursiveArrayToolsArrayPartitionAnyAll` enables ~1.5-1.8x faster partition-level
-# short-circuiting. These @test_broken verify the optimized methods are NOT active.
-@test_broken which(any, Tuple{Function, ArrayPartition}).module !== Base
-@test_broken which(all, Tuple{Function, ArrayPartition}).module !== Base
+# any/all — the base package defines GPU-aware methods that error for GPU sub-arrays
+# and fall through to AbstractArray iteration for CPU arrays. The optimized partition-level
+# iteration (1.5-1.8x faster) requires `using RecursiveArrayToolsArrayPartitionAnyAll`.
+# These @test_broken verify the optimized extension is NOT loaded.
+@test_broken occursin("ArrayPartitionAnyAll",
+    string(which(any, Tuple{Function, ArrayPartition}).module))
+@test_broken occursin("ArrayPartitionAnyAll",
+    string(which(all, Tuple{Function, ArrayPartition}).module))
 
-# Correctness tests still pass via AbstractArray fallback
+# Correctness tests pass via the base package methods (element-by-element on CPU)
 @test !any(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !any(isnan, AP[[3.0, 4.0]])
 @test  any(isnan, AP[[NaN], [3.0, 4.0]])

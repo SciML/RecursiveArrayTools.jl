@@ -45,6 +45,25 @@ end
         @time @safetestset "SymbolicIndexingInterface API test" include("symbolic_indexing_interface_test.jl")
     end
 
+    if GROUP == "Subpackages" || GROUP == "All"
+        # Test that loading RecursiveArrayToolsArrayPartitionAnyAll overrides any/all
+        Pkg.develop(PackageSpec(
+            path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")))
+        @time @safetestset "ArrayPartition AnyAll Subpackage" begin
+            using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, Test
+            # Verify optimized methods are active
+            m_any = which(any, Tuple{Function, ArrayPartition})
+            m_all = which(all, Tuple{Function, ArrayPartition})
+            @test occursin("ArrayPartitionAnyAll", string(m_any.module))
+            @test occursin("ArrayPartitionAnyAll", string(m_all.module))
+            # Verify correctness
+            @test  any(isnan, ArrayPartition([NaN], [1.0]))
+            @test !any(isnan, ArrayPartition([1.0], [2.0]))
+            @test  all(isnan, ArrayPartition([NaN], [NaN]))
+            @test !all(isnan, ArrayPartition([NaN], [1.0]))
+        end
+    end
+
     if GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "ODE Solve Tests" include("downstream/odesolve.jl")
