@@ -741,37 +741,56 @@ ODEProblem(func, AP[ [1.,2.,3.], [1. 2.;3. 4.] ], (0, 1)) |> solve
 """
 struct AP end
 
-# any/all: provide methods that work partition-by-partition to avoid scalar indexing on GPUs.
-# Without RecursiveArrayToolsArrayPartitionAnyAll, the AbstractArray fallback iterates
-# element-by-element, which triggers scalar GPU indexing errors. These methods check for
-# GPU sub-arrays and give a helpful error, or fall through to the partition-level implementation.
-const _ANYALL_HINT = """
-    `any`/`all` on `ArrayPartition` with GPU arrays requires loading the subpackage:
-        using RecursiveArrayToolsArrayPartitionAnyAll
-    This provides optimized partition-level `any`/`all` that avoids scalar GPU indexing.
-    """
+# any/all on ArrayPartition: partition-level iteration avoids scalar GPU indexing
+# and is ~1.5-1.8x faster than element-by-element AbstractArray fallback.
+#
+# On Julia ≥ 1.13, Base no longer restricts any/all to f::Function, so defining
+# any(f, ::ArrayPartition) causes minimal invalidation. On older Julia, the
+# f::Function methods caused ~780 invalidations, so the optimized methods were
+# separated into RecursiveArrayToolsArrayPartitionAnyAll.
+#
+# We now define them inline with a GPU check: if sub-arrays are GPU arrays and
+# we're on old Julia without the extension, give a helpful error.
+@static if VERSION >= v"1.13.0-DEV.0"
+    # Julia 1.13+: safe to define directly, minimal invalidation
+    Base.any(f, A::ArrayPartition) = any((any(f, x) for x in A.x))
+    Base.any(f::Function, A::ArrayPartition) = any((any(f, x) for x in A.x))
+    Base.any(A::ArrayPartition) = any(identity, A)
+    Base.all(f, A::ArrayPartition) = all((all(f, x) for x in A.x))
+    Base.all(f::Function, A::ArrayPartition) = all((all(f, x) for x in A.x))
+    Base.all(A::ArrayPartition) = all(identity, A)
+else
+    # Julia < 1.13: only define GPU-check methods that error for GPU arrays
+    # and fall through to AbstractArray for CPU. The optimized partition-level
+    # methods are in RecursiveArrayToolsArrayPartitionAnyAll to avoid invalidations.
+    const _ANYALL_GPU_HINT = """
+        `any`/`all` on `ArrayPartition` with GPU arrays requires loading the subpackage:
+            using RecursiveArrayToolsArrayPartitionAnyAll
+        This provides optimized partition-level `any`/`all` that avoids scalar GPU indexing.
+        """
 
-function _check_gpu_anyall(A::ArrayPartition)
-    for x in A.x
-        if x isa GPUArraysCore.AnyGPUArray
-            error(_ANYALL_HINT)
+    function _check_gpu_anyall(A::ArrayPartition)
+        for x in A.x
+            if x isa GPUArraysCore.AnyGPUArray
+                error(_ANYALL_GPU_HINT)
+            end
         end
     end
-end
 
-function Base.any(f::Function, A::ArrayPartition)
-    _check_gpu_anyall(A)
-    return Base.invoke(any, Tuple{Function, AbstractArray}, f, A)
-end
-function Base.all(f::Function, A::ArrayPartition)
-    _check_gpu_anyall(A)
-    return Base.invoke(all, Tuple{Function, AbstractArray}, f, A)
-end
-function Base.any(f, A::ArrayPartition)
-    _check_gpu_anyall(A)
-    return Base.invoke(any, Tuple{Any, AbstractArray}, f, A)
-end
-function Base.all(f, A::ArrayPartition)
-    _check_gpu_anyall(A)
-    return Base.invoke(all, Tuple{Any, AbstractArray}, f, A)
+    function Base.any(f::Function, A::ArrayPartition)
+        _check_gpu_anyall(A)
+        return Base.invoke(any, Tuple{Function, AbstractArray}, f, A)
+    end
+    function Base.all(f::Function, A::ArrayPartition)
+        _check_gpu_anyall(A)
+        return Base.invoke(all, Tuple{Function, AbstractArray}, f, A)
+    end
+    function Base.any(f, A::ArrayPartition)
+        _check_gpu_anyall(A)
+        return Base.invoke(any, Tuple{Any, AbstractArray}, f, A)
+    end
+    function Base.all(f, A::ArrayPartition)
+        _check_gpu_anyall(A)
+        return Base.invoke(all, Tuple{Any, AbstractArray}, f, A)
+    end
 end

@@ -178,16 +178,21 @@ recursivecopy!(dest_ap, src_ap)
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
-# any/all — the base package defines GPU-aware methods that error for GPU sub-arrays
-# and fall through to AbstractArray iteration for CPU arrays. The optimized partition-level
-# iteration (1.5-1.8x faster) requires `using RecursiveArrayToolsArrayPartitionAnyAll`.
-# These @test_broken verify the optimized extension is NOT loaded.
-@test_broken occursin("ArrayPartitionAnyAll",
-    string(which(any, Tuple{Function, ArrayPartition}).module))
-@test_broken occursin("ArrayPartitionAnyAll",
-    string(which(all, Tuple{Function, ArrayPartition}).module))
+# any/all — on Julia ≥ 1.13, optimized partition-level methods are defined inline.
+# On older Julia, they require `using RecursiveArrayToolsArrayPartitionAnyAll`.
+@static if VERSION >= v"1.13.0-DEV.0"
+    # Optimized methods are always active on 1.13+
+    @test which(any, Tuple{Function, ArrayPartition}).module === RecursiveArrayTools
+    @test which(all, Tuple{Function, ArrayPartition}).module === RecursiveArrayTools
+else
+    # On older Julia, optimized methods require the extension
+    @test_broken occursin("ArrayPartitionAnyAll",
+        string(which(any, Tuple{Function, ArrayPartition}).module))
+    @test_broken occursin("ArrayPartitionAnyAll",
+        string(which(all, Tuple{Function, ArrayPartition}).module))
+end
 
-# Correctness tests pass via the base package methods (element-by-element on CPU)
+# Correctness tests
 @test !any(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !any(isnan, AP[[3.0, 4.0]])
 @test  any(isnan, AP[[NaN], [3.0, 4.0]])
