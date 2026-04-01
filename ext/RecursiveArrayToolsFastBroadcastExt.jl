@@ -2,15 +2,15 @@ module RecursiveArrayToolsFastBroadcastExt
 
 using RecursiveArrayTools
 using FastBroadcast
+using FastBroadcast: Serial
 using StaticArraysCore
 
 const AbstractVectorOfSArray = AbstractVectorOfArray{
     T, N, <:AbstractVector{<:StaticArraysCore.SArray},
 } where {T, N}
 
-# Override the base 2-arg path (called by Serial dispatch and direct macro path)
 @inline function FastBroadcast.fast_materialize!(
-        dst::AbstractVectorOfSArray,
+        ::Serial, dst::AbstractVectorOfSArray,
         bc::Broadcast.Broadcasted{S}
     ) where {S}
     if FastBroadcast.use_fast_broadcast(S)
