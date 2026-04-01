@@ -223,12 +223,6 @@ end
     end
 end
 Base.filter(f, A::ArrayPartition) = ArrayPartition(map(x -> filter(f, x), A.x))
-Base.any(f, A::ArrayPartition) = any((any(f, x) for x in A.x))
-Base.any(f::Function, A::ArrayPartition) = any((any(f, x) for x in A.x))
-Base.any(A::ArrayPartition) = any(identity, A)
-Base.all(f, A::ArrayPartition) = all((all(f, x) for x in A.x))
-Base.all(f::Function, A::ArrayPartition) = all((all(f, x) for x in A.x))
-Base.all(A::ArrayPartition) = all(identity, A)
 
 for type in [AbstractArray, PermutedDimsArray]
     @eval function Base.copyto!(dest::$(type), A::ArrayPartition)
@@ -746,4 +740,10 @@ ODEProblem(func, AP[ [1.,2.,3.], [1. 2.;3. 4.] ], (0, 1)) |> solve
 
 """
 struct AP end
-Base.getindex(::Type{AP}, xs...) = ArrayPartition(xs...)
+
+# Optimized partition-level any/all for ArrayPartition lives in
+# RecursiveArrayToolsArrayPartitionAnyAll to avoid ~780 invalidations.
+# Without the extension, any/all uses the AbstractArray element-by-element
+# fallback, which triggers scalar indexing errors on GPU arrays.
+# Load the subpackage to fix:
+#     using RecursiveArrayToolsArrayPartitionAnyAll

@@ -1,4 +1,10 @@
 using Pkg
+# Install the ShorthandConstructors subpackage for tests that need VA[...]/AP[...] syntax
+Pkg.develop(
+    PackageSpec(
+        path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors")
+    )
+)
 using RecursiveArrayTools
 using Test
 using SafeTestsets
@@ -14,6 +20,11 @@ end
 function activate_gpu_env()
     Pkg.activate("gpu")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    Pkg.develop(
+        PackageSpec(
+            path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")
+        )
+    )
     return Pkg.instantiate()
 end
 
@@ -42,12 +53,36 @@ end
         @time @safetestset "SymbolicIndexingInterface API test" include("symbolic_indexing_interface_test.jl")
     end
 
+    if GROUP == "Subpackages" || GROUP == "All"
+        # Test that loading RecursiveArrayToolsArrayPartitionAnyAll overrides any/all
+        Pkg.develop(
+            PackageSpec(
+                path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")
+            )
+        )
+        @time @safetestset "ArrayPartition AnyAll Subpackage" begin
+            using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, Test
+            # Verify optimized methods are active
+            m_any = which(any, Tuple{Function, ArrayPartition})
+            m_all = which(all, Tuple{Function, ArrayPartition})
+            @test occursin("ArrayPartitionAnyAll", string(m_any.module))
+            @test occursin("ArrayPartitionAnyAll", string(m_all.module))
+            # Verify correctness
+            @test  any(isnan, ArrayPartition([NaN], [1.0]))
+            @test !any(isnan, ArrayPartition([1.0], [2.0]))
+            @test  all(isnan, ArrayPartition([NaN], [NaN]))
+            @test !all(isnan, ArrayPartition([NaN], [1.0]))
+        end
+    end
+
     if GROUP == "Downstream"
         activate_downstream_env()
         @time @safetestset "ODE Solve Tests" include("downstream/odesolve.jl")
         @time @safetestset "Event Tests with ArrayPartition" include("downstream/downstream_events.jl")
         @time @safetestset "Measurements and Units" include("downstream/measurements_and_units.jl")
         @time @safetestset "TrackerExt" include("downstream/TrackerExt.jl")
+        # TODO: re-enable after SciMLBase compat bump for RAT v4 (SciML/SciMLBase.jl#1297)
+        # @time @safetestset "Downstream Adjoint Tests" include("downstream/adjoints.jl")
     end
 
     if GROUP == "SymbolicIndexingInterface" || GROUP == "Downstream"

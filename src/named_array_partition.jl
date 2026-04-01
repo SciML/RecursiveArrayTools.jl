@@ -92,9 +92,10 @@ end
 
 Base.size(x::NamedArrayPartition) = size(ArrayPartition(x))
 Base.length(x::NamedArrayPartition) = length(ArrayPartition(x))
-Base.getindex(x::NamedArrayPartition, args...) = getindex(ArrayPartition(x), args...)
-
-Base.setindex!(x::NamedArrayPartition, args...) = setindex!(ArrayPartition(x), args...)
+# Delegate indexing to the underlying ArrayPartition.
+# Use concrete index types to avoid invalidating AbstractArray's generic setindex!.
+Base.@propagate_inbounds Base.getindex(x::NamedArrayPartition, i::Int) = ArrayPartition(x)[i]
+Base.@propagate_inbounds Base.setindex!(x::NamedArrayPartition, v, i::Int) = (ArrayPartition(x)[i] = v)
 function Base.map(f, x::NamedArrayPartition)
     return NamedArrayPartition(map(f, ArrayPartition(x)), getfield(x, :names_to_indices))
 end

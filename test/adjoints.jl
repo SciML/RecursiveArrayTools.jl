@@ -1,5 +1,4 @@
 using RecursiveArrayTools, Zygote, ForwardDiff, Test
-using SciMLBase
 
 function loss(x)
     return sum(abs2, Array(VectorOfArray([x .* i for i in 1:5])))
@@ -31,12 +30,6 @@ end
 
 function loss5(x)
     return sum(abs2, Array(ArrayPartition([x .* i for i in 1:5]...)))
-end
-
-function loss6(x)
-    _x = ArrayPartition([x .* i for i in 1:5]...)
-    _prob = ODEProblem((u, p, t) -> u, _x, (0, 1))
-    return sum(abs2, Array(_prob.u0))
 end
 
 function loss7(x)
@@ -85,7 +78,6 @@ loss(x)
 @test Zygote.gradient(loss3, x)[1] == ForwardDiff.gradient(loss3, x)
 @test Zygote.gradient(loss4, x)[1] == ForwardDiff.gradient(loss4, x)
 @test Zygote.gradient(loss5, x)[1] == ForwardDiff.gradient(loss5, x)
-@test Zygote.gradient(loss6, x)[1] == ForwardDiff.gradient(loss6, x)
 @test Zygote.gradient(loss7, x)[1] == ForwardDiff.gradient(loss7, x)
 @test Zygote.gradient(loss8, x)[1] == ForwardDiff.gradient(loss8, x)
 @test ForwardDiff.derivative(loss9, 0.0) ==

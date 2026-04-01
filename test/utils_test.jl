@@ -1,4 +1,5 @@
 using RecursiveArrayTools, StaticArrays
+using RecursiveArrayToolsShorthandConstructors
 using Test
 
 t = collect(range(0, stop = 10, length = 200))
@@ -112,15 +113,15 @@ recursivefill!(x, true)
 
     x_voa = VectorOfArray(x)
     @test eltype(x_voa) === Vec3
-    @test first(x_voa) isa AbstractVector{Vec3}
+    @test first(x_voa.u) isa AbstractVector{Vec3}
 
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, true)
-    @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
+    @test all(y_voa.u[n] == fill(ones(Vec3), n) for n in 1:4)
 
     y_voa = recursivecopy(x_voa)
     recursivefill!(y_voa, ones(Vec3))
-    @test all(y_voa[:, n] == fill(ones(Vec3), n) for n in 1:4)
+    @test all(y_voa.u[n] == fill(ones(Vec3), n) for n in 1:4)
 end
 
 @testset "VectorOfArray recursivecopy!" begin

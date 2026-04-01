@@ -1,0 +1,16 @@
+name = "RecursiveArrayToolsShorthandConstructors"
+uuid = "39fb7555-b4ad-4efd-8abe-30331df017d3"
+version = "1.0.0"
+
+[deps]
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+
+[compat]
+RecursiveArrayTools = "4"
+julia = "1.10"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

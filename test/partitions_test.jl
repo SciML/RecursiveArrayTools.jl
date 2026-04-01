@@ -1,4 +1,5 @@
 using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
+using RecursiveArrayToolsShorthandConstructors
 
 @test length(ArrayPartition()) == 0
 @test isempty(ArrayPartition())
@@ -177,7 +178,13 @@ recursivecopy!(dest_ap, src_ap)
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
-# any
+# any/all — optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll
+# to avoid ~780 invalidations. Without the extension, Base's AbstractArray fallback is used.
+# On GPU arrays, the fallback triggers scalar indexing errors — load the subpackage to fix.
+@test which(any, Tuple{Function, ArrayPartition}).module === Base
+@test which(all, Tuple{Function, ArrayPartition}).module === Base
+
+# Correctness tests (work via AbstractArray fallback on CPU)
 @test !any(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !any(isnan, AP[[3.0, 4.0]])
 @test  any(isnan, AP[[NaN], [3.0, 4.0]])
@@ -186,7 +193,6 @@ recursivecopy!(dest_ap, src_ap)
 @test  any(isnan, AP[[2], [NaN]])
 @test  any(isnan, AP[[2], AP[[NaN]]])
 
-# all
 @test !all(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !all(isnan, AP[[3.0, 4.0]])
 @test !all(isnan, AP[[NaN], [3.0, 4.0]])
@@ -381,7 +387,8 @@ for i in 1:length(part_a.x)
     @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end
 
-# ArrayPartition `all` with a functor
+# ArrayPartition `all` with a functor (works via AbstractArray fallback,
+# optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll)
 struct TestIsnanFunctor end
 (::TestIsnanFunctor)(x) = isnan(x)
 @test all(TestIsnanFunctor(), AP[[NaN], [NaN]])

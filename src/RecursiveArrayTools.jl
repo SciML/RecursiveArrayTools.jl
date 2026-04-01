@@ -26,9 +26,13 @@ module RecursiveArrayTools
 
     !!! note
 
-        In 2023 the linear indexing `A[i]` was deprecated. It previously had the behavior that `A[i] = A.u[i]`. However, this is incompatible with standard `AbstractArray` interfaces, Since if `A = VectorOfArray([[1,2],[3,4]])` and `A` is supposed to act like `[1 3; 2 4]`, then there is a difference `A[1] = [1,2]` for the VectorOfArray while `A[1] = 1` for the matrix. This causes many issues if `AbstractVectorOfArray <: AbstractArray`. Thus we plan in 2026 to complete the deprecation and thus have a breaking update where `A[i]` matches the linear indexing of an`AbstractArray`, and then making `AbstractVectorOfArray <: AbstractArray`. Until then, `AbstractVectorOfArray` due to
-        this interface break but manually implements an `AbstractArray`-like interface for
-        future compatibility.
+        As of v4.0, `AbstractVectorOfArray <: AbstractArray`. Linear indexing `A[i]`
+        now returns the `i`th element in column-major order, matching standard Julia
+        `AbstractArray` behavior. To access the `i`th inner array, use `A.u[i]` or
+        `A[:, i]`. For ragged arrays (inner arrays of different sizes), `size(A)`
+        reports the maximum size in each dimension and out-of-bounds elements are
+        interpreted as zero (sparse representation). This means all standard linear
+        algebra operations work out of the box.
 
     ## Fields
 
@@ -99,7 +103,7 @@ module RecursiveArrayTools
     to make the array type match the internal array type (for example, if `A` is an array
     of GPU arrays, `stack(A)` will be a GPU array).
     """
-    abstract type AbstractVectorOfArray{T, N, A} end
+    abstract type AbstractVectorOfArray{T, N, A} <: AbstractArray{T, N} end
 
     """
         AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
@@ -117,24 +121,73 @@ module RecursiveArrayTools
     An AbstractDiffEqArray adds the following fields:
 
       - `t` which holds the times of each timestep.
+      - `p` which holds the parameter values.
+      - `sys` which holds the symbolic system (e.g. `SymbolCache`).
+      - `discretes` which holds discrete parameter timeseries.
+      - `interp` which holds an interpolation object for dense output (default `nothing`).
+      - `dense` which indicates whether dense interpolation is available (default `false`).
+
+    ## Callable Interface
+
+    When `interp` is not `nothing`, the array supports callable syntax for interpolation:
+
+    ```julia
+    da(t)                           # interpolate at time t
+    da(t, Val{1})                   # first derivative at time t
+    da(t; idxs=1)                   # interpolate component 1
+    da(t; idxs=[1,2])              # interpolate components 1 and 2
+    da(t; continuity=:right)        # right-continuity at discontinuities
+    ```
+
+    The interpolation object is called as `interp(t, idxs, deriv, p, continuity)`.
     """
     abstract type AbstractDiffEqArray{T, N, A} <: AbstractVectorOfArray{T, N, A} end
+
+    """
+        AbstractRaggedVectorOfArray{T, N, A}
+
+    Abstract supertype for ragged (non-rectangular) vector-of-array types that
+    preserve the true ragged structure without zero-padding. Unlike
+    `AbstractVectorOfArray`, this does **not** subtype `AbstractArray` — indexing
+    returns actual stored data and `A[:, i]` gives the `i`-th inner array with
+    its original size.
+
+    Concrete subtypes live in the `RecursiveArrayToolsRaggedArrays` subpackage
+    to avoid method invalidations on the hot path.
+    """
+    abstract type AbstractRaggedVectorOfArray{T, N, A} end
+
+    """
+        AbstractRaggedDiffEqArray{T, N, A} <: AbstractRaggedVectorOfArray{T, N, A}
+
+    Abstract supertype for ragged diff-eq arrays that carry a time vector `t`,
+    parameters `p`, and symbolic system `sys` alongside ragged solution data.
+    """
+    abstract type AbstractRaggedDiffEqArray{T, N, A} <: AbstractRaggedVectorOfArray{T, N, A} end
 
     include("utils.jl")
     include("vector_of_array.jl")
     include("array_partition.jl")
     include("named_array_partition.jl")
 
-    function Base.show(io::IO, x::Union{ArrayPartition, AbstractVectorOfArray})
+    function Base.show(io::IO, x::ArrayPartition)
         return invoke(show, Tuple{typeof(io), Any}, io, x)
     end
+    # AbstractVectorOfArray uses AbstractArray's show
 
     import GPUArraysCore
-    Base.convert(T::Type{<:GPUArraysCore.AnyGPUArray}, VA::AbstractVectorOfArray) = stack(VA.u)
-    (T::Type{<:GPUArraysCore.AnyGPUArray})(VA::AbstractVectorOfArray) = T(Array(VA))
+    # GPU conversion via stack (stays on device, avoids materializing dense Array).
+    # Only define convert — do NOT define a constructor (::Type{<:AbstractGPUArray})(::AbstractVectorOfArray)
+    # because it creates an unresolvable ambiguity with CUDA.jl's CuArray(::AbstractArray{T,N}).
+    # Instead, the KernelAbstractions extension defines the concrete CuArray dispatch.
+    Base.convert(::Type{T}, VA::AbstractVectorOfArray) where {T <: GPUArraysCore.AnyGPUArray} = T(stack(VA.u))
 
     export VectorOfArray, VA, DiffEqArray, AbstractVectorOfArray, AbstractDiffEqArray,
         AllObserved, vecarr_to_vectors, tuples
+
+    # Plotting helpers (used by SciMLBase recipe delegation)
+    export DEFAULT_PLOT_FUNC, plottable_indices, plot_indices, getindepsym_defaultt,
+        interpret_vars, add_labels!, diffeq_to_arrays, solplot_vecs_and_labels
 
     export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_push!,
         vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
