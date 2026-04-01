@@ -429,9 +429,9 @@ using Test
         @test typeof(parent(similar(u_matrix))) == typeof(parent(u_matrix))
         @test typeof(parent((x -> x).(u_matrix))) == typeof(parent(u_matrix))
 
-        # test efficiency
+        # test efficiency (allow 1 alloc on Julia 1.10 LTS)
         num_allocs = @allocations foo!(u_matrix)
-        @test num_allocs == 0
+        @test num_allocs <= 1
     end
 
     @testset "v3 issue 354 (ported)" begin
