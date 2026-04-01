@@ -86,17 +86,3 @@ which is correct but slower due to per-element partition indexing overhead.
 `any`/`all` iterates element-by-element, which requires computing which partition
 each linear index falls into. The optimized methods iterate over each partition
 array directly, avoiding that lookup overhead entirely.
-
-## Installation
-
-All subpackages can be installed from the monorepo:
-
-```julia
-using Pkg
-Pkg.add(url = "https://github.com/SciML/RecursiveArrayTools.jl",
-        subdir = "lib/RecursiveArrayToolsRaggedArrays")
-Pkg.add(url = "https://github.com/SciML/RecursiveArrayTools.jl",
-        subdir = "lib/RecursiveArrayToolsShorthandConstructors")
-Pkg.add(url = "https://github.com/SciML/RecursiveArrayTools.jl",
-        subdir = "lib/RecursiveArrayToolsArrayPartitionAnyAll")
-```
