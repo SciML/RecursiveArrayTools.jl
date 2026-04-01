@@ -1,6 +1,7 @@
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+RecursiveArrayToolsArrayPartitionAnyAll = "172d604e-c495-4f00-97bf-d70957099afa"
 
 [compat]
 CUDA = "3.12, 4, 5"
