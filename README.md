@@ -40,6 +40,26 @@ d = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 c .* d
 ```
 
+### Ragged Arrays
+
+```julia
+using RecursiveArrayTools
+
+# VectorOfArray with ragged data uses zero-padded rectangular interpretation
+ragged = VectorOfArray([[1, 2], [3, 4, 5]])
+size(ragged)     # (3, 2) — max inner length is 3
+ragged[3, 1]     # 0      — implicit zero
+Array(ragged)    # [1 3; 2 4; 0 5]
+
+# For true ragged structure without zero-padding:
+using RecursiveArrayToolsRaggedArrays
+
+A = RaggedVectorOfArray([[1, 2, 3], [4, 5, 6, 7], [8, 9]])
+A[end, 1]   # 3  — last of first array (length 3)
+A[end, 2]   # 7  — last of second array (length 4)
+A[end, 3]   # 9  — last of third array (length 2)
+```
+
 ### ArrayPartition
 
 ```julia
