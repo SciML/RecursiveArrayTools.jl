@@ -6,6 +6,7 @@ pages = [
     "AbstractVectorOfArrayInterface.md",
     "array_types.md",
     "ragged_arrays.md",
+    "subpackages.md",
     "plotting.md",
     "recursive_array_functions.md",
 ]
