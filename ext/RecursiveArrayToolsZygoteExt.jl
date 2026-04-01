@@ -38,18 +38,20 @@ end
         y -> begin
             if y isa Ref
                 y = VectorOfArray(y[].u)
-            end
+        end
             # Return a plain Vector of arrays as gradient for `u`, not wrapped in VectorOfArray.
             # This avoids issues with downstream pullbacks that index into the gradient
             # using linear indexing (which now returns scalar elements for VectorOfArray).
             if y isa AbstractVectorOfArray
                 (y.u,)
-            else
-                ([
+        else
+                (
+                    [
                         y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
                         for i in 1:size(y)[end]
-                    ],)
-            end
+                    ],
+                )
+        end
         end
 end
 
@@ -63,17 +65,18 @@ end
         y -> begin
             if y isa Ref
                 y = VectorOfArray(y[].u)
-            end
+        end
             if y isa AbstractVectorOfArray
                 (y.u, nothing)
-            else
-                ([
+        else
+                (
+                    [
                         y[ntuple(x -> Colon(), ndims(y) - 1)..., i]
                         for i in 1:size(y)[end]
                     ],
                     nothing,
                 )
-            end
+        end
         end
 end
 

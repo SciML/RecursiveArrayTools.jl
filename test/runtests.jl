@@ -1,7 +1,10 @@
 using Pkg
 # Install the ShorthandConstructors subpackage for tests that need VA[...]/AP[...] syntax
-Pkg.develop(PackageSpec(
-    path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors")))
+Pkg.develop(
+    PackageSpec(
+        path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors")
+    )
+)
 using RecursiveArrayTools
 using Test
 using SafeTestsets
@@ -17,8 +20,11 @@ end
 function activate_gpu_env()
     Pkg.activate("gpu")
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
-    Pkg.develop(PackageSpec(
-        path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")))
+    Pkg.develop(
+        PackageSpec(
+            path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")
+        )
+    )
     return Pkg.instantiate()
 end
 
@@ -49,8 +55,11 @@ end
 
     if GROUP == "Subpackages" || GROUP == "All"
         # Test that loading RecursiveArrayToolsArrayPartitionAnyAll overrides any/all
-        Pkg.develop(PackageSpec(
-            path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")))
+        Pkg.develop(
+            PackageSpec(
+                path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsArrayPartitionAnyAll")
+            )
+        )
         @time @safetestset "ArrayPartition AnyAll Subpackage" begin
             using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, Test
             # Verify optimized methods are active

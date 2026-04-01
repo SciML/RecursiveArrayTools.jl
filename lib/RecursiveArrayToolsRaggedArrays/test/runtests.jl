@@ -320,8 +320,10 @@ using Test
         @test r.dense == false
 
         # With interp kwarg
-        r2 = RaggedDiffEqArray([[1.0, 2.0], [3.0, 4.0, 5.0]], [0.0, 1.0];
-            interp = :test_interp, dense = true)
+        r2 = RaggedDiffEqArray(
+            [[1.0, 2.0], [3.0, 4.0, 5.0]], [0.0, 1.0];
+            interp = :test_interp, dense = true
+        )
         @test r2.interp == :test_interp
         @test r2.dense == true
 

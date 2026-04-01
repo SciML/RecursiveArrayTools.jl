@@ -449,8 +449,10 @@ function DiffEqArray(
 end
 
 # first element representative
-function DiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys;
-        discretes = nothing, interp = nothing, dense = false)
+function DiffEqArray(
+        vec::AbstractVector, ts::AbstractVector, p, sys;
+        discretes = nothing, interp = nothing, dense = false
+    )
     _size = size(vec[1])
     T = eltype(vec[1])
     return DiffEqArray{
@@ -548,8 +550,10 @@ end
 # SciMLBase's more-specific `(::AbstractODESolution)(t,...)` methods win dispatch
 # for solution objects and handle symbolic idxs, discrete params, etc.
 
-function (da::AbstractDiffEqArray)(t, ::Type{deriv} = Val{0};
-        idxs = nothing, continuity = :left) where {deriv}
+function (da::AbstractDiffEqArray)(
+        t, ::Type{deriv} = Val{0};
+        idxs = nothing, continuity = :left
+    ) where {deriv}
     da.interp === nothing &&
         error("No interpolation data is available. Provide an interpolation object via the `interp` keyword.")
     return da.interp(t, idxs, deriv, da.p, continuity)
@@ -775,9 +779,11 @@ Base.@propagate_inbounds function Base.setindex!(
     for d in 1:length(inner_I)
         if inner_I[d] > size(u_col, d)
             iszero(x) && return x
-            throw(ArgumentError(
-                "Cannot set non-zero value at index $ii: outside ragged storage bounds."
-            ))
+            throw(
+                ArgumentError(
+                    "Cannot set non-zero value at index $ii: outside ragged storage bounds."
+                )
+            )
         end
     end
     return u_col[CartesianIndex(inner_I)] = x
@@ -887,10 +893,12 @@ Base.@propagate_inbounds function Base.setindex!(
     for d in 1:length(inner_I)
         if inner_I[d] > size(u_col, d)
             iszero(v) && return v
-            throw(ArgumentError(
-                "Cannot set non-zero value at index $I: outside ragged storage bounds. " *
-                "Inner array $col has size $(size(u_col)) but index requires $(inner_I)."
-            ))
+            throw(
+                ArgumentError(
+                    "Cannot set non-zero value at index $I: outside ragged storage bounds. " *
+                        "Inner array $col has size $(size(u_col)) but index requires $(inner_I)."
+                )
+            )
         end
     end
     return u_col[inner_I...] = v
@@ -906,7 +914,7 @@ Base.@propagate_inbounds function Base.getindex(
     inner_I = Base.front(I)
     u_col = A.u[col]
     # Return zero for indices outside ragged storage
-    for d in 1:N - 1
+    for d in 1:(N - 1)
         if inner_I[d] > size(u_col, d)
             return zero(T)
         end
@@ -1089,8 +1097,10 @@ end
     return Array{T}(undef, dims...)
 end
 @inline function Base.similar(
-        VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{Union{Integer, Base.OneTo},
-            Vararg{Union{Integer, Base.OneTo}}}
+        VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{
+            Union{Integer, Base.OneTo},
+            Vararg{Union{Integer, Base.OneTo}},
+        }
     ) where {T}
     return similar(Array{T}, dims)
 end
@@ -1361,12 +1371,16 @@ function solplot_vecs_and_labels(dims, vars, plott, A)
     return plot_vecs, labels
 end
 
-@recipe function f(VA::AbstractDiffEqArray;
-        denseplot = (hasproperty(VA, :dense) && VA.dense &&
-                     hasproperty(VA, :interp) && VA.interp !== nothing),
+@recipe function f(
+        VA::AbstractDiffEqArray;
+        denseplot = (
+            hasproperty(VA, :dense) && VA.dense &&
+                hasproperty(VA, :interp) && VA.interp !== nothing
+        ),
         plotdensity = max(1000, 10 * length(VA.u)),
         tspan = nothing, plotat = nothing,
-        idxs = nothing)
+        idxs = nothing
+    )
 
     idxs_input = idxs === nothing ? plottable_indices(VA.u[1]) : idxs
     if !(idxs_input isa Union{Tuple, AbstractArray})
@@ -1397,8 +1411,10 @@ end
     end
 
     # Default xguide for time-vs-variable plots
-    if all(x -> (x[2] isa Integer && x[2] == 0) ||
-                isequal(x[2], getindepsym_defaultt(VA)), vars)
+    if all(
+            x -> (x[2] isa Integer && x[2] == 0) ||
+                isequal(x[2], getindepsym_defaultt(VA)), vars
+        )
         xguide --> "$(getindepsym_defaultt(VA))"
         if tspan === nothing
             if tdir > 0

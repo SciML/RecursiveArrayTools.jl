@@ -103,8 +103,10 @@ end
 function RaggedVectorOfArray(vec::AbstractVector)
     T = eltype(vec[1])
     N = ndims(vec[1])
-    if all(x -> x isa Union{<:AbstractArray, <:AbstractVectorOfArray, <:AbstractRaggedVectorOfArray},
-        vec)
+    if all(
+            x -> x isa Union{<:AbstractArray, <:AbstractVectorOfArray, <:AbstractRaggedVectorOfArray},
+            vec
+        )
         A = Vector{Union{typeof.(vec)...}}
     else
         A = typeof(vec)
@@ -240,8 +242,10 @@ function VectorOfArray(r::AbstractRaggedVectorOfArray{T, N, A}) where {T, N, A}
 end
 
 function DiffEqArray(r::AbstractRaggedDiffEqArray)
-    return DiffEqArray(r.u, r.t, r.p, r.sys; discretes = r.discretes,
-        interp = r.interp, dense = r.dense)
+    return DiffEqArray(
+        r.u, r.t, r.p, r.sys; discretes = r.discretes,
+        interp = r.interp, dense = r.dense
+    )
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -409,8 +413,10 @@ function Base.getindex(r::RaggedVectorOfArray, ::Colon, ::Colon)
 end
 
 function Base.getindex(r::RaggedDiffEqArray, ::Colon, ::Colon)
-    return RaggedDiffEqArray(copy(r.u), copy(r.t), r.p, r.sys; discretes = r.discretes,
-        interp = r.interp, dense = r.dense)
+    return RaggedDiffEqArray(
+        copy(r.u), copy(r.t), r.p, r.sys; discretes = r.discretes,
+        interp = r.interp, dense = r.dense
+    )
 end
 
 # A[:, idx_array] returns a subset
@@ -425,8 +431,10 @@ function Base.getindex(
         r::RaggedDiffEqArray, ::Colon,
         I::Union{AbstractArray{Int}, AbstractArray{Bool}}
     )
-    return RaggedDiffEqArray(r.u[I], r.t[I], r.p, r.sys; discretes = r.discretes,
-        interp = r.interp, dense = r.dense)
+    return RaggedDiffEqArray(
+        r.u[I], r.t[I], r.p, r.sys; discretes = r.discretes,
+        interp = r.interp, dense = r.dense
+    )
 end
 
 # A[j, :] returns a vector of the j-th component from each inner array
@@ -460,8 +468,10 @@ end
 function Base.getindex(
         r::RaggedDiffEqArray, ::Colon, I::AbstractRange
     )
-    return RaggedDiffEqArray(r.u[I], r.t[I], r.p, r.sys;
-        discretes = r.discretes, interp = r.interp, dense = r.dense)
+    return RaggedDiffEqArray(
+        r.u[I], r.t[I], r.p, r.sys;
+        discretes = r.discretes, interp = r.interp, dense = r.dense
+    )
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -510,8 +520,10 @@ Base.@propagate_inbounds function _ragged_getindex(
         col_idxs = last(I) isa Colon ? eachindex(r.u) : last(I)
         if all(idx -> idx isa Colon, Base.front(I))
             u_slice = [r.u[col][Base.front(I)...] for col in col_idxs]
-            return RaggedDiffEqArray(u_slice, r.t[col_idxs], r.p, r.sys;
-                discretes = r.discretes, interp = r.interp, dense = r.dense)
+            return RaggedDiffEqArray(
+                u_slice, r.t[col_idxs], r.p, r.sys;
+                discretes = r.discretes, interp = r.interp, dense = r.dense
+            )
         else
             return [r.u[col][Base.front(I)...] for col in col_idxs]
         end
@@ -629,8 +641,10 @@ end
 function Base.zero(r::AbstractRaggedVectorOfArray)
     T = typeof(r)
     u_zero = [zero(u) for u in r.u]
-    fields = [fname == :u ? u_zero : _ragged_copyfield(r, fname)
-              for fname in fieldnames(T)]
+    fields = [
+        fname == :u ? u_zero : _ragged_copyfield(r, fname)
+            for fname in fieldnames(T)
+    ]
     return T(fields...)
 end
 
@@ -671,8 +685,10 @@ Base.sizehint!(r::AbstractRaggedVectorOfArray, i) = sizehint!(r.u, i)
 Base.reverse!(r::AbstractRaggedVectorOfArray) = (reverse!(r.u); r)
 Base.reverse(r::RaggedVectorOfArray) = RaggedVectorOfArray(reverse(r.u))
 function Base.reverse(r::RaggedDiffEqArray)
-    return RaggedDiffEqArray(reverse(r.u), r.t, r.p, r.sys; discretes = r.discretes,
-        interp = r.interp, dense = r.dense)
+    return RaggedDiffEqArray(
+        reverse(r.u), r.t, r.p, r.sys; discretes = r.discretes,
+        interp = r.interp, dense = r.dense
+    )
 end
 
 function Base.copyto!(
@@ -732,8 +748,12 @@ _ragged_narrays(bc::Broadcast.Broadcasted) = __ragged_narrays(bc.args)
 function __ragged_narrays(args::Tuple)
     a = _ragged_narrays(args[1])
     b = __ragged_narrays(Base.tail(args))
-    return a == 0 ? b : (b == 0 ? a : (a == b ? a :
-        throw(DimensionMismatch("number of arrays must be equal"))))
+    return a == 0 ? b : (
+            b == 0 ? a : (
+                a == b ? a :
+                throw(DimensionMismatch("number of arrays must be equal"))
+            )
+        )
 end
 __ragged_narrays(args::Tuple{Any}) = _ragged_narrays(args[1])
 __ragged_narrays(::Tuple{}) = 0
@@ -812,7 +832,7 @@ end
 
 function Base.show(io::IO, m::MIME"text/plain", r::AbstractRaggedVectorOfArray)
     println(io, summary(r), ':')
-    show(io, m, r.u)
+    return show(io, m, r.u)
 end
 
 function Base.summary(r::AbstractRaggedVectorOfArray{T, N}) where {T, N}
@@ -824,7 +844,7 @@ function Base.show(io::IO, m::MIME"text/plain", r::AbstractRaggedDiffEqArray)
     show(io, m, r.t)
     println(io)
     print(io, "u: ")
-    show(io, m, r.u)
+    return show(io, m, r.u)
 end
 
 function Base.summary(r::AbstractRaggedDiffEqArray{T, N}) where {T, N}
@@ -835,8 +855,10 @@ end
 # Callable interface — dense interpolation
 # ═══════════════════════════════════════════════════════════════════════════════
 
-function (r::AbstractRaggedDiffEqArray)(t, ::Type{deriv} = Val{0};
-        idxs = nothing, continuity = :left) where {deriv}
+function (r::AbstractRaggedDiffEqArray)(
+        t, ::Type{deriv} = Val{0};
+        idxs = nothing, continuity = :left
+    ) where {deriv}
     r.interp === nothing &&
         error("No interpolation data is available. Provide an interpolation object via the `interp` keyword.")
     return r.interp(t, idxs, deriv, r.p, continuity)
