@@ -188,8 +188,10 @@ function Adapt.adapt_structure(to, VA::AbstractRaggedVectorOfArray)
 end
 
 function Adapt.adapt_structure(to, VA::AbstractRaggedDiffEqArray)
-    return RaggedDiffEqArray(Adapt.adapt.((to,), VA.u), Adapt.adapt(to, VA.t);
-        interp = VA.interp, dense = VA.dense)
+    return RaggedDiffEqArray(
+        Adapt.adapt.((to,), VA.u), Adapt.adapt(to, VA.t);
+        interp = VA.interp, dense = VA.dense
+    )
 end
 
 function RaggedVectorOfArray(vec::AbstractVector{T}, ::NTuple{N}) where {T, N}
@@ -430,8 +432,10 @@ function RaggedDiffEqArray(
 end
 
 # first element representative
-function RaggedDiffEqArray(vec::AbstractVector, ts::AbstractVector, p, sys;
-        discretes = nothing, interp = nothing, dense = false)
+function RaggedDiffEqArray(
+        vec::AbstractVector, ts::AbstractVector, p, sys;
+        discretes = nothing, interp = nothing, dense = false
+    )
     _size = size(vec[1])
     T = eltype(vec[1])
     return RaggedDiffEqArray{
@@ -523,7 +527,7 @@ end
 function (A::RaggedDiffEqArray)(t, deriv = Val{0}; idxs = nothing, continuity = :left)
     A.interp === nothing &&
         error("No interpolation data is available. Provide an interpolation object via the `interp` keyword.")
-    A.interp(t, idxs, deriv, A.p, continuity)
+    return A.interp(t, idxs, deriv, A.p, continuity)
 end
 
 Base.IndexStyle(A::AbstractRaggedVectorOfArray) = Base.IndexStyle(typeof(A))
@@ -663,8 +667,10 @@ Base.@propagate_inbounds function _getindex(
             # Create a vector of sliced arrays instead of stacking into higher-dim array
             u_slice = [A.u[col][Base.front(I)...] for col in col_idxs]
             # Return as RaggedDiffEqArray with sliced time values
-            return RaggedDiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A);
-                interp = A.interp, dense = A.dense)
+            return RaggedDiffEqArray(
+                u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A);
+                interp = A.interp, dense = A.dense
+            )
         else
             # Prefix indices are not all Colons - do the same as RaggedVectorOfArray
             # (stack the results into a higher-dimensional array)
@@ -692,8 +698,10 @@ Base.@propagate_inbounds function _getindex(
         A::AbstractRaggedDiffEqArray, ::NotSymbolic, ::Colon,
         I::Union{AbstractArray{Int}, AbstractArray{Bool}}
     )
-    return RaggedDiffEqArray(A.u[I], A.t[I], parameter_values(A), symbolic_container(A);
-        interp = A.interp, dense = A.dense)
+    return RaggedDiffEqArray(
+        A.u[I], A.t[I], parameter_values(A), symbolic_container(A);
+        interp = A.interp, dense = A.dense
+    )
 end
 
 struct ParameterIndexingError <: Exception
@@ -875,8 +883,10 @@ end
 end
 
 @inline function _preserve_array_type(A::AbstractRaggedDiffEqArray, u_slice, col_idxs)
-    return RaggedDiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A);
-        interp = A.interp, dense = A.dense)
+    return RaggedDiffEqArray(
+        u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A);
+        interp = A.interp, dense = A.dense
+    )
 end
 
 @inline function _ragged_getindex(A::AbstractRaggedVectorOfArray, I...)
@@ -1193,8 +1203,10 @@ Base.sizehint!(VA::AbstractRaggedVectorOfArray{T, N}, i) where {T, N} = sizehint
 Base.reverse!(VA::AbstractRaggedVectorOfArray) = reverse!(VA.u)
 Base.reverse(VA::AbstractRaggedVectorOfArray) = RaggedVectorOfArray(reverse(VA.u))
 function Base.reverse(VA::AbstractRaggedDiffEqArray)
-    return RaggedDiffEqArray(reverse(VA.u), VA.t, parameter_values(VA), symbolic_container(VA);
-        interp = VA.interp, dense = VA.dense)
+    return RaggedDiffEqArray(
+        reverse(VA.u), VA.t, parameter_values(VA), symbolic_container(VA);
+        interp = VA.interp, dense = VA.dense
+    )
 end
 
 function Base.resize!(VA::AbstractRaggedVectorOfArray, i::Integer)
@@ -1690,8 +1702,10 @@ end
 Convert a `RaggedDiffEqArray` to a regular `DiffEqArray`.
 """
 function DiffEqArray(r::AbstractRaggedDiffEqArray)
-    return DiffEqArray(r.u, r.t, r.p, r.sys;
-        discretes = r.discretes, interp = r.interp, dense = r.dense)
+    return DiffEqArray(
+        r.u, r.t, r.p, r.sys;
+        discretes = r.discretes, interp = r.interp, dense = r.dense
+    )
 end
 
 """
@@ -1700,10 +1714,12 @@ end
 Convert a regular `DiffEqArray` to a `RaggedDiffEqArray`.
 """
 function RaggedDiffEqArray(va::AbstractDiffEqArray)
-    return RaggedDiffEqArray(va.u, va.t, va.p, va.sys;
+    return RaggedDiffEqArray(
+        va.u, va.t, va.p, va.sys;
         discretes = hasfield(typeof(va), :discretes) ? getfield(va, :discretes) : nothing,
         interp = hasfield(typeof(va), :interp) ? getfield(va, :interp) : nothing,
-        dense = hasfield(typeof(va), :dense) ? getfield(va, :dense) : false)
+        dense = hasfield(typeof(va), :dense) ? getfield(va, :dense) : false
+    )
 end
 
 # Re-export has_discretes and get_discretes for the non-ragged types

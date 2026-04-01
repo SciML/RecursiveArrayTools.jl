@@ -657,22 +657,26 @@ using Test
         arr = rand(3, 2, 4)
         copyto!(testva, arr)
         @test Array(testva) == arr
-        testva = RaggedVectorOfArray([
-            ones(3, 2, 2),
-            RaggedVectorOfArray([
-                2ones(3, 2),
-                RaggedVectorOfArray([3ones(3), 4ones(3)]),
-            ]),
-            RaggedDiffEqArray(
-                [
-                    5ones(3, 2),
-                    RaggedVectorOfArray([6ones(3), 7ones(3)]),
-                ],
-                [0.1, 0.2],
-                [100.0, 200.0],
-                SymbolCache([:x, :y], [:a, :b], :t)
-            ),
-        ])
+        testva = RaggedVectorOfArray(
+            [
+                ones(3, 2, 2),
+                RaggedVectorOfArray(
+                    [
+                        2ones(3, 2),
+                        RaggedVectorOfArray([3ones(3), 4ones(3)]),
+                    ]
+                ),
+                RaggedDiffEqArray(
+                    [
+                        5ones(3, 2),
+                        RaggedVectorOfArray([6ones(3), 7ones(3)]),
+                    ],
+                    [0.1, 0.2],
+                    [100.0, 200.0],
+                    SymbolCache([:x, :y], [:a, :b], :t)
+                ),
+            ]
+        )
         arr = rand(3, 2, 2, 3)
         copyto!(testva, arr)
         @test Array(testva) == arr
