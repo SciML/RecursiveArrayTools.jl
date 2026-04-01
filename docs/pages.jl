@@ -5,6 +5,7 @@ pages = [
     "breaking_changes_v4.md",
     "AbstractVectorOfArrayInterface.md",
     "array_types.md",
+    "ragged_arrays.md",
     "plotting.md",
     "recursive_array_functions.md",
 ]
