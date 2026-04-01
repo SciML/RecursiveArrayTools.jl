@@ -271,19 +271,81 @@ Base.iterate(r::AbstractRaggedVectorOfArray, state) = iterate(r.u, state)
 Base.firstindex(r::AbstractRaggedVectorOfArray) = firstindex(r.u)
 Base.lastindex(r::AbstractRaggedVectorOfArray) = lastindex(r.u)
 
-# lastindex with dimension — needed for `end` in multi-index expressions like r[end, 2]
-# dim N (last) = number of inner arrays; dim 1..N-1 = ragged, use max across inner arrays
-function Base.lastindex(r::AbstractRaggedVectorOfArray{T, N}, d::Int) where {T, N}
+# ─── RaggedEnd: deferred `end` that resolves per-column ─────────────────────
+# `lastindex(r, d)` returns a `RaggedEnd` sentinel instead of an integer.
+# When indexing actually happens, `_resolve_ragged` resolves it using the
+# actual size of the selected inner array, so `r[end, i]` gives the last
+# element of column `i` regardless of other columns' lengths.
+
+struct RaggedEnd
+    dim::Int
+    offset::Int
+end
+RaggedEnd(dim::Int) = RaggedEnd(dim, 0)
+
+Base.:+(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset + Int(n))
+Base.:-(re::RaggedEnd, n::Integer) = RaggedEnd(re.dim, re.offset - Int(n))
+Base.:+(n::Integer, re::RaggedEnd) = re + n
+Base.broadcastable(x::RaggedEnd) = Ref(x)
+
+struct RaggedRange
+    dim::Int
+    start::Int
+    step::Int
+    offset::Int
+end
+
+Base.:(:)(stop::RaggedEnd) = RaggedRange(stop.dim, 1, 1, stop.offset)
+Base.:(:)(start::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, Int(start), 1, stop.offset)
+Base.:(:)(start::Integer, step::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, Int(start), Int(step), stop.offset)
+Base.:(:)(start::RaggedEnd, stop::RaggedEnd) = RaggedRange(stop.dim, start.offset, 1, stop.offset)
+Base.:(:)(start::RaggedEnd, step::Integer, stop::RaggedEnd) = RaggedRange(stop.dim, start.offset, Int(step), stop.offset)
+Base.:(:)(start::RaggedEnd, stop::Integer) = RaggedRange(start.dim, start.offset, 1, Int(stop))
+Base.:(:)(start::RaggedEnd, step::Integer, stop::Integer) = RaggedRange(start.dim, start.offset, Int(step), Int(stop))
+Base.broadcastable(x::RaggedRange) = Ref(x)
+
+# lastindex returns RaggedEnd for leading dims, plain Int for last (column) dim
+@inline function Base.lastindex(r::AbstractRaggedVectorOfArray{T, N}, d::Integer) where {T, N}
     if d == N
-        return length(r.u)
+        return RaggedEnd(0, Int(lastindex(r.u)))
+    elseif d < N
+        isempty(r.u) && return RaggedEnd(0, 0)
+        return RaggedEnd(Int(d), 0)
     else
-        return isempty(r.u) ? 0 : maximum(size(u, d) for u in r.u)
+        return RaggedEnd(0, 1)
     end
 end
 
-# axes with dimension — needed for `end` translation and range indexing
-function Base.axes(r::AbstractRaggedVectorOfArray{T, N}, d::Int) where {T, N}
-    return Base.OneTo(lastindex(r, d))
+# Resolve RaggedEnd/RaggedRange to concrete indices for a specific column
+@inline _resolve_ragged(idx, ::AbstractRaggedVectorOfArray, ::Any) = idx
+@inline function _resolve_ragged(idx::RaggedEnd, r::AbstractRaggedVectorOfArray, col)
+    if idx.dim == 0
+        return idx.offset
+    else
+        return lastindex(r.u[col], idx.dim) + idx.offset
+    end
+end
+@inline function _resolve_ragged(idx::RaggedRange, r::AbstractRaggedVectorOfArray, col)
+    stop_val = if idx.dim == 0
+        idx.offset
+    else
+        lastindex(r.u[col], idx.dim) + idx.offset
+    end
+    return Base.range(idx.start; step = idx.step, stop = stop_val)
+end
+
+# Column index resolution
+@inline _column_index(::AbstractRaggedVectorOfArray, idx) = idx
+@inline _column_index(::AbstractRaggedVectorOfArray, idx::Colon) = nothing  # handled by Colon methods
+@inline function _column_index(::AbstractRaggedVectorOfArray, idx::RaggedEnd)
+    return idx.dim == 0 ? idx.offset : idx
+end
+@inline function _column_index(::AbstractRaggedVectorOfArray, idx::RaggedRange)
+    if idx.dim == 0
+        return Base.range(idx.start; step = idx.step, stop = idx.offset)
+    else
+        return idx
+    end
 end
 
 Base.keys(r::AbstractRaggedVectorOfArray) = keys(r.u)
@@ -399,6 +461,53 @@ function Base.setindex!(
     inner_I = Base.front(I)
     r.u[col][inner_I...] = v
     return v
+end
+
+# ─── RaggedEnd/RaggedRange indexing resolution ───────────────────────────────
+# Catch-all: any getindex with RaggedEnd or RaggedRange indices gets resolved
+# per-column before dispatching to the concrete methods above.
+
+function Base.getindex(r::AbstractRaggedVectorOfArray, I::RaggedEnd, col::Int)
+    return r.u[col][_resolve_ragged(I, r, col)]
+end
+function Base.getindex(r::AbstractRaggedVectorOfArray, I::RaggedRange, col::Int)
+    return r.u[col][_resolve_ragged(I, r, col)]
+end
+function Base.getindex(r::AbstractRaggedVectorOfArray, I, col::RaggedEnd)
+    c = _resolve_ragged(col, r, nothing)
+    return r[I, c]
+end
+function Base.getindex(r::AbstractRaggedVectorOfArray, I::RaggedEnd, col::RaggedEnd)
+    c = _resolve_ragged(col, r, nothing)
+    return r.u[c][_resolve_ragged(I, r, c)]
+end
+function Base.getindex(r::AbstractRaggedVectorOfArray, ::Colon, col::RaggedEnd)
+    c = _resolve_ragged(col, r, nothing)
+    return r.u[c]
+end
+function Base.getindex(r::AbstractRaggedVectorOfArray, I::RaggedRange, col::RaggedEnd)
+    c = _resolve_ragged(col, r, nothing)
+    return r.u[c][_resolve_ragged(I, r, c)]
+end
+# A[:, start:end] with RaggedRange in column position
+function Base.getindex(r::RaggedVectorOfArray, ::Colon, I::RaggedRange)
+    cols = _resolve_ragged(I, r, nothing)
+    return RaggedVectorOfArray(r.u[cols])
+end
+function Base.getindex(r::RaggedDiffEqArray, ::Colon, I::RaggedRange)
+    cols = _resolve_ragged(I, r, nothing)
+    return RaggedDiffEqArray(
+        r.u[cols], r.t[cols], r.p, r.sys; discretes = r.discretes,
+        interp = r.interp, dense = r.dense
+    )
+end
+# Resolve column RaggedRange for _column_index (dim=0 means already resolved)
+function _resolve_ragged(idx::RaggedRange, ::AbstractRaggedVectorOfArray, ::Nothing)
+    return Base.range(idx.start; step = idx.step,
+        stop = idx.dim == 0 ? idx.offset : error("Cannot resolve inner-dim RaggedRange without column"))
+end
+function _resolve_ragged(idx::RaggedEnd, ::AbstractRaggedVectorOfArray, ::Nothing)
+    return idx.dim == 0 ? idx.offset : error("Cannot resolve inner-dim RaggedEnd without column")
 end
 
 # A[:, i] returns the i-th inner array directly (no zero-padding)

@@ -404,69 +404,51 @@ using Test
     end
 
     @testset "v3 end indexing with ragged arrays (ported)" begin
+        # `end` in the first dimension is per-column via RaggedEnd (matching v3 behavior)
         ragged = RaggedVectorOfArray([[1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0]])
-        # A[j, i] accesses the j-th element of i-th inner array
-        @test ragged[2, 1] == 2.0
-        @test ragged[3, 2] == 5.0
-        @test ragged[4, 3] == 9.0
-        @test ragged[1, 1] == 1.0
-        @test ragged[2, 2] == 4.0
-        @test ragged[3, 3] == 8.0
+        @test ragged[end, 1] == 2.0   # end = lastindex(inner[1]) = 2
+        @test ragged[end, 2] == 5.0   # end = lastindex(inner[2]) = 3
+        @test ragged[end, 3] == 9.0   # end = lastindex(inner[3]) = 4
+        @test ragged[end - 1, 1] == 1.0
+        @test ragged[end - 1, 2] == 4.0
+        @test ragged[end - 1, 3] == 8.0
 
-        # `end` in the last (column) dimension
-        @test ragged[:, end] == [6.0, 7.0, 8.0, 9.0]
-        @test ragged[:, (end - 1):end] isa RaggedVectorOfArray
-        @test length(ragged[:, (end - 1):end]) == 2
-
-        # `end` in first dim = max inner array length (4 here)
-        # So ragged[end, 1] = ragged[4, 1] which is out of bounds for inner array 1
-        @test_throws BoundsError ragged[end, 1]  # inner[1] has only 2 elements
-        @test_throws BoundsError ragged[end, 2]  # inner[2] has only 3 elements
-        @test ragged[end, 3] == 9.0              # inner[3] has 4 elements, end=4 works
-
-        # Range indexing into inner arrays
-        @test ragged[1:2, 1] == [1.0, 2.0]
-        @test ragged[1:3, 2] == [3.0, 4.0, 5.0]
-        @test ragged[1:4, 3] == [6.0, 7.0, 8.0, 9.0]
-        # 1:end uses max inner length (4), so only works for longest column
-        @test_throws BoundsError ragged[1:end, 1]  # 1:4 but inner[1] has 2
-        @test_throws BoundsError ragged[1:end, 2]  # 1:4 but inner[2] has 3
-        @test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]  # 1:4 matches inner[3]
+        # 1:end also resolves per-column
+        @test ragged[1:end, 1] == [1.0, 2.0]
+        @test ragged[1:end, 2] == [3.0, 4.0, 5.0]
+        @test ragged[1:end, 3] == [6.0, 7.0, 8.0, 9.0]
 
         # Colon returns actual arrays
         @test ragged[:, 1] == [1.0, 2.0]
         @test ragged[:, 2] == [3.0, 4.0, 5.0]
         @test ragged[:, 3] == [6.0, 7.0, 8.0, 9.0]
 
-        # Subset selection via range
+        # `end` in last (column) dimension
+        @test ragged[:, end] == [6.0, 7.0, 8.0, 9.0]
         @test ragged[:, 2:end] isa RaggedVectorOfArray
-        @test ragged[:, 2:end][:, 1] == [3.0, 4.0, 5.0]
+        @test ragged[:, (end - 1):end] isa RaggedVectorOfArray
+        @test length(ragged[:, (end - 1):end]) == 2
 
         ragged2 = RaggedVectorOfArray([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0], [7.0, 8.0, 9.0]])
-        # end in first dim = max length = 4
-        @test ragged2[end, 1] == 4.0                # inner[1] has 4 elements
-        @test_throws BoundsError ragged2[end, 2]    # inner[2] has only 2
-        @test_throws BoundsError ragged2[end, 3]    # inner[3] has only 3
-        @test ragged2[end - 1, 1] == 3.0            # end-1 = 3
-        @test_throws BoundsError ragged2[end - 1, 2] # 3 > length([5,6])
-        @test ragged2[end - 1, 3] == 9.0            # 3 <= length([7,8,9])
-        @test ragged2[:, 1] == [1.0, 2.0, 3.0, 4.0]
-        @test ragged2[:, 2] == [5.0, 6.0]
-        @test ragged2[:, 3] == [7.0, 8.0, 9.0]
-        # Explicit range indexing (not using end)
-        @test ragged2[1:4, 1] == [1.0, 2.0, 3.0, 4.0]
-        @test ragged2[1:2, 2] == [5.0, 6.0]
-        @test ragged2[1:3, 3] == [7.0, 8.0, 9.0]
-        @test ragged2[2:4, 1] == [2.0, 3.0, 4.0]
-        @test ragged2[2:2, 2] == [6.0]
-        @test ragged2[2:3, 3] == [8.0, 9.0]
-        # end in last dim works fine
+        @test ragged2[end, 1] == 4.0    # end = 4
+        @test ragged2[end, 2] == 6.0    # end = 2
+        @test ragged2[end, 3] == 9.0    # end = 3
+        @test ragged2[end - 1, 1] == 3.0
+        @test ragged2[end - 1, 2] == 5.0
+        @test ragged2[end - 1, 3] == 8.0
+        @test ragged2[end - 2, 1] == 2.0
+        @test ragged2[1:end, 1] == [1.0, 2.0, 3.0, 4.0]
+        @test ragged2[1:end, 2] == [5.0, 6.0]
+        @test ragged2[1:end, 3] == [7.0, 8.0, 9.0]
+        @test ragged2[2:end, 1] == [2.0, 3.0, 4.0]
+        @test ragged2[2:end, 2] == [6.0]
+        @test ragged2[2:end, 3] == [8.0, 9.0]
         @test ragged2[:, end] == [7.0, 8.0, 9.0]
         @test ragged2[:, 2:end] isa RaggedVectorOfArray
-        # end in first dim = 4 (max), 1:(end-1) = 1:3
+        @test ragged2[:, (end - 1):end] isa RaggedVectorOfArray
         @test ragged2[1:(end - 1), 1] == [1.0, 2.0, 3.0]
-        @test_throws BoundsError ragged2[1:(end - 1), 2]  # 1:3 but inner[2] has 2
-        @test ragged2[1:(end - 1), 3] == [7.0, 8.0, 9.0]  # 1:3 matches inner[3]
+        @test ragged2[1:(end - 1), 2] == [5.0]
+        @test ragged2[1:(end - 1), 3] == [7.0, 8.0]
     end
 
     @testset "v3 push! making array ragged (ported)" begin
