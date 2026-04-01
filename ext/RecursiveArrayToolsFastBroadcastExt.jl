@@ -8,10 +8,11 @@ const AbstractVectorOfSArray = AbstractVectorOfArray{
     T, N, <:AbstractVector{<:StaticArraysCore.SArray},
 } where {T, N}
 
+# Override the base 2-arg path (called by Serial dispatch and direct macro path)
 @inline function FastBroadcast.fast_materialize!(
-        ::FastBroadcast.Static.False, ::DB, dst::AbstractVectorOfSArray,
+        dst::AbstractVectorOfSArray,
         bc::Broadcast.Broadcasted{S}
-    ) where {S, DB}
+    ) where {S}
     if FastBroadcast.use_fast_broadcast(S)
         for i in 1:length(dst.u)
             unpacked = RecursiveArrayTools.unpack_voa(bc, i)
