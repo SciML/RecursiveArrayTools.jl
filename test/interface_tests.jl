@@ -305,15 +305,15 @@ end
         :RecursiveArrayToolsFastBroadcastPolyesterExt
     ) !== nothing
 
-    # Test basic threaded broadcast with Polyester
-    u_p = VectorOfArray(fill(SVector(2.0, 3.0), 3, 3))
+    # Test basic threaded broadcast with Polyester (Vector-of-SVector storage)
+    u_p = VectorOfArray([SVector(2.0, 3.0) for _ in 1:9])
     v_p = copy(u_p)
     @.. thread = true v_p = v_p + u_p
     @test all(x -> x == SVector(4.0, 6.0), v_p.u)
 
     # Test with larger array to exercise Polyester batching
-    u_large = VectorOfArray(fill(SVector(1.0, 1.0, 1.0), 100))
-    v_large = VectorOfArray(fill(SVector(0.0, 0.0, 0.0), 100))
+    u_large = VectorOfArray([SVector(1.0, 1.0, 1.0) for _ in 1:100])
+    v_large = VectorOfArray([SVector(0.0, 0.0, 0.0) for _ in 1:100])
     @.. thread = true v_large = u_large * 2.0
     @test all(x -> x == SVector(2.0, 2.0, 2.0), v_large.u)
 end

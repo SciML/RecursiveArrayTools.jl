@@ -27,14 +27,20 @@ const AbstractVectorOfSArray = AbstractVectorOfArray{
     return dst
 end
 
-# Fallback for VectorOfArray: the generic threaded path splits along the last
-# axis via views, which does not correctly partition work for VectorOfArray.
-# Fall back to serial broadcasting. The RecursiveArrayToolsFastBroadcastPolyesterExt
-# extension provides proper Polyester-based threading when Polyester is loaded.
+# Fallback for non-SArray VectorOfArray: the generic threaded path splits along
+# the last axis via views, which does not correctly partition work for
+# VectorOfArray. Fall back to serial broadcasting.
+# For SArray VectorOfArray, throw an informative error telling the user to
+# load Polyester.jl for threaded broadcasting.
 @inline function FastBroadcast.fast_materialize!(
         ::Threaded, dst::AbstractVectorOfArray,
         bc::Broadcast.Broadcasted
     )
+    if dst isa AbstractVectorOfSArray && !RecursiveArrayTools.POLYESTER_LOADED[]
+        error("Threaded FastBroadcast on VectorOfArray{SArray} requires Polyester.jl. " *
+              "Add `using Polyester` to enable threaded broadcasting, or use " *
+              "`@.. thread=false` for serial broadcasting.")
+    end
     return FastBroadcast.fast_materialize!(Serial(), dst, bc)
 end
 
