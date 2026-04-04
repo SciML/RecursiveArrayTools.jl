@@ -1,20 +1,21 @@
-module RecursiveArrayToolsFastBroadcastExt
+module RecursiveArrayToolsFastBroadcastPolyesterExt
 
 using RecursiveArrayTools
 using FastBroadcast
 using FastBroadcast: Serial, Threaded
+using Polyester
 using StaticArraysCore
 
 const AbstractVectorOfSArray = AbstractVectorOfArray{
     T, N, <:AbstractVector{<:StaticArraysCore.SArray},
 } where {T, N}
 
-@inline function FastBroadcast.fast_materialize!(
-        ::Serial, dst::AbstractVectorOfSArray,
+@inline function _polyester_fast_materialize!(
+        dst::AbstractVectorOfSArray,
         bc::Broadcast.Broadcasted{S}
     ) where {S}
     if FastBroadcast.use_fast_broadcast(S)
-        for i in 1:length(dst.u)
+        @batch for i in 1:length(dst.u)
             unpacked = RecursiveArrayTools.unpack_voa(bc, i)
             dst.u[i] = StaticArraysCore.similar_type(dst.u[i])(
                 unpacked[j]
@@ -27,15 +28,21 @@ const AbstractVectorOfSArray = AbstractVectorOfArray{
     return dst
 end
 
-# Fallback for VectorOfArray: the generic threaded path splits along the last
-# axis via views, which does not correctly partition work for VectorOfArray.
-# Fall back to serial broadcasting. The RecursiveArrayToolsFastBroadcastPolyesterExt
-# extension provides proper Polyester-based threading when Polyester is loaded.
 @inline function FastBroadcast.fast_materialize!(
-        ::Threaded, dst::AbstractVectorOfArray,
+        ::Threaded, dst::AbstractVectorOfSArray,
+        bc::Broadcast.Broadcasted{S}
+    ) where {S}
+    return _polyester_fast_materialize!(dst, bc)
+end
+
+# Disambiguation: this method is more specific than both the base ext's
+# (::Threaded, ::AbstractVectorOfArray, ::Broadcasted) fallback and
+# the above (::Threaded, ::AbstractVectorOfSArray, ::Broadcasted{S}).
+@inline function FastBroadcast.fast_materialize!(
+        ::Threaded, dst::AbstractVectorOfSArray,
         bc::Broadcast.Broadcasted
     )
-    return FastBroadcast.fast_materialize!(Serial(), dst, bc)
+    return _polyester_fast_materialize!(dst, bc)
 end
 
 end # module
