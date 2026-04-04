@@ -142,6 +142,11 @@ module RecursiveArrayTools
 
     export ArrayPartition, AP, NamedArrayPartition
 
+    # Flag set to `true` by RecursiveArrayToolsFastBroadcastPolyesterExt when
+    # Polyester is loaded. Checked by the FastBroadcast ext to decide whether
+    # to throw an informative error on threaded VoA{SArray} operations.
+    const POLYESTER_LOADED = Ref(false)
+
     include("precompilation.jl")
 
 end # module
