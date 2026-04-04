@@ -290,6 +290,18 @@ f3!(z, zz)
 @test z == VA[fill(4, SVector{2, Float64}), fill(2, SVector{2, Float64})]
 @test (@allocated f3!(z, zz)) == 0
 
+# Test threaded FastBroadcast with VectorOfArray of StaticArrays (issue #564)
+@testset "Threaded @.. with VectorOfArray{SArray}" begin
+    u_t = VectorOfArray(fill(SVector(1.0, 1.0), 2, 2))
+    v_t = copy(u_t)
+    @.. thread = true v_t = v_t + u_t
+    @test all(x -> x == SVector(2.0, 2.0), v_t.u)
+
+    # Test that repeated threaded application accumulates correctly
+    @.. thread = true v_t = v_t + u_t
+    @test all(x -> x == SVector(3.0, 3.0), v_t.u)
+end
+
 struct ImmutableVectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
     u::A # A <: AbstractArray{<: AbstractArray{T, N - 1}}
 end
