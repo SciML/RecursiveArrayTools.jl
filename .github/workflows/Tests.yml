@@ -18,7 +18,11 @@ concurrency:
 
 jobs:
   tests:
-    name: "Tests"
+    name: "Tests - ${{ matrix.group }} - Julia ${{ matrix.version }}"
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -36,8 +40,31 @@ jobs:
         exclude:
           - version: "pre"
             group: "nopre"
-    uses: "SciML/.github/.github/workflows/tests.yml@v1"
-    with:
-      group: "${{ matrix.group }}"
-      julia-version: "${{ matrix.version }}"
-    secrets: "inherit"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: "${{ matrix.version }}"
+      - uses: julia-actions/cache@v1
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
+        env:
+          GROUP: "${{ matrix.group }}"
+          # Run tests with 2 threads so that threaded regression tests (e.g. the
+          # @.. thread=true VectorOfArray{SArray} test for issue #570) actually
+          # exercise FastBroadcast's Polyester-backed multi-thread batch-split
+          # path. With the default single thread, that path is a no-op and the
+          # regression is not covered. Mirrors SciML/OrdinaryDiffEq.jl's
+          # SublibraryCI.yml which passes JULIA_NUM_THREADS on the runtest step.
+          JULIA_NUM_THREADS: "2"
+      - uses: julia-actions/julia-processcoverage@v1
+        with:
+          directories: "src,ext"
+      - uses: codecov/codecov-action@v5
+        if: "${{ github.event.pull_request.head.repo.full_name == github.repository }}"
+        with:
+          files: lcov.info
+          token: "${{ secrets.CODECOV_TOKEN }}"
+          fail_ci_if_error: true
