@@ -1,6 +1,7 @@
 using RecursiveArrayTools, StaticArrays, Test
 using RecursiveArrayToolsShorthandConstructors
 using FastBroadcast
+using Polyester
 using SymbolicIndexingInterface: SymbolCache
 
 t = 1:3
@@ -300,6 +301,27 @@ f3!(z, zz)
     # Test that repeated threaded application accumulates correctly
     @.. thread = true v_t = v_t + u_t
     @test all(x -> x == SVector(3.0, 3.0), v_t.u)
+end
+
+# Test Polyester-based threaded FastBroadcast extension (issue #564)
+@testset "Polyester-threaded @.. with VectorOfArray{SArray}" begin
+    # Verify the Polyester extension is loaded
+    @test Base.get_extension(
+        Base.PkgId(RecursiveArrayTools),
+        :RecursiveArrayToolsFastBroadcastPolyesterExt
+    ) !== nothing
+
+    # Test basic threaded broadcast with Polyester (Vector-of-SVector storage)
+    u_p = VectorOfArray([SVector(2.0, 3.0) for _ in 1:9])
+    v_p = copy(u_p)
+    @.. thread = true v_p = v_p + u_p
+    @test all(x -> x == SVector(4.0, 6.0), v_p.u)
+
+    # Test with larger array to exercise Polyester batching
+    u_large = VectorOfArray([SVector(1.0, 1.0, 1.0) for _ in 1:100])
+    v_large = VectorOfArray([SVector(0.0, 0.0, 0.0) for _ in 1:100])
+    @.. thread = true v_large = u_large * 2.0
+    @test all(x -> x == SVector(2.0, 2.0, 2.0), v_large.u)
 end
 
 struct ImmutableVectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
