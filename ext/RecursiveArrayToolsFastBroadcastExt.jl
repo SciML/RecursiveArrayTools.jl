@@ -40,9 +40,11 @@ end
     # defines more-specific methods for AbstractVectorOfSArray, so reaching
     # this method with an SArray VoA means Polyester is not loaded.
     if dst isa AbstractVectorOfSArray
-        error("Threaded FastBroadcast on VectorOfArray{SArray} requires Polyester.jl. " *
-              "Add `using Polyester` to enable threaded broadcasting, or use " *
-              "`@.. thread=false` for serial broadcasting.")
+        error(
+            "Threaded FastBroadcast on VectorOfArray{SArray} requires Polyester.jl. " *
+                "Add `using Polyester` to enable threaded broadcasting, or use " *
+                "`@.. thread=false` for serial broadcasting."
+        )
     end
     return FastBroadcast.fast_materialize!(Serial(), dst, bc)
 end
