@@ -4,11 +4,13 @@ on:
   pull_request:
     branches:
       - master
+      - v3-backport
     paths-ignore:
       - 'docs/**'
   push:
     branches:
       - master
+      - v3-backport
     paths-ignore:
       - 'docs/**'
 
