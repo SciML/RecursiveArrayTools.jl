@@ -6,9 +6,6 @@ using FastBroadcast: Serial, Threaded
 using Polyester
 using StaticArraysCore
 
-# Signal to the base FastBroadcast extension that Polyester threading is available.
-RecursiveArrayTools.POLYESTER_LOADED[] = true
-
 const AbstractVectorOfSArray = AbstractVectorOfArray{
     T, N, <:AbstractVector{<:StaticArraysCore.SArray},
 } where {T, N}

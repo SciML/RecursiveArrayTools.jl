@@ -36,7 +36,10 @@ end
         ::Threaded, dst::AbstractVectorOfArray,
         bc::Broadcast.Broadcasted
     )
-    if dst isa AbstractVectorOfSArray && !RecursiveArrayTools.POLYESTER_LOADED[]
+    # When Polyester is loaded, RecursiveArrayToolsFastBroadcastPolyesterExt
+    # defines more-specific methods for AbstractVectorOfSArray, so reaching
+    # this method with an SArray VoA means Polyester is not loaded.
+    if dst isa AbstractVectorOfSArray
         error("Threaded FastBroadcast on VectorOfArray{SArray} requires Polyester.jl. " *
               "Add `using Polyester` to enable threaded broadcasting, or use " *
               "`@.. thread=false` for serial broadcasting.")
