@@ -35,6 +35,7 @@ end
         @time @safetestset "StaticArrays Tests" include("copy_static_array_test.jl")
         @time @safetestset "Linear Algebra Tests" include("linalg.jl")
         @time @safetestset "Adjoint Tests" include("adjoints.jl")
+        @time @safetestset "Mooncake Tests" include("mooncake.jl")
         @time @safetestset "Measurement Tests" include("measurements.jl")
     end
 
