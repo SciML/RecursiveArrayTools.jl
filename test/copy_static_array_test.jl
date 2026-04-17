@@ -131,3 +131,13 @@ x_immutablefv = [ImmutableFV(1.0, 2.0)]
 for vec in [x_staticvector, x_structarray, x_mutablefv, x_immutablefv]
     @test typeof(similar(VectorOfArray(vec))) === typeof(VectorOfArray(vec))
 end
+
+# Test that zero(VectorOfArray) preserves StructArray container type (via rewrap)
+let
+    sa = StructArray{SVector{2, Float64}}((Float64[1.0, 2.0], Float64[3.0, 4.0]))
+    voa = VectorOfArray(sa)
+    z = zero(voa)
+    @test z.u isa StructArray
+    @test all(iszero, z.u[1])
+    @test all(iszero, z.u[2])
+end

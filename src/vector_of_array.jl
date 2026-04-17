@@ -945,7 +945,7 @@ end
 
 function Base.zero(VA::AbstractVectorOfArray)
     T = typeof(VA)
-    u_zero = [zero(u) for u in VA.u]
+    u_zero = rewrap(VA.u, [zero(u) for u in VA.u])
     fields = [fname == :u ? u_zero : _copyfield(VA, fname) for fname in fieldnames(T)]
     return T(fields...)
 end
