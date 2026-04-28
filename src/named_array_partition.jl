@@ -34,11 +34,16 @@ function Base.similar(A::NamedArrayPartition)
     )
 end
 
-# return ArrayPartition when possible, otherwise next best thing of the correct size
+# return NamedArrayPartition when the requested dims still match the partition layout;
+# otherwise fall back to the plain backing array of the correct size. ArrayPartition's
+# own `similar(A, dims)` already does this degradation (it returns a Vector when
+# `dims != size(A)`), and we simply propagate that result instead of trying to
+# wrap a non-ArrayPartition in a NamedArrayPartition (which would hit the inner
+# constructor signature `NamedArrayPartition(::A<:ArrayPartition, ::NamedTuple)`).
 function Base.similar(A::NamedArrayPartition, dims::NTuple{N, Int}) where {N}
-    return NamedArrayPartition(
-        similar(getfield(A, :array_partition), dims), getfield(A, :names_to_indices)
-    )
+    inner = similar(getfield(A, :array_partition), dims)
+    inner isa ArrayPartition || return inner
+    return NamedArrayPartition(inner, getfield(A, :names_to_indices))
 end
 
 # similar array partition of common type
@@ -48,11 +53,10 @@ end
     )
 end
 
-# return ArrayPartition when possible, otherwise next best thing of the correct size
 function Base.similar(A::NamedArrayPartition, ::Type{T}, dims::NTuple{N, Int}) where {T, N}
-    return NamedArrayPartition(
-        similar(getfield(A, :array_partition), T, dims), getfield(A, :names_to_indices)
-    )
+    inner = similar(getfield(A, :array_partition), T, dims)
+    inner isa ArrayPartition || return inner
+    return NamedArrayPartition(inner, getfield(A, :names_to_indices))
 end
 
 # similar array partition with different types
@@ -96,6 +100,28 @@ Base.length(x::NamedArrayPartition) = length(ArrayPartition(x))
 # Use concrete index types to avoid invalidating AbstractArray's generic setindex!.
 Base.@propagate_inbounds Base.getindex(x::NamedArrayPartition, i::Int) = ArrayPartition(x)[i]
 Base.@propagate_inbounds Base.setindex!(x::NamedArrayPartition, v, i::Int) = (ArrayPartition(x)[i] = v)
+
+# Indexing with non-scalar indices (UnitRange, Vector{Int}, etc.) goes through
+# AbstractArray's generic path, which routes via `similar(A, T, dims)`. NAP's
+# `similar(::NAP, T, dims)` cannot in general produce a NamedArrayPartition for
+# arbitrary `dims` (the partition layout is fixed by `names_to_indices`), so it
+# falls back to a plain Vector — making the inferred return type a small Union.
+#
+# Mirror ArrayPartition's `_unsafe_getindex` shortcut at `array_partition.jl:317`:
+# allocate the destination directly off the first underlying array and fill it
+# via `_unsafe_getindex!`. The result is always a Vector for non-scalar indexing,
+# so `x[I]` is type-stable. This matches the v3 indexing semantics (`x[1:end]`
+# returns a `Vector`, not a `NamedArrayPartition`); use `similar(x)` /
+# `copy(x)` if you want a NamedArrayPartition back.
+Base.@propagate_inbounds function Base._unsafe_getindex(
+        ::IndexStyle, A::NamedArrayPartition,
+        I::Vararg{Union{Real, AbstractArray}, N}
+    ) where {N}
+    shape = Base.index_shape(I...)
+    dest = similar(getfield(A, :array_partition).x[1], shape)
+    Base._unsafe_getindex!(dest, A, I...)
+    return dest
+end
 function Base.map(f, x::NamedArrayPartition)
     return NamedArrayPartition(map(f, ArrayPartition(x)), getfield(x, :names_to_indices))
 end
