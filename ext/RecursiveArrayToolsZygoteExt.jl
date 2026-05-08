@@ -44,6 +44,8 @@ end
             # using linear indexing (which now returns scalar elements for VectorOfArray).
             if y isa AbstractVectorOfArray
                 (y.u,)
+            elseif y isa NamedTuple && haskey(y, :u)
+                (y.u,)
         else
                 (
                     [
@@ -67,6 +69,8 @@ end
                 y = VectorOfArray(y[].u)
         end
             if y isa AbstractVectorOfArray
+                (y.u, nothing)
+            elseif y isa NamedTuple && haskey(y, :u)
                 (y.u, nothing)
         else
                 (
@@ -113,11 +117,15 @@ end
 
 @adjoint function Base.Array(VA::AbstractVectorOfArray)
     adj = let VA = VA
-        function Array_adjoint(y)
-            # Return a VectorOfArray so it flows correctly back through VectorOfArray constructor
-            VA = recursivecopy(VA)
-            copyto!(VA, y)
-            return (VA,)
+        function Array_adjoint(y::AbstractArray{T, N}) where {T, N}
+            arrarr = [
+                [
+                    y[ntuple(_ -> Colon(), Val(N - 2))..., j, i]
+                    for j in 1:size(y)[end - 1]
+                ]
+                for i in 1:size(y)[end]
+            ]
+            return ((u = arrarr,),)
         end
     end
     Array(VA), adj

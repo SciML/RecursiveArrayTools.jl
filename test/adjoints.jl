@@ -90,3 +90,45 @@ voa_gs, = Zygote.gradient(voa) do x
     sum(sum.(x.u))
 end
 @test voa_gs isa RecursiveArrayTools.VectorOfArray
+
+@testset "Base.Array(::AbstractVectorOfArray) cotangent shape" begin
+    let voa = VectorOfArray([Float64.(1:3), Float64.(4:6), Float64.(7:9)])
+        y = Array(voa)
+        @test size(y) == (3, 3)
+        _, back = Zygote.pullback(Base.Array, voa)
+        cot, = back(ones(Float64, size(y)))
+        @test cot isa NamedTuple
+        @test haskey(cot, :u)
+        @test length(cot.u) == length(voa.u)
+        for i in eachindex(voa.u)
+            @test cot.u[i] == ones(Float64, length(voa.u[i]))
+        end
+    end
+
+    let ntraj = 4, ntime = 5, nstate = 2
+        voa = VectorOfArray([
+            VectorOfArray([Float64.((j - 1) * nstate .+ (1:nstate)) .+ (i - 0.5)
+                           for j in 1:ntime])
+            for i in 1:ntraj
+        ])
+        y = Array(voa)
+        @test size(y) == (nstate, ntime, ntraj)
+        _, back = Zygote.pullback(Base.Array, voa)
+        cot, = back(reshape(collect(Float64, 1:length(y)), size(y)))
+        @test cot isa NamedTuple
+        @test length(cot.u) == ntraj
+        for i in 1:ntraj
+            @test length(cot.u[i]) == ntime
+            @test all(length(v) == nstate for v in cot.u[i])
+        end
+    end
+end
+
+@testset "Array(::VectorOfArray) gradient matches ForwardDiff" begin
+    function row_loss(x)
+        voa = VectorOfArray([x .* i for i in 1:5])
+        sum(abs2, 1.0 .- Array(voa))
+    end
+    x = collect(Float64, 1:5)
+    @test Zygote.gradient(row_loss, x)[1] == ForwardDiff.gradient(row_loss, x)
+end
