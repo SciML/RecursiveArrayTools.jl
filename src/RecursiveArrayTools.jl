@@ -189,7 +189,8 @@ module RecursiveArrayTools
     export DEFAULT_PLOT_FUNC, plottable_indices, plot_indices, getindepsym_defaultt,
         interpret_vars, add_labels!, diffeq_to_arrays, solplot_vecs_and_labels
 
-    export recursivecopy, recursivecopy!, recursivefill!, vecvecapply, copyat_or_push!,
+    export recursivecopy, recursivecopy!, recursivecopyto!, recursivefill!, vecvecapply,
+        copyat_or_push!,
         vecvec_to_mat, recursive_one, recursive_mean, recursive_bottom_eltype,
         recursive_unitless_bottom_eltype, recursive_unitless_eltype
 

@@ -361,6 +361,23 @@ function recursivecopy!(
     return A
 end
 
+function recursivecopyto!(A::ArrayPartition, B::ArrayPartition)
+    for (a, b) in zip(A.x, B.x)
+        recursivecopyto!(a, b)
+    end
+    return A
+end
+
+function recursivecopyto!(
+        A::ArrayPartition{T, S},
+        B::ArrayPartition{T, S}
+    ) where {T, S <: Tuple{Vararg{AbstractVectorOfArray}}}
+    for i in eachindex(A.x, B.x)
+        recursivecopyto!(A.x[i], B.x[i])
+    end
+    return A
+end
+
 function recursive_mean(A::ArrayPartition)
     n = npartitions(A)
     if n == 0

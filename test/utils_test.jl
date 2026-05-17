@@ -152,6 +152,87 @@ end
     @test a.u[1][1] == 1.0
 end
 
+@testset "recursivecopyto!" begin
+    # Same-shape scalar arrays — should match copyto!
+    b = zeros(3)
+    a = [1.0, 2.0, 3.0]
+    recursivecopyto!(b, a)
+    @test b == a
+
+    b = zeros(2, 2)
+    a = [1.0 2.0; 3.0 4.0]
+    recursivecopyto!(b, a)
+    @test b == a
+
+    # Issue #589: Matrix ← Vector of matching length (rejected by recursivecopy!,
+    # allowed by recursivecopyto!).
+    b = zeros(2, 3)
+    a = collect(1.0:6.0)
+    recursivecopyto!(b, a)
+    @test b == reshape(a, 2, 3)
+    @test_throws MethodError recursivecopy!(b, a)
+
+    # Vector ← Matrix
+    b = zeros(6)
+    a = reshape(collect(1.0:6.0), 2, 3)
+    recursivecopyto!(b, a)
+    @test b == collect(1.0:6.0)
+
+    # Different-shape matrices, same total length
+    b = zeros(2, 3)
+    a = reshape(collect(1.0:6.0), 3, 2)
+    recursivecopyto!(b, a)
+    @test vec(b) == 1.0:6.0
+
+    # dst longer than src — tail untouched, matches Base.copyto!
+    b = ones(5)
+    a = [10.0, 20.0, 30.0]
+    recursivecopyto!(b, a)
+    @test b == [10.0, 20.0, 30.0, 1.0, 1.0]
+
+    # dst shorter than src — BoundsError, matches Base.copyto!
+    b = zeros(2)
+    a = [1.0, 2.0, 3.0]
+    @test_throws BoundsError recursivecopyto!(b, a)
+
+    # Nested: Vector of Vectors, matching shapes
+    a = [ones(3), 2 * ones(3)]
+    b = [zeros(3), zeros(3)]
+    recursivecopyto!(b, a)
+    @test b[1] == ones(3) && b[2] == 2 * ones(3)
+    # Verify deep copy semantics — mutating dst leaves src untouched
+    b[1][1] = 99.0
+    @test a[1][1] == 1.0
+
+    # Nested with shape mismatch at the leaves — inner copyto! handles it
+    a = [collect(1.0:6.0), collect(7.0:12.0)]
+    b = [zeros(2, 3), zeros(2, 3)]
+    recursivecopyto!(b, a)
+    @test b[1] == reshape(1.0:6.0, 2, 3)
+    @test b[2] == reshape(7.0:12.0, 2, 3)
+
+    # Static array element
+    a = [@SVector([1.0, 2.0]), @SVector([3.0, 4.0])]
+    b = [@SVector(zeros(2)), @SVector(zeros(2))]
+    recursivecopyto!(b, a)
+    @test b == a
+
+    # ArrayPartition with matching shapes (sanity — parity with recursivecopy!)
+    A = ArrayPartition(zeros(2), zeros(3))
+    B = ArrayPartition([1.0, 2.0], [3.0, 4.0, 5.0])
+    recursivecopyto!(A, B)
+    @test A.x[1] == [1.0, 2.0]
+    @test A.x[2] == [3.0, 4.0, 5.0]
+
+    # VectorOfArray
+    u1 = VA[zeros(MVector{2, Float64}), zeros(MVector{2, Float64})]
+    u2 = VA[fill(4, MVector{2, Float64}), 2 .* ones(MVector{2, Float64})]
+    recursivecopyto!(u1, u2)
+    @test u1.u[1] == [4.0, 4.0]
+    @test u1.u[2] == [2.0, 2.0]
+    @test u1.u[1] isa MVector
+end
+
 @testset "VectorOfArray similar with nested scalar leaves" begin
     a = VA[ones(2), VA[1.0, 1.0]]
     b = similar(a, Float64)

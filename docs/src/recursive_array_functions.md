@@ -8,6 +8,7 @@ and do not require that the RecursiveArrayTools types are used.
 ```@docs
 recursivecopy
 recursivecopy!
+recursivecopyto!
 vecvecapply
 copyat_or_push!
 ```

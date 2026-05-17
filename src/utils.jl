@@ -45,7 +45,9 @@ recursivecopy!(b::AbstractArray{T, N}, a::AbstractArray{T, N})
 ```
 
 A recursive `copy!` function. Acts like a `deepcopy!` on arrays of arrays, but
-like `copy!` on arrays of scalars.
+like `copy!` on arrays of scalars. Requires `b` and `a` to have matching `ndims`;
+use [`recursivecopyto!`](@ref) for the `copyto!`-style linear-index variant that
+allows mismatched shapes.
 """
 function recursivecopy! end
 
@@ -98,6 +100,68 @@ function recursivecopy!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
     @inbounds for i in eachindex(b.u, a.u)
         if ArrayInterface.ismutable(b.u[i]) || b.u[i] isa AbstractVectorOfArray
             recursivecopy!(b.u[i], a.u[i])
+        else
+            b.u[i] = recursivecopy(a.u[i])
+        end
+    end
+    return b
+end
+
+"""
+```julia
+recursivecopyto!(b::AbstractArray, a::AbstractArray)
+```
+
+A recursive `copyto!` function. Acts like a `deepcopy!` on arrays of arrays, but
+like `copyto!` on arrays of scalars.
+
+Unlike [`recursivecopy!`](@ref), this does not require `b` and `a` to have matching
+`ndims` or axes; only that `length(b) >= length(a)`. Elements are copied in linear
+(column-major) order, matching the semantics of `Base.copyto!`. Use this when
+flattening/reshaping between destination and source is intended, e.g. copying a
+`Vector` into a `Matrix` of the same total length.
+"""
+function recursivecopyto! end
+
+function recursivecopyto!(b::AbstractArray, a::AbstractArray)
+    return copyto!(b, a)
+end
+
+function recursivecopyto!(
+        b::AbstractArray{T},
+        a::AbstractArray{T2}
+    ) where {
+        T <: StaticArraysCore.StaticArray,
+        T2 <: StaticArraysCore.StaticArray,
+    }
+    @inbounds for (ib, ia) in zip(eachindex(b), eachindex(a))
+        # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
+        b[ib] = copy(a[ia])
+    end
+    return b
+end
+
+function recursivecopyto!(
+        b::AbstractArray{T},
+        a::AbstractArray{T2}
+    ) where {
+        T <: Union{AbstractArray, AbstractVectorOfArray},
+        T2 <: Union{AbstractArray, AbstractVectorOfArray},
+    }
+    if ArrayInterface.ismutable(T)
+        @inbounds for (ib, ia) in zip(eachindex(b), eachindex(a))
+            recursivecopyto!(b[ib], a[ia])
+        end
+    else
+        copyto!(b, a)
+    end
+    return b
+end
+
+function recursivecopyto!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
+    @inbounds for i in eachindex(b.u, a.u)
+        if ArrayInterface.ismutable(b.u[i]) || b.u[i] isa AbstractVectorOfArray
+            recursivecopyto!(b.u[i], a.u[i])
         else
             b.u[i] = recursivecopy(a.u[i])
         end
