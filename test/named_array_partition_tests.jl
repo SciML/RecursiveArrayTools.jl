@@ -58,21 +58,21 @@ end
     @test x[[1, 2]] == [1.0, 1.0]
     @test x[[1, 4]] == [1.0, 2.0]
 
-    @test x[1:2]    isa Vector{Float64}
-    @test x[1:end]  isa Vector{Float64}
+    @test x[1:2] isa Vector{Float64}
+    @test x[1:end] isa Vector{Float64}
     @test x[[1, 4]] isa Vector{Float64}
 
     # Inferred return types: Vector, not Union
-    @test (@inferred x[1:2])           isa Vector{Float64}
-    @test (@inferred x[1:length(x)])   isa Vector{Float64}
-    @test (@inferred x[[1, 4]])        isa Vector{Float64}
+    @test (@inferred x[1:2]) isa Vector{Float64}
+    @test (@inferred x[1:length(x)]) isa Vector{Float64}
+    @test (@inferred x[[1, 4]]) isa Vector{Float64}
 
     # `similar` with a non-matching dims falls back to the backing array;
     # with matching dims keeps the NamedArrayPartition wrapper.
     @test similar(x, Float64, (2,)) isa Vector{Float64}
-    @test similar(x, (2,))          isa Vector{Float64}
+    @test similar(x, (2,)) isa Vector{Float64}
     @test similar(x, Float64, size(x)) isa NamedArrayPartition
-    @test similar(x, size(x))          isa NamedArrayPartition
+    @test similar(x, size(x)) isa NamedArrayPartition
 
     # Scalar indexing untouched and type-stable
     @test x[1] == 1.0

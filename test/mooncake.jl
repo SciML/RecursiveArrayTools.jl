@@ -14,7 +14,7 @@ using RecursiveArrayTools, Mooncake, Test
 
 @testset "ArrayPartition increment_and_get_rdata!" begin
     @test Base.get_extension(RecursiveArrayTools, :RecursiveArrayToolsMooncakeExt) !==
-          nothing
+        nothing
 
     # Tangent produced by an upstream ChainRule.
     t = ArrayPartition([1.0, 2.0], [3.0, 4.0])
