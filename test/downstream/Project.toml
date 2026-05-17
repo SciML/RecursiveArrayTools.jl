@@ -14,10 +14,10 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [compat]
 ArrayInterface = "7"
-ModelingToolkit = "8.33, 9"
+ModelingToolkit = "8.33, 9, 10, 11"
 MonteCarloMeasurements = "1.1"
 NLsolve = "4"
-OrdinaryDiffEq = "6.31"
+OrdinaryDiffEq = "6.31, 7"
 StaticArrays = "1"
 SymbolicIndexingInterface = "0.3"
 Tables = "1"
