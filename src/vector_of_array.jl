@@ -797,6 +797,15 @@ Base.@propagate_inbounds function Base.getindex(A::AbstractVectorOfArray, _arg, 
     end
     symtype = symbolic_type(_arg)
     elsymtype = symbolic_type(eltype(_arg))
+    # For symbolic indices, `A[sym, :]` is semantically equivalent to `A[sym]`
+    # (the no-args symbolic getindex already returns the full timeseries).
+    # Routing through the no-args path here also avoids a broadcast shape bug
+    # in SymbolicIndexingInterface's `GetStateIndex` when the underlying index
+    # is a `Vector{Int}` (array-symbolic) combined with a `Colon` time index.
+    if (symtype != NotSymbolic() || elsymtype != NotSymbolic()) &&
+            length(args) == 1 && args[1] === Colon()
+        return A[_arg]
+    end
 
     return if symtype == NotSymbolic() && elsymtype == NotSymbolic()
         if _arg isa Union{Tuple, AbstractArray} &&
