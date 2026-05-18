@@ -77,7 +77,7 @@ ts = 0:0.5:10
 sol_ts = sol(ts)
 @assert sol_ts isa DiffEqArray
 test_tables_interface(
-    sol_ts, [:timestamp, Symbol("x(t)"), Symbol("y(t)")],
+    sol_ts, [:timestamp; Symbol.(string.(unknowns(lv)))],
     hcat(ts, Array(sol_ts)')
 )
 
