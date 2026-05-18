@@ -1,4 +1,4 @@
-using OrdinaryDiffEq, StaticArrays, RecursiveArrayTools
+using OrdinaryDiffEq, StaticArrays, RecursiveArrayTools, RecursiveArrayToolsShorthandConstructors
 u0 = AP[SVector{1}(50.0), SVector{1}(0.0)]
 tspan = (0.0, 15.0)
 

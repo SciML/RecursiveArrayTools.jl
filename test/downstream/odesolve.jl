@@ -1,4 +1,5 @@
-using OrdinaryDiffEq, NLsolve, RecursiveArrayTools, Test, ArrayInterface, StaticArrays
+using OrdinaryDiffEq, OrdinaryDiffEqRosenbrock, NLsolve, RecursiveArrayTools,
+    RecursiveArrayToolsShorthandConstructors, Test, ArrayInterface, StaticArrays
 function lorenz(du, u, p, t)
     du[1] = 10.0 * (u[2] - u[1])
     du[2] = u[1] * (28.0 - u[3]) - u[2]
@@ -9,7 +10,7 @@ u0 = AP[[1.0, 0.0], [0.0]]
 tspan = (0.0, 100.0)
 prob = ODEProblem(lorenz, u0, tspan)
 sol = solve(prob, Tsit5())
-sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = false)))
+sol = solve(prob, AutoTsit5(Rosenbrock23(autodiff = AutoFiniteDiff())))
 sol = solve(prob, AutoTsit5(Rosenbrock23()))
 
 @test all(Array(sol) .== sol)
@@ -72,4 +73,4 @@ end
 u = fill(SVector{2}(ones(2)), 2, 3)
 ode = ODEProblem(rhs!, VectorOfArray(u), (0.0, 1.0))
 sol = solve(ode, Tsit5())
-@test SciMLBase.successful_retcode(sol)
+@test successful_retcode(sol)
