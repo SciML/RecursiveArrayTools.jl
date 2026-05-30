@@ -106,4 +106,4 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
 [targets]
-test = ["Aqua", "FastBroadcast", "ForwardDiff", "KernelAbstractions", "Measurements", "Mooncake", "NLsolve", "Pkg", "Polyester", "Random", "SafeTestsets", "SparseArrays", "StaticArrays", "Statistics", "StructArrays", "Tables", "Test", "Unitful", "Zygote"]
+test = ["Aqua", "FastBroadcast", "ForwardDiff", "KernelAbstractions", "Measurements", "Mooncake", "NLsolve", "Pkg", "Polyester", "Random", "ReverseDiff", "SafeTestsets", "SparseArrays", "StaticArrays", "Statistics", "StructArrays", "Tables", "Test", "Unitful", "Zygote"]

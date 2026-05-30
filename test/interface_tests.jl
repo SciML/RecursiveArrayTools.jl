@@ -70,6 +70,13 @@ push!(testda, [-1, -2, -3, -4])
 @inferred sum(testva)
 @inferred sum(VA[VA[zeros(4, 4)]])
 @inferred mapreduce(string, *, testva)
+
+# sum must follow Base's promotion, not the element type (issue #595):
+# `Int8` elements sum to `Int64`, so asserting the result is `::Int8` is wrong.
+@test sum(VA[Int8[1, 2, 3]]) === Int64(6)
+@test sum(VA[Int8[1, 2], Int8[3, 4]]) === Int64(10)
+@test sum(VA[Float32[1, 2, 3]]) === 6.0f0
+@inferred sum(VA[Int8[1, 2, 3]])
 # Type stability for `end` indexing (issue #525)
 testva_end = VectorOfArray(fill(fill(2.0, 2), 10))
 # Use lastindex directly since `end` doesn't work in SafeTestsets

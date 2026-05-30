@@ -1137,10 +1137,14 @@ vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u
 # linear algebra
 ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
 
-# Type-stable sum/mapreduce that avoids inference issues on Julia 1.10
-# with deeply nested VectorOfArray type parameters
+# The `::` assertion pins the return type so Julia 1.10's inference does not bail
+# (widening to `Any`) on the self-recursion of `sum(::AbstractVectorOfArray)` for
+# deeply nested VectorOfArrays. It must be the type `sum` actually produces -- the
+# `add_sum` accumulator type -- and NOT the element type `T`, which over-constrains
+# the result for promoting eltypes (`Int8` -> `Int64`) and for AD scalars whose
+# summation drops metadata (e.g. `ReverseDiff.TrackedReal` origin); see issue #595.
 function Base.sum(VA::AbstractVectorOfArray{T}) where {T}
-    return sum(sum, VA.u)::T
+    return sum(sum, VA.u)::Base.promote_op(Base.add_sum, T, T)
 end
 
 function Base.sum(f::F, VA::AbstractVectorOfArray{T}) where {F, T}

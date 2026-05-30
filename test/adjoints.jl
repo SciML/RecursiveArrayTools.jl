@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Zygote, ForwardDiff, Test
+using RecursiveArrayTools, Zygote, ForwardDiff, ReverseDiff, Test
 
 function loss(x)
     return sum(abs2, Array(VectorOfArray([x .* i for i in 1:5])))
@@ -90,3 +90,12 @@ voa_gs, = Zygote.gradient(voa) do x
     sum(sum.(x.u))
 end
 @test voa_gs isa RecursiveArrayTools.VectorOfArray
+
+# issue #595: `sum(::VectorOfArray)` must not assert the element type, which
+# discarded ReverseDiff's `TrackedReal` origin and threw a `TypeError`.
+let g = ReverseDiff.gradient(x -> sum(VectorOfArray([x])), float.(1:3))
+    @test g ≈ ones(3)
+end
+let g = ReverseDiff.gradient(x -> sum(VectorOfArray([VectorOfArray([x])])), float.(1:3))
+    @test g ≈ ones(3)
+end
