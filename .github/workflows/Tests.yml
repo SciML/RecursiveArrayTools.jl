@@ -46,6 +46,10 @@ jobs:
         with:
           version: "${{ matrix.version }}"
       - uses: julia-actions/cache@v3
+        # The cache save (post) step fails to authenticate with the cache backend
+        # on some self-hosted runners; a cache miss must not fail an otherwise
+        # green test job.
+        continue-on-error: true
         with:
           token: "${{ secrets.GITHUB_TOKEN }}"
       - uses: julia-actions/julia-buildpkg@v1
@@ -64,7 +68,10 @@ jobs:
           directories: "src,ext"
       - uses: codecov/codecov-action@v6
         if: "${{ github.event.pull_request.head.repo.full_name == github.repository }}"
+        # Coverage upload is a reporting step; an upload failure (token, rate
+        # limit, codecov outage) must not fail a green test job.
+        continue-on-error: true
         with:
           files: lcov.info
           token: "${{ secrets.CODECOV_TOKEN }}"
-          fail_ci_if_error: true
+          fail_ci_if_error: false

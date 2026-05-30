@@ -32,6 +32,9 @@ jobs:
           GROUP: "GPU"
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v6
+        # `fail_ci_if_error: false` is not enough: the action still exits non-zero
+        # when the token is empty (e.g. fork PRs), so guard the step itself.
+        continue-on-error: true
         with:
           files: lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
