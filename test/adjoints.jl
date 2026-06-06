@@ -1,4 +1,5 @@
 using RecursiveArrayTools, Zygote, ForwardDiff, ReverseDiff, Test
+using Zygote: ChainRulesCore
 
 function loss(x)
     return sum(abs2, Array(VectorOfArray([x .* i for i in 1:5])))
@@ -98,4 +99,22 @@ let g = ReverseDiff.gradient(x -> sum(VectorOfArray([x])), float.(1:3))
 end
 let g = ReverseDiff.gradient(x -> sum(VectorOfArray([VectorOfArray([x])])), float.(1:3))
     @test g ≈ ones(3)
+end
+
+# A `ZeroTangent`/`AbstractZero` slice in the cotangent (structural zero gradient)
+# must be treated like an absent gradient instead of erroring on `size(::ZeroTangent)`.
+let ext = Base.get_extension(RecursiveArrayTools, :RecursiveArrayToolsZygoteExt)
+    voa = VectorOfArray([Float64[i, i, i] for i in 1:3])
+    dea = DiffEqArray([Float64[i, i, i] for i in 1:3], 1:3)
+    d = Any[Float64[1, 1, 1], ChainRulesCore.ZeroTangent(), Float64[3, 3, 3]]
+    expected = [Float64[1, 1, 1], Float64[0, 0, 0], Float64[3, 3, 3]]
+
+    g_voa = ext.vofa_u_adjoint(d, voa)
+    @test g_voa isa VectorOfArray
+    @test g_voa.u == expected
+
+    g_dea = ext.vofa_u_adjoint(d, dea)
+    @test g_dea isa DiffEqArray
+    @test g_dea.u == expected
+    @test g_dea.t == dea.t
 end

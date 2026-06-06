@@ -4,6 +4,7 @@ using RecursiveArrayTools
 
 using Zygote
 using Zygote: FillArrays, ChainRulesCore, literal_getproperty, @adjoint
+using Zygote.ChainRulesCore: AbstractZero
 
 function ChainRulesCore.rrule(
         T::Type{<:RecursiveArrayTools.GPUArraysCore.AbstractGPUArray},
@@ -90,7 +91,7 @@ end
 
 function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
     m = map(enumerate(d)) do (idx, d_i)
-        isnothing(d_i) && return zero(A.u[idx])
+        (isnothing(d_i) || d_i isa AbstractZero) && return zero(A.u[idx])
         d_i
     end
     return VectorOfArray(m)
@@ -98,7 +99,7 @@ end
 
 function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractDiffEqArray)
     m = map(enumerate(d)) do (idx, d_i)
-        isnothing(d_i) && return zero(A.u[idx])
+        (isnothing(d_i) || d_i isa AbstractZero) && return zero(A.u[idx])
         d_i
     end
     return DiffEqArray(m, A.t)
@@ -106,7 +107,7 @@ end
 
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})
     function literal_ArrayPartition_x_adjoint(d)
-        (ArrayPartition((isnothing(d[i]) ? zero(A.x[i]) : d[i] for i in 1:length(d))...),)
+        (ArrayPartition((isnothing(d[i]) || d[i] isa AbstractZero ? zero(A.x[i]) : d[i] for i in 1:length(d))...),)
     end
     A.x, literal_ArrayPartition_x_adjoint
 end
