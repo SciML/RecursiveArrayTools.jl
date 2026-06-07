@@ -20,4 +20,3 @@ jobs:
     with:
       julia-version: "lts"
       skip: "RecursiveArrayTools, Pkg, TOML, Statistics, LinearAlgebra, SparseArrays, InteractiveUtils, Random, Test"
-      allow-reresolve: true
