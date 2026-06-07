@@ -2,7 +2,7 @@ using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, Test
 
 const TEST_GROUP = get(ENV, "RECURSIVEARRAYTOOLS_TEST_GROUP", "Core")
 
-if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+if TEST_GROUP == "Core" || TEST_GROUP == "All"
     @testset "Optimized any" begin
         ap = ArrayPartition(collect(1:5), collect(6:10), collect(11:15))
         @test any(x -> x == 4, ap)

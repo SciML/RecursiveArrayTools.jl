@@ -6,7 +6,7 @@ using Test
 
 const TEST_GROUP = get(ENV, "RECURSIVEARRAYTOOLS_TEST_GROUP", "Core")
 
-if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+if TEST_GROUP == "Core" || TEST_GROUP == "All"
     @testset "RecursiveArrayToolsRaggedArrays" begin
         # ===================================================================
         # Tests ported from v3 basic_indexing.jl

@@ -2,7 +2,7 @@ using RecursiveArrayTools, RecursiveArrayToolsShorthandConstructors, Test
 
 const TEST_GROUP = get(ENV, "RECURSIVEARRAYTOOLS_TEST_GROUP", "Core")
 
-if TEST_GROUP == "Core" || TEST_GROUP == "ALL"
+if TEST_GROUP == "Core" || TEST_GROUP == "All"
     @testset "VA[...] shorthand" begin
         recs = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
