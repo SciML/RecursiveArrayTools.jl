@@ -28,9 +28,6 @@ jobs:
           - "pre"
         group:
           - "Core"
-          - "RaggedArrays"
-          - "ArrayPartitionAnyAll"
-          - "ShorthandConstructors"
           - "Downstream"
           - "nopre"
         exclude:

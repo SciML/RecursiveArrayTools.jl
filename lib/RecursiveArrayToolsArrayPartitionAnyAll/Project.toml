@@ -5,6 +5,9 @@ version = "1.0.0"
 [deps]
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 
+[sources]
+RecursiveArrayTools = {path = "../.."}
+
 [compat]
 RecursiveArrayTools = "4"
 julia = "1.10"
