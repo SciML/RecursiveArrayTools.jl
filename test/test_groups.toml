@@ -1,0 +1,24 @@
+[Core]
+versions = ["lts", "1", "pre"]
+num_threads = 2
+
+[QA]
+versions = ["lts", "1"]
+num_threads = 2
+
+[SymbolicIndexingInterface]
+versions = ["lts", "1", "pre"]
+num_threads = 2
+
+[Downstream]
+versions = ["lts", "1", "pre"]
+num_threads = 2
+
+[NoPre]
+versions = ["lts", "1"]
+num_threads = 2
+
+[GPU]
+versions = ["1"]
+runner = ["self-hosted", "Linux", "X64", "gpu"]
+timeout = 60
