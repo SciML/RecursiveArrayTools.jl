@@ -98,7 +98,7 @@ end
         # not leak into the subsequent functional Core tests run in the main env.
         main_test_project = Base.active_project()
 
-        if GROUP == "QA" || GROUP == "All"
+        if GROUP == "QA"
             # QA (Aqua) runs in its own dep-adding environment (test/QA/Project.toml)
             # so the QA tooling is not part of the main test dependency set.
             activate_qa_env()
