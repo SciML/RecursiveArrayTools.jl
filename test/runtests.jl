@@ -28,6 +28,16 @@ function activate_nopre_env()
     return Pkg.instantiate()
 end
 
+function activate_qa_env()
+    Pkg.activate(joinpath(@__DIR__, "qa"))
+    # On Julia < 1.11, the [sources] section in the qa Project.toml is not
+    # honored, so Pkg.develop the umbrella root path explicitly.
+    if VERSION < v"1.11.0-DEV.0"
+        Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
+    end
+    return Pkg.instantiate()
+end
+
 @time begin
     # Detect sublibrary test groups.
     # GROUP can be a bare sublibrary name (Core test group) or
@@ -85,6 +95,15 @@ end
     else
         # Root package's own test groups.
         if GROUP == "Core" || GROUP == "All"
+            # QA (Aqua) runs in its own isolated environment so the QA tooling
+            # is not part of the main test dependency set. Restore the original
+            # test project afterwards so the functional Core tests below run in
+            # the full main test environment.
+            core_test_project = Base.active_project()
+            activate_qa_env()
+            @time @safetestset "Quality Assurance" include("qa/qa.jl")
+            Pkg.activate(core_test_project)
+
             # The root Core tests use the VA[...]/AP[...] shorthand syntax, which
             # lives in the RecursiveArrayToolsShorthandConstructors sublibrary.
             Pkg.develop(
@@ -92,7 +111,6 @@ end
                     path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors")
                 )
             )
-            @time @safetestset "Quality Assurance" include("qa.jl")
             @time @safetestset "Utils Tests" include("utils_test.jl")
             @time @safetestset "NamedArrayPartition Tests" include("named_array_partition_tests.jl")
             @time @safetestset "Partitions Tests" include("partitions_test.jl")
