@@ -6,13 +6,13 @@ using SafeTestsets
 const GROUP = get(ENV, "GROUP", "All")
 
 function activate_downstream_env()
-    Pkg.activate("downstream")
+    Pkg.activate(joinpath(@__DIR__, "Downstream"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
 function activate_gpu_env()
-    Pkg.activate("gpu")
+    Pkg.activate(joinpath(@__DIR__, "GPU"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     Pkg.develop(
         PackageSpec(
@@ -23,14 +23,14 @@ function activate_gpu_env()
 end
 
 function activate_nopre_env()
-    Pkg.activate("nopre")
+    Pkg.activate(joinpath(@__DIR__, "NoPre"))
     Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
     return Pkg.instantiate()
 end
 
 function activate_qa_env()
-    Pkg.activate(joinpath(@__DIR__, "qa"))
-    # On Julia < 1.11, the [sources] section in the qa Project.toml is not
+    Pkg.activate(joinpath(@__DIR__, "QA"))
+    # On Julia < 1.11, the [sources] section in the QA Project.toml is not
     # honored, so Pkg.develop the umbrella root path explicitly.
     if VERSION < v"1.11.0-DEV.0"
         Pkg.develop(PackageSpec(path = dirname(@__DIR__)))
@@ -94,16 +94,19 @@ end
         end
     else
         # Root package's own test groups.
-        if GROUP == "Core" || GROUP == "All"
-            # QA (Aqua) runs in its own isolated environment so the QA tooling
-            # is not part of the main test dependency set. Restore the original
-            # test project afterwards so the functional Core tests below run in
-            # the full main test environment.
-            core_test_project = Base.active_project()
-            activate_qa_env()
-            @time @safetestset "Quality Assurance" include("qa/qa.jl")
-            Pkg.activate(core_test_project)
+        # Captured so that, in a local "All" run, the QA group's isolated env does
+        # not leak into the subsequent functional Core tests run in the main env.
+        main_test_project = Base.active_project()
 
+        if GROUP == "QA" || GROUP == "All"
+            # QA (Aqua) runs in its own dep-adding environment (test/QA/Project.toml)
+            # so the QA tooling is not part of the main test dependency set.
+            activate_qa_env()
+            @time @safetestset "Quality Assurance" include("QA/qa.jl")
+            Pkg.activate(main_test_project)
+        end
+
+        if GROUP == "Core" || GROUP == "All"
             # The root Core tests use the VA[...]/AP[...] shorthand syntax, which
             # lives in the RecursiveArrayToolsShorthandConstructors sublibrary.
             Pkg.develop(
@@ -111,49 +114,50 @@ end
                     path = joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors")
                 )
             )
-            @time @safetestset "Utils Tests" include("utils_test.jl")
-            @time @safetestset "NamedArrayPartition Tests" include("named_array_partition_tests.jl")
-            @time @safetestset "Partitions Tests" include("partitions_test.jl")
-            @time @safetestset "VecOfArr Indexing Tests" include("basic_indexing.jl")
-            @time @safetestset "VecOfArr Interface Tests" include("interface_tests.jl")
-            @time @safetestset "Table traits" include("tabletraits.jl")
-            @time @safetestset "StaticArrays Tests" include("copy_static_array_test.jl")
-            @time @safetestset "Linear Algebra Tests" include("linalg.jl")
-            @time @safetestset "Adjoint Tests" include("adjoints.jl")
-            @time @safetestset "Mooncake Tests" include("mooncake.jl")
-            @time @safetestset "Measurement Tests" include("measurements.jl")
+            @time @safetestset "Utils Tests" include("Core/utils_test.jl")
+            @time @safetestset "NamedArrayPartition Tests" include("Core/named_array_partition_tests.jl")
+            @time @safetestset "Partitions Tests" include("Core/partitions_test.jl")
+            @time @safetestset "Partitions and StaticArrays Tests" include("Core/partitions_and_static_arrays.jl")
+            @time @safetestset "VecOfArr Indexing Tests" include("Core/basic_indexing.jl")
+            @time @safetestset "VecOfArr Interface Tests" include("Core/interface_tests.jl")
+            @time @safetestset "Table traits" include("Core/tabletraits.jl")
+            @time @safetestset "StaticArrays Tests" include("Core/copy_static_array_test.jl")
+            @time @safetestset "Linear Algebra Tests" include("Core/linalg.jl")
+            @time @safetestset "Adjoint Tests" include("Core/adjoints.jl")
+            @time @safetestset "Mooncake Tests" include("Core/mooncake.jl")
+            @time @safetestset "Measurement Tests" include("Core/measurements.jl")
         end
 
         if GROUP == "SymbolicIndexingInterface" || GROUP == "All"
-            @time @safetestset "SymbolicIndexingInterface API test" include("symbolic_indexing_interface_test.jl")
+            @time @safetestset "SymbolicIndexingInterface API test" include("SymbolicIndexingInterface/symbolic_indexing_interface_test.jl")
         end
 
         if GROUP == "Downstream"
             activate_downstream_env()
-            @time @safetestset "ODE Solve Tests" include("downstream/odesolve.jl")
-            @time @safetestset "Event Tests with ArrayPartition" include("downstream/downstream_events.jl")
-            @time @safetestset "Measurements and Units" include("downstream/measurements_and_units.jl")
-            @time @safetestset "TrackerExt" include("downstream/TrackerExt.jl")
+            @time @safetestset "ODE Solve Tests" include("Downstream/odesolve.jl")
+            @time @safetestset "Event Tests with ArrayPartition" include("Downstream/downstream_events.jl")
+            @time @safetestset "Measurements and Units" include("Downstream/measurements_and_units.jl")
+            @time @safetestset "TrackerExt" include("Downstream/TrackerExt.jl")
             # TODO: re-enable after SciMLBase compat bump for RAT v4 (SciML/SciMLBase.jl#1297)
-            # @time @safetestset "Downstream Adjoint Tests" include("downstream/adjoints.jl")
+            # @time @safetestset "Downstream Adjoint Tests" include("Downstream/adjoints.jl")
         end
 
         if GROUP == "SymbolicIndexingInterface" || GROUP == "Downstream"
             if GROUP == "SymbolicIndexingInterface"
                 activate_downstream_env()
             end
-            @time @safetestset "DiffEqArray Indexing Tests" include("downstream/symbol_indexing.jl")
+            @time @safetestset "DiffEqArray Indexing Tests" include("Downstream/symbol_indexing.jl")
         end
 
         if GROUP == "GPU"
             activate_gpu_env()
-            @time @safetestset "VectorOfArray GPU" include("gpu/vectorofarray_gpu.jl")
-            @time @safetestset "ArrayPartition GPU" include("gpu/arraypartition_gpu.jl")
+            @time @safetestset "VectorOfArray GPU" include("GPU/vectorofarray_gpu.jl")
+            @time @safetestset "ArrayPartition GPU" include("GPU/arraypartition_gpu.jl")
         end
 
         if GROUP == "NoPre"
             activate_nopre_env()
-            @time @safetestset "JET Tests" include("jet_tests.jl")
+            @time @safetestset "JET Tests" include("NoPre/jet_tests.jl")
         end
     end
 end
