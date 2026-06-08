@@ -19,7 +19,6 @@ jobs:
     secrets: "inherit"
     with:
       julia-version: "lts"
-      skip: "RecursiveArrayTools,RecursiveArrayToolsArrayPartitionAnyAll,RecursiveArrayToolsRaggedArrays,RecursiveArrayToolsShorthandConstructors,Pkg,TOML,Statistics,LinearAlgebra,SparseArrays,InteractiveUtils,Random,Test"
       group-env-name: "RECURSIVEARRAYTOOLS_TEST_GROUP"
       group-env-value: "Core"
       # Every lib/* sublibrary is downgrade-tested (projects auto-discovered, no exclusions).
