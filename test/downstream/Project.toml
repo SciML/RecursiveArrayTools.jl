@@ -10,9 +10,14 @@ RecursiveArrayToolsShorthandConstructors = "39fb7555-b4ad-4efd-8abe-30331df017d3
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[sources]
+RecursiveArrayTools = {path = "../.."}
+RecursiveArrayToolsShorthandConstructors = {path = "../../lib/RecursiveArrayToolsShorthandConstructors"}
 
 [compat]
 ArrayInterface = "7"
@@ -22,8 +27,11 @@ NLsolve = "4"
 OrdinaryDiffEq = "6.31, 7"
 OrdinaryDiffEqRosenbrock = "1, 2"
 StaticArrays = "1"
+RecursiveArrayTools = "4"
+RecursiveArrayToolsShorthandConstructors = "1"
 SymbolicIndexingInterface = "0.3"
 Tables = "1"
+Test = "1"
 Tracker = "0.2"
 Unitful = "1.17"
 Zygote = "0.6, 0.7"
