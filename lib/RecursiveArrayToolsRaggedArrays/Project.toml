@@ -10,6 +10,9 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 StaticArraysCore = "1e83bf80-4336-4d27-bf5d-d5a4f845583c"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 
+[sources]
+RecursiveArrayTools = {path = "../.."}
+
 [compat]
 Adapt = "4"
 ArrayInterface = "7.17.0"

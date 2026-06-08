@@ -1,4 +1,4 @@
-name: "Tests"
+name: CI
 
 on:
   pull_request:
@@ -23,23 +23,40 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1"
           - "lts"
+          - "1"
           - "pre"
         group:
           - "Core"
-          - "RaggedArrays"
-          - "ArrayPartitionAnyAll"
-          - "ShorthandConstructors"
+          - "QA"
+          - "SymbolicIndexingInterface"
           - "Downstream"
-          - "nopre"
+          - "NoPre"
         exclude:
+          # JET (NoPre) is not run on prereleases.
           - version: "pre"
-            group: "nopre"
+            group: "NoPre"
+          # QA (Aqua) runs only on lts and 1, never on prereleases.
+          - version: "pre"
+            group: "QA"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"
       group: "${{ matrix.group }}"
       num-threads: "2"
+      check-bounds: "auto"
+      coverage-directories: "src,ext"
+    secrets: "inherit"
+
+  # GPU tests are a dep-adding group (test/GPU/Project.toml) that runs on the
+  # self-hosted GPU runner. Folded in from the former bespoke GPU.yml.
+  gpu:
+    name: "GPU Tests"
+    uses: "SciML/.github/.github/workflows/tests.yml@v1"
+    with:
+      julia-version: "1"
+      group: "GPU"
+      runner: '["self-hosted", "Linux", "X64", "gpu"]'
+      timeout-minutes: 60
       coverage-directories: "src,ext"
     secrets: "inherit"

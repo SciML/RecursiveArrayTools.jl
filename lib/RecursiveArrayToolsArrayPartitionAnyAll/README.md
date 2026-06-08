@@ -1,8 +1,13 @@
 # RecursiveArrayToolsArrayPartitionAnyAll.jl
 
-Optimized `any` and `all` for
-[RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl)'s
-`ArrayPartition` type.
+[![Join the chat at https://julialang.zulipchat.com #sciml-bridged](https://img.shields.io/static/v1?label=Zulip&message=chat&color=9558b2&labelColor=389826)](https://julialang.zulipchat.com/#narrow/stream/279055-sciml-bridged)
+[![Global Docs](https://img.shields.io/badge/docs-SciML-blue.svg)](https://docs.sciml.ai/RecursiveArrayTools/stable/)
+
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor%27s%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
+[![SciML Code Style](https://img.shields.io/static/v1?label=code%20style&message=SciML&color=9558b2&labelColor=389826)](https://github.com/SciML/SciMLStyle)
+
+RecursiveArrayToolsArrayPartitionAnyAll.jl is a component of the [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) monorepo. Optimized `any` and `all` for the `ArrayPartition` type.
+While completely independent and usable on its own, users wanting the full functionality should use [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl).
 
 `ArrayPartition` stores data as a tuple of arrays. The default `AbstractArray`
 `any`/`all` iterates element-by-element through the partition, which incurs

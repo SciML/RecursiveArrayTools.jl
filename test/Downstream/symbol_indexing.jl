@@ -2,7 +2,7 @@ using RecursiveArrayTools, ModelingToolkit, OrdinaryDiffEq, SymbolicIndexingInte
 using Zygote
 using ModelingToolkit: t_nounits as t, D_nounits as D
 
-include("../testutils.jl")
+include("../Core/testutils.jl")
 
 @variables x(t)
 @parameters τ
