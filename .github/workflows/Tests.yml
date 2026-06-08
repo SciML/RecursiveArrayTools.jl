@@ -29,10 +29,10 @@ jobs:
         group:
           - "Core"
           - "Downstream"
-          - "nopre"
+          - "NoPre"
         exclude:
           - version: "pre"
-            group: "nopre"
+            group: "NoPre"
     uses: "SciML/.github/.github/workflows/tests.yml@v1"
     with:
       julia-version: "${{ matrix.version }}"

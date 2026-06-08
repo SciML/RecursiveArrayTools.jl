@@ -133,7 +133,7 @@ end
             @time @safetestset "ArrayPartition GPU" include("gpu/arraypartition_gpu.jl")
         end
 
-        if GROUP == "nopre"
+        if GROUP == "NoPre"
             activate_nopre_env()
             @time @safetestset "JET Tests" include("jet_tests.jl")
         end
