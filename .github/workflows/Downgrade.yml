@@ -21,4 +21,11 @@ jobs:
     uses: "SciML/.github/.github/workflows/downgrade.yml@v1"
     with:
       group: "${{ matrix.group }}"
+      # Mooncake 0.5 (RecursiveArrayToolsMooncakeExt) requires Julia >= 1.10.8,
+      # so the downgrade resolver cannot place it when it minimizes Julia to the
+      # 1.10.0 floor that the default "lts" channel implies. Resolve downgrades
+      # against 1.11 (matching OrdinaryDiffEq.jl) where every dependency floor is
+      # jointly installable; core support for Julia 1.10 is unchanged and remains
+      # exercised by the regular lts CI legs.
+      julia-version: "1.11"
     secrets: "inherit"
