@@ -146,7 +146,7 @@ function Base.similar(
     return NamedArrayPartition(similar(ArrayPartition(x)), getfield(x, :names_to_indices))
 end
 
-# when broadcasting with ArrayPartition + another array type, the output is the other array tupe
+# when broadcasting with ArrayPartition + another array type, the output is the other array type
 function Base.BroadcastStyle(
         ::Broadcast.ArrayStyle{NamedArrayPartition}, ::Broadcast.DefaultArrayStyle{1}
     )
