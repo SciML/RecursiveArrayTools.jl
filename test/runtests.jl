@@ -22,8 +22,6 @@ run_tests(;
         @time @safetestset "Table traits" include("Core/tabletraits.jl")
         @time @safetestset "StaticArrays Tests" include("Core/copy_static_array_test.jl")
         @time @safetestset "Linear Algebra Tests" include("Core/linalg.jl")
-        @time @safetestset "Adjoint Tests" include("Core/adjoints.jl")
-        @time @safetestset "Mooncake Tests" include("Core/mooncake.jl")
         return @time @safetestset "Measurement Tests" include("Core/measurements.jl")
     end,
     groups = Dict(
@@ -68,6 +66,18 @@ run_tests(;
             env = joinpath(@__DIR__, "NoPre"),
             body = function ()
                 return @time @safetestset "JET Tests" include("NoPre/jet_tests.jl")
+            end,
+        ),
+        # AD lives in its own env (test/AD/Project.toml) so its heavy AD-backend
+        # deps (Mooncake/Zygote/ForwardDiff/ReverseDiff) stay out of the root test
+        # target. It is deliberately absent from `all` and not run in the Downgrade
+        # lane: Mooncake 0.5 requires Julia >= 1.10.8, which the downgrade resolver
+        # cannot satisfy when it minimizes Julia to the 1.10.0 LTS floor.
+        "AD" => (;
+            env = joinpath(@__DIR__, "AD"),
+            body = function ()
+                @time @safetestset "Adjoint Tests" include("AD/adjoints.jl")
+                return @time @safetestset "Mooncake Tests" include("AD/mooncake.jl")
             end,
         ),
     ),
