@@ -18,6 +18,16 @@ num_threads = 2
 versions = ["lts", "1"]
 num_threads = 2
 
+# AD backends (Mooncake/Zygote/ForwardDiff/ReverseDiff) live in their own env
+# (test/AD/Project.toml) and run as their own CI group. in_all = false keeps them
+# out of the "All" aggregate, and the Downgrade lane only runs "Core", so AD is
+# never fed to the downgrade resolver -- Mooncake 0.5 needs Julia >= 1.10.8, which
+# the downgrade resolver cannot place when it minimizes Julia to the 1.10.0 floor.
+[AD]
+versions = ["lts", "1"]
+num_threads = 2
+in_all = false
+
 [GPU]
 versions = ["1"]
 runner = ["self-hosted", "Linux", "X64", "gpu"]

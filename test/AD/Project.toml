@@ -1,0 +1,18 @@
+[deps]
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+Mooncake = "da2b9cff-9c12-43a0-ae48-6db2b0edb7d6"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[sources]
+RecursiveArrayTools = {path = "../.."}
+
+[compat]
+ForwardDiff = "0.10.38, 1"
+Mooncake = "0.5"
+RecursiveArrayTools = "4"
+ReverseDiff = "1.15"
+Test = "1"
+Zygote = "0.7"
