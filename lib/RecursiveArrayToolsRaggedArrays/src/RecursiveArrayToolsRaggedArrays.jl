@@ -2,7 +2,7 @@ module RecursiveArrayToolsRaggedArrays
 
 import RecursiveArrayTools: RecursiveArrayTools, AbstractRaggedVectorOfArray,
     AbstractRaggedDiffEqArray, VectorOfArray, DiffEqArray,
-    AbstractVectorOfArray, AbstractDiffEqArray, AllObserved,
+    AbstractVectorOfArray, AbstractDiffEqArray,
     recursivefill!, recursivecopy!
 using SymbolicIndexingInterface
 using SymbolicIndexingInterface: ParameterTimeseriesCollection, ParameterIndexingProxy,
