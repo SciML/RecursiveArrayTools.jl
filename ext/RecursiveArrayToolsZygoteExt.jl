@@ -94,6 +94,7 @@ function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
         (isnothing(d_i) || d_i isa AbstractZero) && return zero(A.u[idx])
         d_i
     end
+    _vofa_cotangent_array(m) || return m
     return VectorOfArray(m)
 end
 
@@ -102,7 +103,17 @@ function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractDiffEqArray)
         (isnothing(d_i) || d_i isa AbstractZero) && return zero(A.u[idx])
         d_i
     end
+    _vofa_cotangent_array(m) || return m
     return DiffEqArray(m, A.t)
+end
+
+# Whether the per-element cotangents can be rewrapped in a `VectorOfArray`/`DiffEqArray`.
+# When they are structural tangents instead (e.g. `NamedTuple`s for the solution
+# objects in an `EnsembleSolution`, produced when only a scalar field such as
+# `sol.t[end]` is differentiated) they have no `ndims`, so the cotangent is passed
+# through as a plain vector rather than erroring. (DifferentialEquations.jl#1149)
+function _vofa_cotangent_array(m)
+    return all(x -> x isa Union{AbstractArray, AbstractVectorOfArray}, m)
 end
 
 @adjoint function literal_getproperty(A::ArrayPartition, ::Val{:x})
