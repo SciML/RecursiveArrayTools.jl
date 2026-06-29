@@ -118,3 +118,27 @@ let ext = Base.get_extension(RecursiveArrayTools, :RecursiveArrayToolsZygoteExt)
     @test g_dea.u == expected
     @test g_dea.t == dea.t
 end
+
+# Structural `NamedTuple` cotangents (e.g. the per-trajectory solution cotangents
+# of an `EnsembleSolution` when only a scalar field such as `sol.t[end]` is
+# differentiated) cannot be wrapped in a `VectorOfArray`/`DiffEqArray`; they must
+# pass through as a plain vector instead of erroring on `ndims(::NamedTuple)`.
+# (DifferentialEquations.jl#1149)
+let ext = Base.get_extension(RecursiveArrayTools, :RecursiveArrayToolsZygoteExt)
+    voa = VectorOfArray([Float64[i, i, i] for i in 1:3])
+    dea = DiffEqArray([Float64[i, i, i] for i in 1:3], 1:3)
+    d = [(u = nothing, t = Float64[0, 0, i]) for i in 1:3]
+
+    g_voa = ext.vofa_u_adjoint(d, voa)
+    @test g_voa == d
+
+    g_dea = ext.vofa_u_adjoint(d, dea)
+    @test g_dea == d
+
+    # `nothing`/`AbstractZero` slices still drop out even when mixed with structural tangents.
+    d_mixed = Any[
+        (u = nothing, t = Float64[0, 0, 1]), nothing,
+        ChainRulesCore.ZeroTangent(),
+    ]
+    @test ext.vofa_u_adjoint(d_mixed, voa)[1] == d_mixed[1]
+end
