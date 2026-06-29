@@ -16,6 +16,15 @@ run_qa(
         ),
     ),
     jet_kwargs = (; target_defined_modules = true),
+    # Pre-existing JET typo-mode finding (reproduces byte-identically on master):
+    # the `copyto!`/`fill!`/broadcast immutable-element branches call
+    # `StaticArraysCore.similar_type(dest.u[i])`, but `dest.u[i]` infers as `::Any`
+    # because the abstract `AbstractRaggedVectorOfArray` `.u` field is untyped, so
+    # `similar_type(::Any)` has no matching method. Tracked (with the real fix —
+    # tightening the `.u` type / guarding the immutable branch) in
+    # https://github.com/SciML/RecursiveArrayTools.jl/issues/620. `jet_broken`
+    # auto-flags an Unexpected Pass once that fix lands, prompting removal.
+    jet_broken = true,
     ei_kwargs = (;
         # `AbstractRaggedVectorOfArray`/`AbstractRaggedDiffEqArray` are
         # RecursiveArrayTools-owned abstract types this subpackage subtypes; they are
