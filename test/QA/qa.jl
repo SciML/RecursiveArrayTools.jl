@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Aqua, Pkg
+using SciMLTesting, RecursiveArrayTools, Test, Pkg
 
 # yes this is horrible, we'll fix it when Pkg or Base provides a decent API
 manifest = Pkg.Types.EnvCache().manifest
@@ -7,13 +7,30 @@ if haskey(manifest.deps, "NonlinearSolveBase") || haskey(manifest.deps, "DiffEqB
     error("Don't put Downstream Packages in non Downstream CI")
 end
 
-@testset "Aqua" begin
-    Aqua.find_persistent_tasks_deps(RecursiveArrayTools)
-    Aqua.test_ambiguities(RecursiveArrayTools; recursive = false, broken = true)
-    Aqua.test_deps_compat(RecursiveArrayTools)
-    Aqua.test_piracies(RecursiveArrayTools)
-    Aqua.test_project_extras(RecursiveArrayTools)
-    Aqua.test_stale_deps(RecursiveArrayTools)
-    Aqua.test_unbound_args(RecursiveArrayTools)
-    Aqua.test_undefined_exports(RecursiveArrayTools)
-end
+run_qa(
+    RecursiveArrayTools;
+    explicit_imports = true,
+    # Method-table ambiguities tracked in
+    # https://github.com/SciML/RecursiveArrayTools.jl/issues/326
+    aqua_broken = (:ambiguities,),
+    ei_kwargs = (;
+        # Non-public names legitimately qualified/imported from upstream packages
+        # (Base, Base.Broadcast, LinearAlgebra, StaticArraysCore, ArrayInterface,
+        # Adapt, SymbolicIndexingInterface). Not RecursiveArrayTools' to make public.
+        all_qualified_accesses_are_public = (;
+            ignore = (
+                Symbol("@propagate_inbounds"), :AbstractArrayStyle, :AllVariables,
+                :ArrayStyle, :BroadcastStyle, :Broadcasted, :DefaultArrayStyle, :OneTo,
+                :QRCompactWY, :SolvedVariables, :StaticArray, :StaticVecOrMat,
+                :SymbolicTypeTrait, :_InitialValue, :_ipiv_rows!, :_maybe_reshape,
+                :_swap_rows!, :_unsafe_getindex, :_unsafe_getindex!, :adapt_structure,
+                :add_sum, :flatten, :front, :index_shape, :ismutable, :issingular,
+                :promote_op, :restructure, :result_style, :similar_type, :tail,
+                :unalias, :zeromatrix,
+            ),
+        ),
+    ),
+    # Whole-module `using` exposes many names implicitly; explicit-import refactor
+    # tracked in https://github.com/SciML/RecursiveArrayTools.jl/issues/619
+    ei_broken = (:no_implicit_imports,),
+)
