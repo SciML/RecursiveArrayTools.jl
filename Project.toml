@@ -1,7 +1,7 @@
 name = "RecursiveArrayTools"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
 authors = ["Chris Rackauckas <accounts@chrisrackauckas.com>"]
-version = "4.3.2"
+version = "4.3.3"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
@@ -60,7 +60,7 @@ KernelAbstractions = "0.9.36"
 LinearAlgebra = "1.10"
 Measurements = "2.11"
 MonteCarloMeasurements = "1.2"
-Mooncake = "0.5"
+Mooncake = "0.5.36"
 Pkg = "1"
 Polyester = "0.7.16"
 PrecompileTools = "1.2.1"

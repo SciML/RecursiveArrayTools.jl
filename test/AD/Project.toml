@@ -11,7 +11,7 @@ RecursiveArrayTools = {path = "../.."}
 
 [compat]
 ForwardDiff = "0.10.38, 1"
-Mooncake = "0.5"
+Mooncake = "0.5.36"
 RecursiveArrayTools = "4"
 ReverseDiff = "1.15"
 Test = "1"
