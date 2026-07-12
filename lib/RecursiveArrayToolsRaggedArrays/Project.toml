@@ -1,6 +1,6 @@
 name = "RecursiveArrayToolsRaggedArrays"
 uuid = "c384ba91-639a-44ca-823a-e1d3691ab84a"
-version = "1.1.1"
+version = "1.1.2"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
