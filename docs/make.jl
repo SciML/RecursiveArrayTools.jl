@@ -1,4 +1,4 @@
-using Documenter, RecursiveArrayTools
+using Documenter, RecursiveArrayTools, RecursiveArrayToolsRaggedArrays
 
 cp("./docs/Manifest.toml", "./docs/src/assets/Manifest.toml", force = true)
 cp("./docs/Project.toml", "./docs/src/assets/Project.toml", force = true)
@@ -8,7 +8,7 @@ include("pages.jl")
 makedocs(
     sitename = "RecursiveArrayTools.jl",
     authors = "Chris Rackauckas",
-    modules = [RecursiveArrayTools],
+    modules = [RecursiveArrayTools, RecursiveArrayToolsRaggedArrays],
     clean = true, doctest = false, linkcheck = true,
     warnonly = [:missing_docs],
     format = Documenter.HTML(

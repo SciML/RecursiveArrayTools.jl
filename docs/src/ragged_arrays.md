@@ -184,4 +184,6 @@ structure and access elements without implicit zeros.
 ```@docs
 RecursiveArrayTools.AbstractRaggedVectorOfArray
 RecursiveArrayTools.AbstractRaggedDiffEqArray
+RecursiveArrayToolsRaggedArrays.RaggedVectorOfArray
+RecursiveArrayToolsRaggedArrays.RaggedDiffEqArray
 ```

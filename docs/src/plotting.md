@@ -152,3 +152,16 @@ additional features:
 
 These advanced features are defined in SciMLBase and activate automatically
 when plotting solution objects.
+
+## Plot Helper API
+
+```@docs
+DEFAULT_PLOT_FUNC
+plottable_indices
+plot_indices
+getindepsym_defaultt
+interpret_vars
+add_labels!
+diffeq_to_arrays
+solplot_vecs_and_labels
+```
