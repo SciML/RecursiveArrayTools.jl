@@ -267,7 +267,12 @@ for type in [AbstractArray, AbstractVectorOfArray]
     end
 end
 
-# Deprecated
+"""
+    vecvec_to_mat(vecvec)
+
+Convert a vector of equal-length vectors into a dense matrix whose rows are the
+input vectors.
+"""
 function vecvec_to_mat(vecvec)
     mat = Matrix{eltype(eltype(vecvec))}(undef, length(vecvec), length(vecvec[1]))
     for i in 1:length(vecvec)
@@ -351,6 +356,12 @@ Calls `one` on the bottom container to get the "true element one type".
 recursive_one(a) = recursive_one(a[1])
 recursive_one(a::T) where {T <: Number} = one(a)
 
+"""
+    recursive_bottom_eltype(x)
+
+Return the scalar element type at the bottom of nested array-like element
+types.
+"""
 recursive_bottom_eltype(a) = a == eltype(a) ? a : recursive_bottom_eltype(eltype(a))
 
 """
@@ -395,6 +406,12 @@ end
 recursive_unitless_eltype(a::Type{T}) where {T <: Number} = typeof(one(eltype(a)))
 recursive_unitless_eltype(::Type{<:Enum{T}}) where {T} = T
 
+"""
+    recursive_mean(x)
+
+Compute a mean value through recursive array containers without requiring
+`Statistics.mean`.
+"""
 function recursive_mean(vecvec::Vector{T}) where {T <: AbstractArray}
     out = zero(vecvec[1])
     for i in eachindex(vecvec)

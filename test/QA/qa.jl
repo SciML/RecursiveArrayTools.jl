@@ -1,4 +1,4 @@
-using SciMLTesting, RecursiveArrayTools, Test, Pkg
+using SciMLTesting, RecursiveArrayTools, Pkg
 
 # yes this is horrible, we'll fix it when Pkg or Base provides a decent API
 manifest = Pkg.Types.EnvCache().manifest
@@ -10,6 +10,7 @@ end
 run_qa(
     RecursiveArrayTools;
     explicit_imports = true,
+    api_docs_kwargs = (; rendered = true),
     # Method-table ambiguities tracked in
     # https://github.com/SciML/RecursiveArrayTools.jl/issues/326
     aqua_broken = (:ambiguities,),

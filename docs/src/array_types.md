@@ -15,3 +15,11 @@ DiffEqArray
 ArrayPartition
 NamedArrayPartition
 ```
+
+## Convenience Constructor Types
+
+```@docs
+VA
+AP
+AllObserved
+```

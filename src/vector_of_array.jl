@@ -74,6 +74,13 @@ mutable struct DiffEqArray{
     dense::Bool
 end
 ### Abstract Interface
+
+"""
+    AllObserved()
+
+Sentinel used by symbolic indexing paths to request all observed variables from
+an `AbstractDiffEqArray`.
+"""
 struct AllObserved
 end
 
@@ -936,6 +943,11 @@ function Base.:(==)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
 end
 # Comparison with plain arrays uses AbstractArray element-wise comparison via default
 
+"""
+    tuples(A::DiffEqArray)
+
+Return the saved time/state pairs of `A` as `(t, u)` tuples.
+"""
 tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 
 # Growing the array simply adds to the container vector
@@ -1132,7 +1144,11 @@ function Base.fill!(VA::AbstractVectorOfArray, x)
     end
     return VA
 end
-# conversion tools
+"""
+    vecarr_to_vectors(A::AbstractVectorOfArray)
+
+Collect the component time series of `A` as one vector per component.
+"""
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u[1])]
 # linear algebra
 ArrayInterface.issingular(va::AbstractVectorOfArray) = ArrayInterface.issingular(Matrix(va))
@@ -1170,11 +1186,30 @@ end
 
 ## Plotting helper functions (shared with SciMLBase)
 
+"""
+    DEFAULT_PLOT_FUNC(x, y)
+    DEFAULT_PLOT_FUNC(x, y, z)
+
+Default transformation used by plotting helpers when no custom plotting
+function is supplied.
+"""
 DEFAULT_PLOT_FUNC(x, y) = (x, y)
 DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
 
+"""
+    plottable_indices(x)
+
+Return the default component indices to plot for `x`.
+"""
 plottable_indices(x::AbstractArray) = 1:length(x)
 plottable_indices(x::Number) = 1
+
+"""
+    plot_indices(A::AbstractArray)
+
+Return the index iterator used when expanding array-valued data into plot
+series.
+"""
 plot_indices(A::AbstractArray) = eachindex(A)
 
 """
@@ -1266,6 +1301,11 @@ function _var_label(A, x)
     end
 end
 
+"""
+    add_labels!(labels, x, dims, A, strs)
+
+Append the plot label for the variable tuple `x` to `labels`.
+"""
 function add_labels!(labels, x, dims, A, strs)
     if ((x[2] isa Integer && x[2] == 0) || isequal(x[2], getindepsym_defaultt(A))) &&
             dims == 2
@@ -1319,6 +1359,12 @@ function diffeq_to_arrays(
     return solplot_vecs_and_labels(dims, vars, plott, A)
 end
 
+"""
+    solplot_vecs_and_labels(dims, vars, plott, A)
+
+Build plot vectors and labels for interpreted plotting variables over the
+sample points `plott`.
+"""
 function solplot_vecs_and_labels(dims, vars, plott, A)
     plot_vecs = []
     labels = String[]
