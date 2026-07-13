@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "879de10aa903630154b3163fcf46cad78b8793d1"
+project_hash = "15a2ae383af5e7c19a4332e24db1591f86b150aa"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -422,6 +422,12 @@ version = "4.3.4"
     Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
     Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
     Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[[deps.RecursiveArrayToolsRaggedArrays]]
+deps = ["Adapt", "ArrayInterface", "LinearAlgebra", "RecursiveArrayTools", "StaticArraysCore", "SymbolicIndexingInterface"]
+git-tree-sha1 = "d0ca6ac28de3ea119bfbd423a8fd95108e8e9a07"
+uuid = "c384ba91-639a-44ca-823a-e1d3691ab84a"
+version = "1.1.2"
 
 [[deps.RegistryInstances]]
 deps = ["LazilyInitializedFields", "Pkg", "TOML", "Tar"]
