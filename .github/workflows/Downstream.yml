@@ -25,7 +25,7 @@ jobs:
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core6}
-          - {user: SciML, repo: LabelledArrays.jl, group: RecursiveArrayTools}
+          - {user: SciML, repo: LabelledArrays.jl, group: Core}
     uses: "SciML/.github/.github/workflows/downstream.yml@v1"
     with:
       owner: "${{ matrix.package.user }}"
