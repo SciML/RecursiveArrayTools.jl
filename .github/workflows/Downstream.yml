@@ -13,23 +13,23 @@ jobs:
       matrix:
         package:
           - {user: SciML, repo: SciMLBase.jl, group: Core}
-          - {user: SciML, repo: DiffEqBase.jl, group: Core}
-          - {user: SciML, repo: DiffEqBase.jl, group: Downstream}
-          - {user: SciML, repo: DiffEqBase.jl, group: Downstream2}
-          - {user: SciML, repo: OrdinaryDiffEq.jl, group: Core}
-          - {user: SciML, repo: OrdinaryDiffEq.jl, group: Interface}
-          - {user: SciML, repo: DelayDiffEq.jl, group: Interface}
+          - {user: SciML, repo: OrdinaryDiffEq.jl, subdir: lib/DiffEqBase, group: Core}
+          - {user: SciML, repo: OrdinaryDiffEq.jl, subdir: lib/DiffEqBase, group: Downstream}
+          - {user: SciML, repo: OrdinaryDiffEq.jl, subdir: lib/DiffEqBase, group: Downstream2}
+          - {user: SciML, repo: OrdinaryDiffEq.jl, subdir: "", group: Interface}
+          - {user: SciML, repo: OrdinaryDiffEq.jl, subdir: lib/DelayDiffEq, group: Interface}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core1}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core2}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core3}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core4}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core5}
           - {user: SciML, repo: SciMLSensitivity.jl, group: Core6}
-          - {user: SciML, repo: LabelledArrays.jl, group: RecursiveArrayTools}
+          - {user: SciML, repo: LabelledArrays.jl, group: Core}
     uses: "SciML/.github/.github/workflows/downstream.yml@v1"
     with:
       owner: "${{ matrix.package.user }}"
       repo: "${{ matrix.package.repo }}"
+      subdir: "${{ matrix.package.subdir }}"
       group: "${{ matrix.package.group }}"
       julia-version: "1"
     secrets: "inherit"
