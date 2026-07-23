@@ -152,6 +152,26 @@ end
     @test a.u[1][1] == 1.0
 end
 
+# OrdinaryDiffEq.jl#1365: recursivecopy must not broadcast-assign into an
+# immutable outer container such as SVector of arrays.
+@testset "recursivecopy VectorOfArray with SVector outer (ODE#1365)" begin
+    a = VectorOfArray(SVector{2}([randn(5), randn(5)]))
+    b = recursivecopy(a)
+    @test typeof(b) === typeof(a)
+    @test typeof(b.u) === typeof(a.u)
+    @test b.u == a.u
+    @test !(b.u[1] === a.u[1])
+    @test !(b.u[2] === a.u[2])
+    b.u[1][1] = 999.0
+    @test a.u[1][1] != 999.0
+
+    # mutable outer path still deep-copies
+    c = VectorOfArray([randn(5), randn(5)])
+    d = recursivecopy(c)
+    @test typeof(d.u) === typeof(c.u)
+    @test !(d.u[1] === c.u[1])
+end
+
 @testset "recursivecopyto!" begin
     # Same-shape scalar arrays — should match copyto!
     b = zeros(3)

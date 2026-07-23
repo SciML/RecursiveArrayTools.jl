@@ -34,9 +34,23 @@ function recursivecopy(a::AbstractArray{T, N}) where {T <: AbstractArray, N}
 end
 
 function recursivecopy(a::AbstractVectorOfArray)
-    b = copy(a)
-    b.u .= recursivecopy.(a.u)
-    return b
+    # Deep-copy the inner arrays. When the outer container is immutable
+    # (e.g. `SVector` of arrays, OrdinaryDiffEq.jl#1365), broadcast assignment
+    # into `b.u` fails, so rebuild via `rewrap` the way `zero` does.
+    u_copy = map(recursivecopy, a.u)
+    if ArrayInterface.ismutable(a.u)
+        b = copy(a)
+        b.u .= u_copy
+        return b
+    else
+        T = typeof(a)
+        u_rewrapped = rewrap(a.u, u_copy)
+        fields = [
+            fname === :u ? u_rewrapped : _copyfield(a, fname)
+                for fname in fieldnames(T)
+        ]
+        return T(fields...)
+    end
 end
 
 """
