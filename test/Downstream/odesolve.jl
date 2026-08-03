@@ -52,7 +52,7 @@ end
     AutoTsit5(Rodas5())
 ).retcode == ReturnCode.Success
 
-@test_broken solve(
+@test solve(
     ODEProblem(
         dyn,
         ArrayPartition(
@@ -74,3 +74,22 @@ u = fill(SVector{2}(ones(2)), 2, 3)
 ode = ODEProblem(rhs!, VectorOfArray(u), (0.0, 1.0))
 sol = solve(ode, Tsit5())
 @test successful_retcode(sol)
+
+# VectorOfArray whose outer storage is itself immutable
+function decay!(dQ, Q, p, t)
+    dQ[:, 1] .= @view Q[:, 1]
+    dQ[:, 2] .= @view Q[:, 2]
+    return nothing
+end
+
+u0 = [randn(5), randn(5)]
+exact = reduce(hcat, u .* exp(1.0) for u in u0)
+for alg in (Tsit5(), Rosenbrock23())
+    local Q = VectorOfArray(SVector{2}(deepcopy(u0)))
+    local sol = solve(
+        ODEProblem(decay!, Q, (0.0, 1.0)), alg, abstol = 1.0e-10, reltol = 1.0e-10
+    )
+    @test successful_retcode(sol)
+    @test sol.u[end] isa typeof(Q)
+    @test Array(sol.u[end]) ≈ exact rtol = 1.0e-5
+end
