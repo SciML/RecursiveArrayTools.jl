@@ -4,6 +4,15 @@ using FastBroadcast
 using Polyester
 using SymbolicIndexingInterface: SymbolCache
 
+if isdefined(Base, :ispublic)
+    @testset "Ragged developer API declarations" begin
+        for name in (:AbstractRaggedVectorOfArray, :AbstractRaggedDiffEqArray)
+            @test Base.ispublic(RecursiveArrayTools, name)
+            @test Base.Docs.hasdoc(RecursiveArrayTools, name)
+        end
+    end
+end
+
 t = 1:3
 testva = VA[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 testda = DiffEqArray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], t)

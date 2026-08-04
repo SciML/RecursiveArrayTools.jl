@@ -8,6 +8,7 @@ module RecursiveArrayTools
     using RecipesBase, StaticArraysCore,
         ArrayInterface, LinearAlgebra
     using SymbolicIndexingInterface
+    using SciMLPublic: @public
 
     import Adapt
 
@@ -152,8 +153,18 @@ module RecursiveArrayTools
     returns actual stored data and `A[:, i]` gives the `i`-th inner array with
     its original size.
 
-    Concrete subtypes live in the `RecursiveArrayToolsRaggedArrays` subpackage
-    to avoid method invalidations on the hot path.
+    # Developer Interface
+
+    Concrete subtypes must expose an indexable `u` collection containing the
+    stored inner arrays. They preserve each inner array's true shape and should
+    implement the ragged indexing, iteration, copying, and broadcasting behavior
+    documented by `RecursiveArrayToolsRaggedArrays`. They must not introduce
+    zero-padding or claim the rectangular `AbstractArray` interface.
+
+    This is a developer API for packages implementing ragged array containers.
+    Concrete implementations belong in `RecursiveArrayToolsRaggedArrays` to
+    avoid method invalidations on the root package's hot path. Application code
+    should construct `RaggedVectorOfArray` rather than subtype this interface.
     """
     abstract type AbstractRaggedVectorOfArray{T, N, A} end
 
@@ -162,6 +173,14 @@ module RecursiveArrayTools
 
     Abstract supertype for ragged diff-eq arrays that carry a time vector `t`,
     parameters `p`, and symbolic system `sys` alongside ragged solution data.
+
+    # Developer Interface
+
+    Subtypes must satisfy the `AbstractRaggedVectorOfArray` contract and expose
+    `t`, `p`, and `sys` metadata compatible with `DiffEqArray`. The metadata must
+    remain aligned with the entries of `u` whenever the container is mutated.
+    Application code should construct `RaggedDiffEqArray` instead of subtyping
+    this interface.
     """
     abstract type AbstractRaggedDiffEqArray{T, N, A} <: AbstractRaggedVectorOfArray{T, N, A} end
 
@@ -195,6 +214,8 @@ module RecursiveArrayTools
         recursive_unitless_bottom_eltype, recursive_unitless_eltype
 
     export ArrayPartition, AP, NamedArrayPartition
+
+    @public AbstractRaggedVectorOfArray, AbstractRaggedDiffEqArray
 
     include("precompilation.jl")
 
