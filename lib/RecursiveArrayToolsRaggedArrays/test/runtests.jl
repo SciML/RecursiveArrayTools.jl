@@ -9,16 +9,12 @@ const TEST_GROUP = get(ENV, "RECURSIVEARRAYTOOLS_TEST_GROUP", "Core")
 
 function activate_qa_env()
     Pkg.activate(joinpath(@__DIR__, "qa"))
-    # On Julia < 1.11, the [sources] section in the qa Project.toml is not
-    # honored, so Pkg.develop the local paths explicitly.
-    if VERSION < v"1.11.0-DEV.0"
-        Pkg.develop(
-            [
-                PackageSpec(path = dirname(@__DIR__)),
-                PackageSpec(path = normpath(joinpath(dirname(@__DIR__), "..", ".."))),
-            ]
-        )
-    end
+    Pkg.develop(
+        [
+            PackageSpec(path = dirname(@__DIR__)),
+            PackageSpec(path = normpath(joinpath(dirname(@__DIR__), "..", ".."))),
+        ]
+    )
     return Pkg.instantiate()
 end
 

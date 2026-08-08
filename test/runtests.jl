@@ -19,6 +19,7 @@ run_tests(;
         @time @safetestset "Partitions and StaticArrays Tests" include("Core/partitions_and_static_arrays.jl")
         @time @safetestset "VecOfArr Indexing Tests" include("Core/basic_indexing.jl")
         @time @safetestset "VecOfArr Interface Tests" include("Core/interface_tests.jl")
+        @time @safetestset "Public API Tests" include("Core/public_api_test.jl")
         @time @safetestset "Table traits" include("Core/tabletraits.jl")
         @time @safetestset "StaticArrays Tests" include("Core/copy_static_array_test.jl")
         @time @safetestset "Linear Algebra Tests" include("Core/linalg.jl")

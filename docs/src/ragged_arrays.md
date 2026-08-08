@@ -181,6 +181,9 @@ structure and access elements without implicit zeros.
 
 ## API Reference
 
+The abstract types below are developer interfaces for packages implementing ragged containers.
+Application code should construct `RaggedVectorOfArray` or `RaggedDiffEqArray`.
+
 ```@docs
 RecursiveArrayTools.AbstractRaggedVectorOfArray
 RecursiveArrayTools.AbstractRaggedDiffEqArray

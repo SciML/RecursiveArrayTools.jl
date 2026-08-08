@@ -9,8 +9,8 @@ makedocs(
     sitename = "RecursiveArrayTools.jl",
     authors = "Chris Rackauckas",
     modules = [RecursiveArrayTools, RecursiveArrayToolsRaggedArrays],
-    clean = true, doctest = false, linkcheck = true,
-    warnonly = [:missing_docs],
+    clean = true, doctest = true, linkcheck = true,
+    checkdocs = :exports,
     format = Documenter.HTML(
         assets = ["assets/favicon.ico"],
         canonical = "https://docs.sciml.ai/RecursiveArrayTools/stable/"

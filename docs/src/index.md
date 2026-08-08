@@ -1,5 +1,9 @@
 # RecursiveArrayTools.jl: Arrays of Arrays and Even Deeper
 
+```@docs
+RecursiveArrayTools
+```
+
 RecursiveArrayTools.jl is a set of tools for dealing with recursive arrays, like
 arrays of arrays. It contains type wrappers for making recursive arrays act more
 like normal arrays (for example, automating the recursion of broadcast, maps,

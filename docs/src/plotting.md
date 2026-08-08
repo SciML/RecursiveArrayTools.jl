@@ -155,6 +155,10 @@ when plotting solution objects.
 
 ## Plot Helper API
 
+!!! warning "Developer API"
+    These helpers support plot recipe implementations in packages such as SciMLBase. Application
+    code should use the plotting interfaces described above instead of depending on these helpers.
+
 ```@docs
 DEFAULT_PLOT_FUNC
 plottable_indices

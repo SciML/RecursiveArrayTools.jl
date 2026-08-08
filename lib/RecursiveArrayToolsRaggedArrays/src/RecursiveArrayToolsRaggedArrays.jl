@@ -4,12 +4,14 @@ import RecursiveArrayTools: RecursiveArrayTools, AbstractRaggedVectorOfArray,
     AbstractRaggedDiffEqArray, VectorOfArray, DiffEqArray,
     AbstractVectorOfArray, AbstractDiffEqArray,
     recursivefill!, recursivecopy!
-using SymbolicIndexingInterface
+import Adapt
+import ArrayInterface
+import StaticArraysCore
+import SymbolicIndexingInterface
 using SymbolicIndexingInterface: ParameterTimeseriesCollection, ParameterIndexingProxy,
-    ScalarSymbolic, ArraySymbolic, NotSymbolic, Timeseries, SymbolCache
-using Adapt
-using ArrayInterface
-using StaticArraysCore
+    ScalarSymbolic, ArraySymbolic, NotSymbolic, Timeseries, SymbolCache,
+    all_variable_symbols, getu, is_parameter, is_timeseries_parameter, observed,
+    parameter_values, symbolic_container, symbolic_type, variable_symbols
 using LinearAlgebra: Adjoint
 
 export RaggedVectorOfArray, RaggedDiffEqArray
@@ -17,39 +19,22 @@ export RaggedVectorOfArray, RaggedDiffEqArray
 # Based on code from M. Bauman Stackexchange answer + Gitter discussion
 
 """
-```julia
-RaggedVectorOfArray(u::AbstractVector)
-```
+    RaggedVectorOfArray(u::AbstractVector)
 
-A `RaggedVectorOfArray` is an array which has the underlying data structure `Vector{AbstractArray{T}}`
-(but, hopefully, concretely typed!). This wrapper over such data structures allows one to lazily
-act like it's a higher-dimensional vector, and easily convert it to different forms. The indexing
-structure is:
+Wrap a collection of arrays while preserving each array's shape. Unlike `VectorOfArray`,
+this type does not present zero-padded ragged data as a rectangular `AbstractArray`.
 
-```julia
-A.u[i] # Returns the ith array in the vector of arrays
-A[j, i] # Returns the jth component in the ith array
-A[j1, ..., jN, i] # Returns the (j1,...,jN) component of the ith array
-```
+# Fields
 
-which presents itself as a column-major matrix with the columns being the arrays from the vector.
-The `AbstractArray` interface is implemented, giving access to `copy`, `push`, `append!`, etc. functions,
-which act appropriately. Points to note are:
+- `u`: the collection of stored arrays.
 
-  - The length is the number of vectors, or `length(A.u)` where `u` is the vector of arrays.
-  - Iteration follows the linear index and goes over the vectors
-
-Additionally, the `convert(Array,VA::AbstractRaggedVectorOfArray)` function is provided, which transforms
-the `RaggedVectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractRaggedVectorOfArray)`
-returns a vector of the series for each component, that is, `A[i,:]` for each `i`.
-
-There is also support for `RaggedVectorOfArray` constructed from multi-dimensional arrays
+# Examples
 
 ```julia
-RaggedVectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
+A = RaggedVectorOfArray([[1, 2], [3, 4, 5]])
+A[:, 1] == [1, 2]
+A[end, 2] == 5
 ```
-
-where `IndexStyle(typeof(u)) isa IndexLinear`.
 """
 mutable struct RaggedVectorOfArray{T, N, A} <: AbstractRaggedVectorOfArray{T, N, A}
     u::A # A <: AbstractArray{<: AbstractArray{T, N - 1}}
@@ -57,23 +42,28 @@ end
 # RaggedVectorOfArray with an added series for time
 
 """
+    RaggedDiffEqArray(u::AbstractVector, t::AbstractVector; kwargs...)
+
+Wrap ragged saved states `u` and matching time points `t` with differential-equation and
+symbolic-indexing metadata.
+
+# Fields
+
+- `u`: the saved ragged state arrays.
+- `t`: the time corresponding to each entry of `u`.
+- `p`: parameter values associated with the solution.
+- `sys`: symbolic indexing metadata.
+- `discretes`: discrete parameter timeseries, or `nothing`.
+- `interp`: interpolation object for dense output, or `nothing`.
+- `dense`: whether dense interpolation is available.
+
+# Examples
+
 ```julia
-RaggedDiffEqArray(u::AbstractVector, t::AbstractVector)
-```
-
-This is a `RaggedVectorOfArray`, which stores `A.t` that matches `A.u`. This will plot
-`(A.t[i],A[i,:])`. The function `tuples(diffeq_arr)` returns tuples of `(t,u)`.
-
-To construct a RaggedDiffEqArray
-
-```julia
-t = 0.0:0.1:10.0
-f(t) = t - 1
-f2(t) = t^2
-vals = [[f(tval) f2(tval)] for tval in t]
-A = RaggedDiffEqArray(vals, t)
-A[1, :]  # all time periods for f(t)
-A.t
+t = [0.0, 1.0]
+u = [[1.0, 2.0], [3.0, 4.0, 5.0]]
+A = RaggedDiffEqArray(u, t)
+A[:, 2] == [3.0, 4.0, 5.0]
 ```
 """
 mutable struct RaggedDiffEqArray{
