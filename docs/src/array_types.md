@@ -21,5 +21,13 @@ NamedArrayPartition
 ```@docs
 VA
 AP
+```
+
+## Developer Interfaces
+
+`AllObserved` is intended for packages extending symbolic indexing of differential-equation
+arrays. Application code should use the ordinary symbolic indexing interface.
+
+```@docs
 AllObserved
 ```

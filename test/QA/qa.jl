@@ -9,8 +9,6 @@ end
 
 run_qa(
     RecursiveArrayTools;
-    explicit_imports = true,
-    api_docs_kwargs = (; rendered = true),
     # Method-table ambiguities tracked in
     # https://github.com/SciML/RecursiveArrayTools.jl/issues/326
     aqua_broken = (:ambiguities,),
@@ -31,7 +29,4 @@ run_qa(
             ),
         ),
     ),
-    # Whole-module `using` exposes many names implicitly; explicit-import refactor
-    # tracked in https://github.com/SciML/RecursiveArrayTools.jl/issues/619
-    ei_broken = (:no_implicit_imports,),
 )

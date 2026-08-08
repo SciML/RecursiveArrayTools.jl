@@ -1,27 +1,22 @@
 """
-```julia
-ArrayPartition(x::AbstractArray...)
-```
+    ArrayPartition(parts...)
 
-An `ArrayPartition` `A` is an array, which is made up of different arrays `A.x`.
-These index like a single array, but each subarray may have a different type.
-However, broadcast is overloaded to loop in an efficient manner, meaning that
-`A .+= 2.+B` is type-stable in its computations, even if `A.x[i]` and `A.x[j]`
-do not match types. A full array interface is included for completeness, which
-allows this array type to be used in place of a standard array where
-such a type stable broadcast may be needed. One example is in heterogeneous
-differential equations for [DifferentialEquations.jl](https://docs.sciml.ai/DiffEqDocs/stable/).
+Wrap arrays with potentially different types as one linear `AbstractVector`. Indexing
+traverses the partitions in order, while broadcasting operates partition-by-partition
+without losing the individual array types.
 
-An `ArrayPartition` acts like a single array. `A[i]` indexes through the first
-array, then the second, etc., all linearly. But `A.x` is where the arrays are stored.
-Thus, for:
+# Fields
+
+- `x`: the tuple of stored arrays.
+
+# Examples
 
 ```julia
-using RecursiveArrayTools
-A = ArrayPartition(y, z)
+A = ArrayPartition([1, 2], [3.0, 4.0])
+A[3] == 3.0
+A.x[1] == [1, 2]
+collect(A) == [1.0, 2.0, 3.0, 4.0]
 ```
-
-we would have `A.x[1]==y` and `A.x[2]==z`. Broadcasting like `f.(A)` is efficient.
 """
 struct ArrayPartition{T, S <: Tuple} <: AbstractVector{T}
     x::S
@@ -735,26 +730,18 @@ function Adapt.adapt_structure(to, ap::ArrayPartition)
 end
 
 """
+    AP
+
+Shorthand constructor marker for `ArrayPartition`. Load
+`RecursiveArrayToolsShorthandConstructors` to enable `AP[parts...]` syntax.
+
+# Examples
+
 ```julia
-AP[ matrices, ]
+using RecursiveArrayToolsShorthandConstructors
+A = AP[[1, 2], [3.0, 4.0]]
+A == ArrayPartition([1, 2], [3.0, 4.0])
 ```
-
-Create an `ArrayPartition` using vector syntax. Equivalent to `ArrayPartition(matrices)`, but looks nicer with nesting.
-
-# Examples:
-
-Simple examples:
-```julia
-ArrayPartition([1,2,3], [1 2;3 4]) == AP[[1,2,3], [1 2;3 4]] # true
-AP[1u"m/s^2", 1u"m/s", 1u"m"]
-```
-
-With an ODEProblem:
-```julia
-func(u, p, t) = AP[5u.x[1], u.x[2]./2]
-ODEProblem(func, AP[ [1.,2.,3.], [1. 2.;3. 4.] ], (0, 1)) |> solve
-```
-
 """
 struct AP end
 

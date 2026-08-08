@@ -1,40 +1,25 @@
 # Based on code from M. Bauman Stackexchange answer + Gitter discussion
 
 """
-```julia
-VectorOfArray(u::AbstractVector)
-```
+    VectorOfArray(u::AbstractVector)
 
-A `VectorOfArray` is an array which has the underlying data structure `Vector{AbstractArray{T}}`
-(but, hopefully, concretely typed!). This wrapper over such data structures allows one to lazily
-act like it's a higher-dimensional vector, and easily convert it to different forms. The indexing
-structure is:
+Wrap a collection of equally shaped or ragged arrays as one column-major `AbstractArray`
+without materializing a dense concatenation. The last index selects an inner array:
+`A[j, i]` accesses component `j` of `A.u[i]`, while `A.u[i]` returns the stored
+array itself.
 
-```julia
-A.u[i] # Returns the ith array in the vector of arrays
-A[j, i] # Returns the jth component in the ith array
-A[j1, ..., jN, i] # Returns the (j1,...,jN) component of the ith array
-```
+# Fields
 
-which presents itself as a column-major matrix with the columns being the arrays from the vector.
-The `AbstractArray` interface is implemented, giving access to `copy`, `push`, `append!`, etc. functions,
-which act appropriately. Points to note are:
+- `u`: the collection of stored arrays.
 
-  - The length is the number of vectors, or `length(A.u)` where `u` is the vector of arrays.
-  - Iteration follows the linear index and goes over the vectors
-
-Additionally, the `convert(Array,VA::AbstractVectorOfArray)` function is provided, which transforms
-the `VectorOfArray` into a matrix/tensor. Also, `vecarr_to_vectors(VA::AbstractVectorOfArray)`
-returns a vector of the series for each component, that is, `A[i,:]` for each `i`.
-A plot recipe is provided, which plots the `A[i,:]` series.
-
-There is also support for `VectorOfArray` constructed from multi-dimensional arrays
+# Examples
 
 ```julia
-VectorOfArray(u::AbstractArray{AT}) where {T, N, AT <: AbstractArray{T, N}}
+A = VectorOfArray([[1, 2], [3, 4]])
+size(A) == (2, 2)
+A[2, 1] == 2
+Array(A) == [1 3; 2 4]
 ```
-
-where `IndexStyle(typeof(u)) isa IndexLinear`.
 """
 mutable struct VectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
     u::A # A <: AbstractArray{<: AbstractArray{T, N - 1}}
@@ -42,23 +27,29 @@ end
 # VectorOfArray with an added series for time
 
 """
+    DiffEqArray(u::AbstractVector, t::AbstractVector; kwargs...)
+
+Wrap saved state arrays `u` and matching time points `t` as an `AbstractDiffEqArray`.
+The result supports the `VectorOfArray` interface and stores metadata used for symbolic
+indexing, interpolation, and plotting.
+
+# Fields
+
+- `u`: the saved state arrays.
+- `t`: the time corresponding to each entry of `u`.
+- `p`: parameter values associated with the solution.
+- `sys`: symbolic indexing metadata.
+- `discretes`: discrete parameter timeseries, or `nothing`.
+- `interp`: interpolation object for dense output, or `nothing`.
+- `dense`: whether dense interpolation is available.
+
+# Examples
+
 ```julia
-DiffEqArray(u::AbstractVector, t::AbstractVector)
-```
-
-This is a `VectorOfArray`, which stores `A.t` that matches `A.u`. This will plot
-`(A.t[i],A[i,:])`. The function `tuples(diffeq_arr)` returns tuples of `(t,u)`.
-
-To construct a DiffEqArray
-
-```julia
-t = 0.0:0.1:10.0
-f(t) = t - 1
-f2(t) = t^2
-vals = [[f(tval) f2(tval)] for tval in t]
-A = DiffEqArray(vals, t)
-A[1, :]  # all time periods for f(t)
-A.t
+t = [0.0, 0.5, 1.0]
+u = [[sin(ti), cos(ti)] for ti in t]
+A = DiffEqArray(u, t)
+A[1, :] == sin.(t)
 ```
 """
 mutable struct DiffEqArray{
@@ -78,8 +69,9 @@ end
 """
     AllObserved()
 
-Sentinel used by symbolic indexing paths to request all observed variables from
-an `AbstractDiffEqArray`.
+Sentinel used by symbolic indexing implementations to request all observed variables from
+an `AbstractDiffEqArray`. This is a developer interface for packages extending symbolic
+indexing.
 """
 struct AllObserved
 end
@@ -947,6 +939,13 @@ end
     tuples(A::DiffEqArray)
 
 Return the saved time/state pairs of `A` as `(t, u)` tuples.
+
+# Examples
+
+```julia
+A = DiffEqArray([[1.0], [2.0]], [0.0, 1.0])
+tuples(A) == [(0.0, [1.0]), (1.0, [2.0])]
+```
 """
 tuples(VA::DiffEqArray) = tuple.(VA.t, VA.u)
 
@@ -1148,6 +1147,13 @@ end
     vecarr_to_vectors(A::AbstractVectorOfArray)
 
 Collect the component time series of `A` as one vector per component.
+
+# Examples
+
+```julia
+A = VectorOfArray([[1, 2], [3, 4]])
+vecarr_to_vectors(A) == [[1, 3], [2, 4]]
+```
 """
 vecarr_to_vectors(VA::AbstractVectorOfArray) = [VA[i, :] for i in eachindex(VA.u[1])]
 # linear algebra
@@ -1191,7 +1197,7 @@ end
     DEFAULT_PLOT_FUNC(x, y, z)
 
 Default transformation used by plotting helpers when no custom plotting
-function is supplied.
+function is supplied. This is a developer interface for plot recipe implementations.
 """
 DEFAULT_PLOT_FUNC(x, y) = (x, y)
 DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
@@ -1200,6 +1206,8 @@ DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
     plottable_indices(x)
 
 Return the default component indices to plot for `x`.
+
+This is a developer interface for plot recipe implementations.
 """
 plottable_indices(x::AbstractArray) = 1:length(x)
 plottable_indices(x::Number) = 1
@@ -1209,6 +1217,8 @@ plottable_indices(x::Number) = 1
 
 Return the index iterator used when expanding array-valued data into plot
 series.
+
+This is a developer interface for plot recipe implementations.
 """
 plot_indices(A::AbstractArray) = eachindex(A)
 
@@ -1216,6 +1226,8 @@ plot_indices(A::AbstractArray) = eachindex(A)
     getindepsym_defaultt(A)
 
 Return the independent variable symbol for `A`, defaulting to `:t`.
+
+This is a developer interface for plot recipe implementations.
 """
 function getindepsym_defaultt(A)
     syms = independent_variable_symbols(A)
@@ -1228,6 +1240,8 @@ end
 Normalize user-provided variable specifications into a standard internal format:
 a list of tuples `(func, xvar, yvar[, zvar])`. Index `0` represents the
 independent variable (time).
+
+This is a developer interface for plot recipe implementations.
 """
 function interpret_vars(vars, A)
     if vars === nothing
@@ -1305,6 +1319,8 @@ end
     add_labels!(labels, x, dims, A, strs)
 
 Append the plot label for the variable tuple `x` to `labels`.
+
+This is a developer interface for plot recipe implementations.
 """
 function add_labels!(labels, x, dims, A, strs)
     if ((x[2] isa Integer && x[2] == 0) || isequal(x[2], getindepsym_defaultt(A))) &&
@@ -1322,6 +1338,8 @@ end
     diffeq_to_arrays(A, denseplot, plotdensity, tspan, vars, tscale, plotat)
 
 Convert an `AbstractDiffEqArray` into plot-ready arrays. Returns `(plot_vecs, labels)`.
+
+This is a developer interface for plot recipe implementations.
 """
 function diffeq_to_arrays(
         A, denseplot, plotdensity, tspan, vars, tscale, plotat
@@ -1364,6 +1382,8 @@ end
 
 Build plot vectors and labels for interpreted plotting variables over the
 sample points `plott`.
+
+This is a developer interface for plot recipe implementations.
 """
 function solplot_vecs_and_labels(dims, vars, plott, A)
     plot_vecs = []
@@ -1643,28 +1663,17 @@ unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
 unpack_args_voa(::Any, args::Tuple{}) = ()
 
 """
+    VA
+
+Shorthand constructor marker for `VectorOfArray`. Load
+`RecursiveArrayToolsShorthandConstructors` to enable `VA[arrays...]` syntax.
+
+# Examples
+
 ```julia
-VA[ matrices, ]
+using RecursiveArrayToolsShorthandConstructors
+A = VA[[1, 2], [3, 4]]
+A == VectorOfArray([[1, 2], [3, 4]])
 ```
-
-Create an `VectorOfArray` using vector syntax. Equivalent to `VectorOfArray([matrices])`, but looks nicer with nesting.
-
-# Simple example:
-```julia
-VectorOfArray([[1,2,3], [1 2;3 4]]) == VA[[1,2,3], [1 2;3 4]] # true
-```
-
-# All the layers:
-```julia
-nested = VA[
-    fill(1, 2, 3),
-    VA[
-        VA[8, [1, 2, 3], [1 2;3 4], VA[1, 2, 3]],
-        fill(2, 3, 4),
-        VA[3ones(3), zeros(3)],
-    ],
-]
-```
-
 """
 struct VA end

@@ -1,14 +1,26 @@
 __precompile__()
 """
-$(DocStringExtensions.README)
+    RecursiveArrayTools
+
+Array types and utilities for working with recursively nested arrays. The package
+provides array-compatible wrappers such as [`VectorOfArray`](@ref), [`DiffEqArray`](@ref),
+[`ArrayPartition`](@ref), and [`NamedArrayPartition`](@ref).
 """
 module RecursiveArrayTools
 
-    using DocStringExtensions
-    using RecipesBase, StaticArraysCore,
-        ArrayInterface, LinearAlgebra
-    using SymbolicIndexingInterface
+    using ArrayInterface: ArrayInterface
+    using LinearAlgebra: LinearAlgebra, Adjoint, Factorization, I, LDLt, LU,
+        LowerTriangular, SymTridiagonal, Transpose, Tridiagonal, UnitLowerTriangular,
+        UnitUpperTriangular, UpperTriangular, ldiv!, mul!
+    using RecipesBase: RecipesBase, @recipe
     using SciMLPublic: @public
+    using StaticArraysCore: StaticArraysCore
+    using SymbolicIndexingInterface: SymbolicIndexingInterface, ArraySymbolic,
+        NotSymbolic, ParameterIndexingProxy, ParameterTimeseriesCollection,
+        ScalarSymbolic, SymbolCache, Timeseries, all_variable_symbols, getu,
+        independent_variable_symbols, is_parameter, is_timeseries_parameter,
+        observed, parameter_values, symbolic_container, symbolic_type,
+        variable_symbols
 
     import Adapt
 
@@ -114,8 +126,8 @@ module RecursiveArrayTools
     the pairing `DiffEqArray([[1,2],[3,4]],[1.0,2.0])` which means that at time 1.0
     the values were `[1,2]` and at time 2.0 the values were `[3,4]`.
 
-    An AbstractDiffEqArray has all of the same behaviors as an AbstractVectorOfArray with the
-    additional properties:
+    An AbstractDiffEqArray has all of the same behaviors as an AbstractVectorOfArray with
+    the additional properties:
 
     ## Fields
 

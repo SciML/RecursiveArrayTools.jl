@@ -5,6 +5,14 @@
 Similar to an `ArrayPartition` but the individual arrays can be accessed via the
 constructor-specified names. However, unlike `ArrayPartition`, each individual array
 must have the same element type.
+
+# Examples
+
+```julia
+A = NamedArrayPartition(position = [1.0, 2.0], velocity = [3.0, 4.0])
+A.position == [1.0, 2.0]
+collect(A) == [1.0, 2.0, 3.0, 4.0]
+```
 """
 struct NamedArrayPartition{T, A <: ArrayPartition{T}, NT <: NamedTuple} <: AbstractVector{T}
     array_partition::A
@@ -154,14 +162,14 @@ function Base.BroadcastStyle(
 end
 
 # hook into ArrayPartition broadcasting routines
-@inline RecursiveArrayTools.npartitions(x::NamedArrayPartition) = npartitions(ArrayPartition(x))
-@inline RecursiveArrayTools.unpack(
+@inline npartitions(x::NamedArrayPartition) = npartitions(ArrayPartition(x))
+@inline unpack(
     bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{NamedArrayPartition}},
     i
 ) = Broadcast.Broadcasted(
-    bc.f, RecursiveArrayTools.unpack_args(i, bc.args)
+    bc.f, unpack_args(i, bc.args)
 )
-@inline RecursiveArrayTools.unpack(x::NamedArrayPartition, i) = unpack(ArrayPartition(x), i)
+@inline unpack(x::NamedArrayPartition, i) = unpack(ArrayPartition(x), i)
 
 function Base.copy(A::NamedArrayPartition{T, S, NT}) where {T, S, NT}
     return NamedArrayPartition{T, S, NT}(copy(ArrayPartition(A)), getfield(A, :names_to_indices))

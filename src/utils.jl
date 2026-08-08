@@ -2,12 +2,19 @@ unrolled_foreach!(f, t::Tuple) = (f(t[1]); unrolled_foreach!(f, Base.tail(t)))
 unrolled_foreach!(f, ::Tuple{}) = nothing
 
 """
-```julia
-recursivecopy(a::Union{AbstractArray{T, N}, AbstractVectorOfArray{T, N}})
-```
+    recursivecopy(a)
 
-A recursive `copy` function. Acts like a `deepcopy` on arrays of arrays, but
-like `copy` on arrays of scalars.
+Copy `a` recursively. This acts like `deepcopy` for nested arrays and like `copy` for
+arrays of scalar values.
+
+# Examples
+
+```julia
+original = [[1, 2], [3, 4]]
+copied = recursivecopy(original)
+copied[1][1] = 10
+original[1][1] == 1
+```
 """
 function recursivecopy(a)
     return deepcopy(a)
@@ -54,14 +61,20 @@ function recursivecopy(a::AbstractVectorOfArray)
 end
 
 """
-```julia
-recursivecopy!(b::AbstractArray{T, N}, a::AbstractArray{T, N})
-```
+    recursivecopy!(dest, src)
 
-A recursive `copy!` function. Acts like a `deepcopy!` on arrays of arrays, but
-like `copy!` on arrays of scalars. Requires `b` and `a` to have matching `ndims`;
-use [`recursivecopyto!`](@ref) for the `copyto!`-style linear-index variant that
-allows mismatched shapes.
+Copy `src` recursively into `dest`. This acts like `deepcopy!` for nested arrays and
+like `copy!` for arrays of scalar values. `dest` and `src` must have matching
+dimensionality; use [`recursivecopyto!`](@ref) for linear copying between different
+shapes.
+
+# Examples
+
+```julia
+dest = [zeros(2), zeros(2)]
+src = [[1.0, 2.0], [3.0, 4.0]]
+recursivecopy!(dest, src)
+```
 """
 function recursivecopy! end
 
@@ -122,18 +135,20 @@ function recursivecopy!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
 end
 
 """
+    recursivecopyto!(dest, src) -> dest
+
+Copy `src` recursively into `dest` in linear, column-major order. This acts like
+`deepcopy!` for nested arrays and like `copyto!` for arrays of scalar values.
+
+Unlike [`recursivecopy!`](@ref), this does not require matching dimensions or axes.
+Use it when copying between different shapes is intentional.
+
+# Examples
+
 ```julia
-recursivecopyto!(b::AbstractArray, a::AbstractArray)
+dest = zeros(2, 2)
+recursivecopyto!(dest, [1.0, 2.0, 3.0, 4.0])
 ```
-
-A recursive `copyto!` function. Acts like a `deepcopy!` on arrays of arrays, but
-like `copyto!` on arrays of scalars.
-
-Unlike [`recursivecopy!`](@ref), this does not require `b` and `a` to have matching
-`ndims` or axes; only that `length(b) >= length(a)`. Elements are copied in linear
-(column-major) order, matching the semantics of `Base.copyto!`. Use this when
-flattening/reshaping between destination and source is intended, e.g. copying a
-`Vector` into a `Matrix` of the same total length.
 """
 function recursivecopyto! end
 
@@ -184,11 +199,16 @@ function recursivecopyto!(b::AbstractVectorOfArray, a::AbstractVectorOfArray)
 end
 
 """
-```julia
-recursivefill!(b::AbstractArray{T, N}, a)
-```
+    recursivefill!(dest, value)
 
-A recursive `fill!` function.
+Fill every scalar element of the nested container `dest` with `value`.
+
+# Examples
+
+```julia
+dest = [zeros(2), zeros(3)]
+recursivefill!(dest, 1.0)
+```
 """
 function recursivefill! end
 
@@ -286,6 +306,12 @@ end
 
 Convert a vector of equal-length vectors into a dense matrix whose rows are the
 input vectors.
+
+# Examples
+
+```julia
+vecvec_to_mat([[1, 2], [3, 4]]) == [1 2; 3 4]
+```
 """
 function vecvec_to_mat(vecvec)
     mat = Matrix{eltype(eltype(vecvec))}(undef, length(vecvec), length(vecvec[1]))
@@ -296,11 +322,15 @@ function vecvec_to_mat(vecvec)
 end
 
 """
-```julia
-vecvecapply(f::Base.Callable, v)
-```
+    vecvecapply(f, v)
 
-Calls `f` on each element of a vecvec `v`.
+Flatten the nested array `v` and call `f` on the resulting vector.
+
+# Examples
+
+```julia
+vecvecapply(sum, [[1, 2], [3, 4]]) == 10
+```
 """
 function vecvecapply(f, v::AbstractArray{<:AbstractArray})
     sol = Vector{eltype(eltype(v))}()
@@ -323,12 +353,18 @@ function vecvecapply(f, v::T) where {T <: Number}
 end
 
 """
-```julia
-copyat_or_push!{T}(a::AbstractVector{T}, i::Int, x)
-```
+    copyat_or_push!(a, i, x[, perform_copy = true]) -> nothing
 
-If `i<length(x)`, it's simply a `recursivecopy!` to the `i`th element. Otherwise, it will
-`push!` a `deepcopy`.
+Recursively copy `x` into `a[i]` when that element exists, or append a recursive copy
+of `x` otherwise. Set `perform_copy = false` to assign or append `x` directly.
+
+# Examples
+
+```julia
+values = [[1, 2]]
+copyat_or_push!(values, 2, [3, 4])
+values == [[1, 2], [3, 4]]
+```
 """
 function copyat_or_push!(a::AbstractVector{T}, i::Int, x, perform_copy = true) where {T}
     @inbounds if length(a) >= i
@@ -361,11 +397,15 @@ function copyat_or_push!(
 end
 
 """
-```julia
-recursive_one(a)
-```
+    recursive_one(a)
 
-Calls `one` on the bottom container to get the "true element one type".
+Return `one` for the scalar value at the bottom of the nested container `a`.
+
+# Examples
+
+```julia
+recursive_one([[2.0]]) == 1.0
+```
 """
 recursive_one(a) = recursive_one(a[1])
 recursive_one(a::T) where {T <: Number} = one(a)
@@ -375,16 +415,25 @@ recursive_one(a::T) where {T <: Number} = one(a)
 
 Return the scalar element type at the bottom of nested array-like element
 types.
+
+# Examples
+
+```julia
+recursive_bottom_eltype(Vector{Vector{Float32}}) === Float32
+```
 """
 recursive_bottom_eltype(a) = a == eltype(a) ? a : recursive_bottom_eltype(eltype(a))
 
 """
-```julia
-recursive_unitless_bottom_eltype(a)
-```
+    recursive_unitless_bottom_eltype(a)
 
-Grabs the unitless element type at the bottom of the chain. For example, if
-ones has a `Array{Array{Float64,N},N}`, this will return `Float64`.
+Return the unitless scalar type at the bottom of the nested container type `a`.
+
+# Examples
+
+```julia
+recursive_unitless_bottom_eltype(Vector{Vector{Float64}}) === Float64
+```
 """
 recursive_unitless_bottom_eltype(a) = recursive_unitless_bottom_eltype(typeof(a))
 recursive_unitless_bottom_eltype(a::Type{Any}) = Any
@@ -400,12 +449,9 @@ end
 recursive_unitless_bottom_eltype(::Type{<:Enum{T}}) where {T} = T
 
 """
-```julia
-recursive_unitless_eltype(a)
-```
+    recursive_unitless_eltype(a)
 
-Grabs the unitless element type. For example, if
-ones has a `Array{Array{Float64,N},N}`, this will return `Array{Float64,N}`.
+Return the element type of `a` after recursively removing units from its scalar type.
 """
 recursive_unitless_eltype(a) = recursive_unitless_eltype(eltype(a))
 recursive_unitless_eltype(a::Type{Any}) = Any
@@ -425,6 +471,12 @@ recursive_unitless_eltype(::Type{<:Enum{T}}) where {T} = T
 
 Compute a mean value through recursive array containers without requiring
 `Statistics.mean`.
+
+# Examples
+
+```julia
+recursive_mean([[1.0, 3.0], [3.0, 5.0]]) == [2.0, 4.0]
+```
 """
 function recursive_mean(vecvec::Vector{T}) where {T <: AbstractArray}
     out = zero(vecvec[1])
@@ -458,7 +510,9 @@ end
 Iterate through any number of iterators in sequence.
 
 ```jldoctest
-julia> for i in chain(1:3, ['a', 'b', 'c'])
+julia> using RecursiveArrayTools
+
+julia> for i in RecursiveArrayTools.chain(1:3, ['a', 'b', 'c'])
            @show i
        end
 i = 1
