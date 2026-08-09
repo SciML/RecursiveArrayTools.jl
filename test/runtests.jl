@@ -36,12 +36,20 @@ run_tests(;
         # second half of both the "SymbolicIndexingInterface" and "Downstream" paths.
         "SII_Downstream" => (;
             env = joinpath(@__DIR__, "Downstream"),
+            parent = [
+                dirname(@__DIR__),
+                joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors"),
+            ],
             body = function ()
                 return @time @safetestset "DiffEqArray Indexing Tests" include("Downstream/symbol_indexing.jl")
             end,
         ),
         "Downstream" => (;
             env = joinpath(@__DIR__, "Downstream"),
+            parent = [
+                dirname(@__DIR__),
+                joinpath(dirname(@__DIR__), "lib", "RecursiveArrayToolsShorthandConstructors"),
+            ],
             body = function ()
                 @time @safetestset "ODE Solve Tests" include("Downstream/odesolve.jl")
                 @time @safetestset "Event Tests with ArrayPartition" include("Downstream/downstream_events.jl")
@@ -65,6 +73,7 @@ run_tests(;
         ),
         "NoPre" => (;
             env = joinpath(@__DIR__, "NoPre"),
+            parent = dirname(@__DIR__),
             body = function ()
                 return @time @safetestset "JET Tests" include("NoPre/jet_tests.jl")
             end,
@@ -76,6 +85,7 @@ run_tests(;
         # cannot satisfy when it minimizes Julia to the 1.10.0 LTS floor.
         "AD" => (;
             env = joinpath(@__DIR__, "AD"),
+            parent = dirname(@__DIR__),
             body = function ()
                 @time @safetestset "Adjoint Tests" include("AD/adjoints.jl")
                 return @time @safetestset "Mooncake Tests" include("AD/mooncake.jl")

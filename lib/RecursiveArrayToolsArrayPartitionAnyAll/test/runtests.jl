@@ -1,5 +1,7 @@
-using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, Test
 using Pkg
+Pkg.develop(PackageSpec(path = normpath(joinpath(@__DIR__, "..", "..", ".."))))
+
+using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, Test
 
 const TEST_GROUP = get(ENV, "RECURSIVEARRAYTOOLS_TEST_GROUP", "Core")
 

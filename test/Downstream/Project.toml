@@ -15,10 +15,6 @@ Tracker = "9f7883ad-71c0-57eb-9f7f-b5c9e6d3789c"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 
-[sources]
-RecursiveArrayTools = {path = "../.."}
-RecursiveArrayToolsShorthandConstructors = {path = "../../lib/RecursiveArrayToolsShorthandConstructors"}
-
 [compat]
 ArrayInterface = "7"
 ModelingToolkit = "8.33, 9, 10, 11"

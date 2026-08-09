@@ -1,10 +1,12 @@
+using Pkg
+Pkg.develop(PackageSpec(path = normpath(joinpath(@__DIR__, "..", "..", ".."))))
+
 using RecursiveArrayTools, RecursiveArrayToolsRaggedArrays
 using RecursiveArrayToolsRaggedArrays: RaggedEnd, RaggedRange
 using SymbolicIndexingInterface
 using SymbolicIndexingInterface: SymbolCache
 using StaticArrays
 using Test
-using Pkg
 
 const TEST_GROUP = get(ENV, "RECURSIVEARRAYTOOLS_TEST_GROUP", "Core")
 
