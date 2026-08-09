@@ -2,6 +2,7 @@ using RecursiveArrayTools, RecursiveArrayToolsRaggedArrays
 using RecursiveArrayToolsRaggedArrays: RaggedEnd, RaggedRange
 using SymbolicIndexingInterface
 using SymbolicIndexingInterface: SymbolCache
+using StaticArrays
 using Test
 using Pkg
 
@@ -25,6 +26,24 @@ end
 
 if TEST_GROUP == "Core" || TEST_GROUP == "All"
     @testset "RecursiveArrayToolsRaggedArrays" begin
+        @testset "immutable inner arrays" begin
+            src = RaggedVectorOfArray([SVector(1, 2), SVector(3, 4)])
+            dest = RaggedVectorOfArray([SVector(0, 0), SVector(0, 0)])
+
+            copyto!(dest, src)
+            @test dest.u == src.u
+            @test eltype(dest.u) === SVector{2, Int}
+
+            copyto!(dest, [5 7; 6 8])
+            @test dest.u == [SVector(5, 6), SVector(7, 8)]
+
+            fill!(dest, 9)
+            @test dest.u == [SVector(9, 9), SVector(9, 9)]
+
+            dest .= src .+ 1
+            @test dest.u == [SVector(2, 3), SVector(4, 5)]
+        end
+
         # ===================================================================
         # Tests ported from v3 basic_indexing.jl
         # ===================================================================

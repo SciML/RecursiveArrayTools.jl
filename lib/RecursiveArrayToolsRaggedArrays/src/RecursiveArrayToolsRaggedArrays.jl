@@ -1322,7 +1322,7 @@ function Base.copyto!(
         if ArrayInterface.ismutable(dest.u[i]) || dest.u[i] isa AbstractRaggedVectorOfArray
             copyto!(dest.u[i], src.u[j])
         else
-            dest.u[i] = StaticArraysCore.similar_type(dest.u[i])(src.u[j])
+            dest.u[i] = typeof(dest.u[i])(src.u[j])
         end
     end
     return
@@ -1334,7 +1334,7 @@ function Base.copyto!(
         if ArrayInterface.ismutable(dest.u[i]) || dest.u[i] isa AbstractRaggedVectorOfArray
             copyto!(dest.u[i], slice)
         else
-            dest.u[i] = StaticArraysCore.similar_type(dest.u[i])(slice)
+            dest.u[i] = typeof(dest.u[i])(slice)
         end
     end
     return dest
@@ -1455,7 +1455,7 @@ function Base.fill!(VA::AbstractRaggedVectorOfArray, x)
                 fill!(VA[:, i], x)
             else
                 # For immutable arrays like SVector, create a new filled array
-                VA.u[i] = fill(x, StaticArraysCore.similar_type(VA.u[i]))
+                VA.u[i] = typeof(VA.u[i])(fill(x, size(VA.u[i])))
             end
         else
             VA[:, i] = x
@@ -1623,7 +1623,7 @@ for (type, N_expr) in [
                     copyto!(dest[:, i], unpack_voa(bc, i))
                 else
                     unpacked = unpack_voa(bc, i)
-                    arr_type = StaticArraysCore.similar_type(dest[:, i])
+                    arr_type = typeof(dest[:, i])
                     dest[:, i] = if length(unpacked) == 1 && length(dest[:, i]) == 1
                         arr_type(unpacked[1])
                     elseif length(unpacked) == 1

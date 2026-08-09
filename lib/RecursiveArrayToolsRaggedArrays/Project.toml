@@ -20,6 +20,7 @@ LinearAlgebra = "1.10"
 Pkg = "1"
 RecursiveArrayTools = "4"
 SparseArrays = "1.10"
+StaticArrays = "1.6"
 StaticArraysCore = "1.4.2"
 SymbolicIndexingInterface = "0.3.42"
 Test = "1"
@@ -28,8 +29,9 @@ julia = "1.10"
 [extras]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Pkg", "SparseArrays", "SymbolicIndexingInterface", "Test"]
+test = ["Pkg", "SparseArrays", "StaticArrays", "SymbolicIndexingInterface", "Test"]

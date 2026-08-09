@@ -15,15 +15,6 @@ run_qa(
         ),
     ),
     jet_kwargs = (; target_modules = (RecursiveArrayToolsRaggedArrays,)),
-    # Pre-existing JET typo-mode finding (reproduces byte-identically on master):
-    # the `copyto!`/`fill!`/broadcast immutable-element branches call
-    # `StaticArraysCore.similar_type(dest.u[i])`, but `dest.u[i]` infers as `::Any`
-    # because the abstract `AbstractRaggedVectorOfArray` `.u` field is untyped, so
-    # `similar_type(::Any)` has no matching method. Tracked (with the real fix —
-    # tightening the `.u` type / guarding the immutable branch) in
-    # https://github.com/SciML/RecursiveArrayTools.jl/issues/620. JET 0.9 on Julia
-    # 1.10 does not report this finding, so keep that stricter lane unbroken.
-    jet_broken = VERSION >= v"1.11",
     ei_kwargs = (;
         # Non-public names legitimately qualified/imported from upstream packages
         # (Base, Base.Broadcast, StaticArraysCore, ArrayInterface, Adapt,
@@ -35,7 +26,7 @@ run_qa(
                 :Slice, :SolvedVariables, :StaticVecOrMat, :SymbolicTypeTrait,
                 :adapt_structure, :add_sum, :broadcastable, :check_parent_index_match,
                 :ensure_indexable, :flatten, :front, :index_dimsum, :ismutable,
-                :issingular, :maybeview, :mul_prod, :similar_type, :tail, :typename,
+                :issingular, :maybeview, :mul_prod, :tail, :typename,
                 :unalias, :viewindexing,
             ),
         ),
