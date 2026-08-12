@@ -23,6 +23,7 @@ run_tests(;
         @time @safetestset "Table traits" include("Core/tabletraits.jl")
         @time @safetestset "StaticArrays Tests" include("Core/copy_static_array_test.jl")
         @time @safetestset "Linear Algebra Tests" include("Core/linalg.jl")
+        @time @safetestset "SciMLStructures Tests" include("Core/scimlstructures_test.jl")
         return @time @safetestset "Measurement Tests" include("Core/measurements.jl")
     end,
     groups = Dict(

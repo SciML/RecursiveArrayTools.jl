@@ -14,6 +14,7 @@ module RecursiveArrayTools
         UnitUpperTriangular, UpperTriangular, ldiv!, mul!
     using RecipesBase: RecipesBase, @recipe
     using SciMLPublic: @public
+    using SciMLStructures: SciMLStructures, Tunable
     using StaticArraysCore: StaticArraysCore
     using SymbolicIndexingInterface: SymbolicIndexingInterface, ArraySymbolic,
         NotSymbolic, ParameterIndexingProxy, ParameterTimeseriesCollection,
@@ -200,6 +201,7 @@ module RecursiveArrayTools
     include("vector_of_array.jl")
     include("array_partition.jl")
     include("named_array_partition.jl")
+    include("scimlstructures.jl")
 
     function Base.show(io::IO, x::ArrayPartition)
         return invoke(show, Tuple{typeof(io), Any}, io, x)
