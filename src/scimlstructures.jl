@@ -1,4 +1,3 @@
-
 # SciMLStructures opts every numeric array into the interface and canonicalizes it
 # with `vec`. That is right for a contiguous array, but an `ArrayPartition` is
 # already an `AbstractVector`, so `vec` returns it unchanged and the buffer comes
