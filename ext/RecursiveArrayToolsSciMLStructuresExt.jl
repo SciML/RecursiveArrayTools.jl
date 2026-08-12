@@ -13,14 +13,19 @@ using SciMLStructures: SciMLStructures, Tunable
 # `copyto!` and `Vector` use, so a caller can rely on the flat buffer matching
 # `collect(p)`.
 
-# The buffer is a copy: the partitions are separate arrays, so no flat view over
-# them exists to alias. Built from the first partition rather than as a `Vector` so
-# that a GPU-backed partition yields a GPU-backed buffer.
+# `reduce(vcat, p.x)` rather than building from one partition: the partitions need
+# not share an array type or an element type, and concatenating promotes across both.
+# It also keeps a uniform static or device-backed partitioning in kind, where sizing
+# from `p.x[1]` would silently pick that partition's type for the whole buffer.
+#
+# The buffer must not alias `p`, since `canonicalize` reports `aliases = false`, and
+# `reduce(vcat, (x,))` returns `x` itself, so a lone partition is copied.
 function _flatten(p::ArrayPartition)
     isempty(p.x) && throw(
         ArgumentError("cannot canonicalize an `ArrayPartition` with no partitions")
     )
-    return copyto!(similar(first(p.x), length(p)), p)
+    length(p.x) == 1 && return copy(only(p.x))
+    return reduce(vcat, p.x)
 end
 
 SciMLStructures.isscimlstructure(::ArrayPartition) = true

@@ -84,14 +84,41 @@ using SciMLStructures: Tunable, Constants, Caches, Discrete, Initials, Input,
     end
 
     @testset "the partition array type is preserved" begin
-        # The buffer is built from the first partition rather than as a `Vector`, so
-        # an exotic backing type stays itself rather than being moved to a `Vector`.
+        # Concatenating keeps a uniformly static partitioning static rather than
+        # dropping it to a `Vector`, and `replace` rebuilds each partition in kind.
         q = ArrayPartition(MVector(1.0, 2.0), MVector(3.0, 4.0))
         buffer, repack, _ = canonicalize(Tunable(), q)
         @test buffer == [1.0, 2.0, 3.0, 4.0]
+        @test buffer isa MVector
         back = repack([5.0, 6.0, 7.0, 8.0])
         @test back.x[1] isa MVector
         @test collect(back) == [5.0, 6.0, 7.0, 8.0]
+    end
+
+    # The partitions need not share an array type or an element type, so the buffer
+    # has to promote across them rather than take its type from one of them.
+    @testset "partitions of differing types" begin
+        mixed_eltype = ArrayPartition([1, 2], [3.0, 4.5])
+        buffer, repack, _ = canonicalize(Tunable(), mixed_eltype)
+        # Sizing from the first partition would give a `Vector{Int}` and truncate.
+        @test eltype(buffer) === Float64
+        @test buffer == [1.0, 2.0, 3.0, 4.5]
+
+        mixed_array = ArrayPartition([1.0, 2.0], MVector(3.0, 4.0))
+        buffer2, _, _ = canonicalize(Tunable(), mixed_array)
+        @test buffer2 == [1.0, 2.0, 3.0, 4.0]
+        @test length(buffer2) == 4
+    end
+
+    # `reduce(vcat, (x,))` returns `x` itself, so the single-partition case has to
+    # copy or the buffer would alias `p` despite `aliases` being reported `false`.
+    @testset "a single partition still yields an independent buffer" begin
+        q = ArrayPartition([1.0, 2.0, 3.0])
+        buffer, _, aliases = canonicalize(Tunable(), q)
+        @test aliases == false
+        @test buffer !== q.x[1]
+        buffer[1] = -1.0
+        @test q.x[1][1] == 1.0
     end
 
     @testset "integer partitions" begin
