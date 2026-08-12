@@ -1,7 +1,3 @@
-module RecursiveArrayToolsSciMLStructuresExt
-
-using RecursiveArrayTools: ArrayPartition
-using SciMLStructures: SciMLStructures, Tunable
 
 # SciMLStructures opts every numeric array into the interface and canonicalizes it
 # with `vec`. That is right for a contiguous array, but an `ArrayPartition` is
@@ -84,6 +80,4 @@ function _offsets(p::ArrayPartition)
         total
     end
     return offsets
-end
-
 end
