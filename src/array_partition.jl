@@ -5,6 +5,22 @@ Wrap arrays with potentially different types as one linear `AbstractVector`. Ind
 traverses the partitions in order, while broadcasting operates partition-by-partition
 without losing the individual array types.
 
+# Arguments
+
+- `parts...`: arrays or scalar values to store as the partitions.
+- `copy_x`: when constructing from a tuple with `Val{true}`, copy each partition;
+  the default `Val{false}` preserves the supplied partition objects.
+
+# Returns
+
+An `ArrayPartition` whose element type is the promoted bottom element type of
+the partitions.
+
+# Errors
+
+`ArrayPartition{T, S}(undef, n)` throws an `ArgumentError` unless `S` describes
+exactly one partition.
+
 # Fields
 
 - `x`: the tuple of stored arrays.

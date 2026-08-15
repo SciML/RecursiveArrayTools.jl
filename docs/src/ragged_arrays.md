@@ -184,6 +184,14 @@ structure and access elements without implicit zeros.
 The abstract types below are developer interfaces for packages implementing ragged containers.
 Application code should construct `RaggedVectorOfArray` or `RaggedDiffEqArray`.
 
+A concrete `AbstractRaggedVectorOfArray` must expose an indexable `u` field and preserve
+the true shape of every inner array. It must support the ragged indexing contract,
+including `A[:, j] == A.u[j]`, and may use the generic conversion, copying, filling,
+iteration, and broadcasting methods supplied by the subpackage. It must not claim the
+rectangular `AbstractArray` interface or add implicit zero padding. A concrete
+`AbstractRaggedDiffEqArray` follows the same rules and additionally keeps `t`, `p`, and
+`sys` metadata aligned with `u`.
+
 ```@docs
 RecursiveArrayTools.AbstractRaggedVectorOfArray
 RecursiveArrayTools.AbstractRaggedDiffEqArray

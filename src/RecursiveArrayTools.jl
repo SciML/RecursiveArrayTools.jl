@@ -50,9 +50,17 @@ module RecursiveArrayTools
 
     ## Fields
 
-    An AbstractVectorOfArray has the following fields:
+    Concrete subtypes must expose the following field:
 
-      - `u` which holds the Vector of values at each timestep
+      - `u`, an indexable collection holding the inner arrays. The last index of
+        the array interface selects an entry of `u`.
+
+    Concrete subtypes must also implement `size`, `getindex`, and `setindex!` as
+    appropriate for their storage. They must preserve the column-major convention:
+    `A[I..., j]` indexes `A.u[j]`, and `A[:, j]` returns that inner array (or its
+    rectangular, zero-padded view when the inner arrays are ragged). The generic
+    copying, filling, conversion, and component-series functions in
+    `RecursiveArrayTools` are defined in terms of this contract.
 
     ## Array Interface
 
@@ -132,14 +140,19 @@ module RecursiveArrayTools
 
     ## Fields
 
-    An AbstractDiffEqArray adds the following fields:
+    Concrete subtypes of AbstractDiffEqArray add the following fields:
 
-      - `t` which holds the times of each timestep.
-      - `p` which holds the parameter values.
-      - `sys` which holds the symbolic system (e.g. `SymbolCache`).
-      - `discretes` which holds discrete parameter timeseries.
-      - `interp` which holds an interpolation object for dense output (default `nothing`).
-      - `dense` which indicates whether dense interpolation is available (default `false`).
+      - `t`, the time corresponding to each entry of `u`.
+      - `p`, the parameter values associated with the saved states.
+      - `sys`, symbolic-indexing metadata such as a `SymbolCache`, or `nothing`.
+      - `discretes`, discrete parameter timeseries, or `nothing`.
+      - `interp`, an interpolation object for dense output, or `nothing`.
+      - `dense`, whether dense interpolation is available.
+
+    The lengths of `u` and `t` must stay aligned when the container is resized or
+    otherwise mutated. A subtype with a non-`nothing` `interp` field must accept
+    the callable interface below; otherwise calling it should report that no
+    interpolation data is available.
 
     ## Callable Interface
 
@@ -190,8 +203,12 @@ module RecursiveArrayTools
     # Developer Interface
 
     Subtypes must satisfy the `AbstractRaggedVectorOfArray` contract and expose
-    `t`, `p`, and `sys` metadata compatible with `DiffEqArray`. The metadata must
-    remain aligned with the entries of `u` whenever the container is mutated.
+    `t`, `p`, and `sys` metadata compatible with `DiffEqArray`. They may also
+    expose `discretes`, `interp`, and `dense` fields for discrete parameters and
+    interpolation. The metadata must remain aligned with the entries of `u`
+    whenever the container is mutated. Application code should use the generic
+    symbolic-indexing methods on the subtype rather than inspecting these fields
+    directly.
     Application code should construct `RaggedDiffEqArray` instead of subtyping
     this interface.
     """

@@ -6,6 +6,25 @@ Similar to an `ArrayPartition` but the individual arrays can be accessed via the
 constructor-specified names. However, unlike `ArrayPartition`, each individual array
 must have the same element type.
 
+# Arguments
+
+- `kwargs...`: named partitions, for example `position = [1.0, 2.0]`.
+- `x`: a `NamedTuple` containing the named partitions.
+
+# Fields
+
+- `array_partition`: the underlying `ArrayPartition`.
+- `names_to_indices`: a `NamedTuple` mapping each constructor name to its partition index.
+
+# Returns
+
+A named linear `AbstractVector` whose properties access the corresponding
+partitions.
+
+# Errors
+
+Construction asserts that all partitions have the same element type.
+
 # Examples
 
 ```julia

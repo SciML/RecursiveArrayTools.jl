@@ -8,6 +8,23 @@ without materializing a dense concatenation. The last index selects an inner arr
 `A[j, i]` accesses component `j` of `A.u[i]`, while `A.u[i]` returns the stored
 array itself.
 
+# Arguments
+
+- `u`: an indexable collection of inner arrays. The first inner array determines
+  the element type and dimensionality; later arrays may be ragged in size.
+
+# Returns
+
+A mutable `VectorOfArray` with `size(A) == (size(A.u[1])..., length(A.u))` for
+rectangular input. Ragged input is represented by the maximum inner size and
+reads outside an inner array as zero.
+
+# Notes
+
+`VectorOfArray` implements the `AbstractArray` interface. Use `A.u[i]` or
+`A[:, i]` to access an inner array; linear indexing `A[i]` accesses scalar
+elements in column-major order.
+
 # Fields
 
 - `u`: the collection of stored arrays.
@@ -32,6 +49,27 @@ end
 Wrap saved state arrays `u` and matching time points `t` as an `AbstractDiffEqArray`.
 The result supports the `VectorOfArray` interface and stores metadata used for symbolic
 indexing, interpolation, and plotting.
+
+# Arguments
+
+- `u`: an indexable collection of saved state arrays.
+- `t`: the time values corresponding to the entries of `u`.
+
+# Keyword Arguments
+
+- `discretes`: discrete parameter timeseries, or `nothing`.
+- `variables`: variable symbols used to construct symbolic-indexing metadata.
+- `parameters`: parameter symbols used to construct symbolic-indexing metadata.
+- `independent_variables`: independent-variable symbols used to construct
+  symbolic-indexing metadata.
+- `interp`: an interpolation object called as `interp(t, idxs, deriv, p, continuity)`.
+- `dense`: whether dense interpolation is available.
+
+# Returns
+
+A mutable `DiffEqArray` with the saved states, times, parameters, and symbolic
+indexing metadata. Positional overloads additionally accept `p` and `sys` when
+those objects have already been constructed.
 
 # Fields
 
