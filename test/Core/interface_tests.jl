@@ -4,6 +4,61 @@ using FastBroadcast
 using Polyester
 using SymbolicIndexingInterface: SymbolCache
 
+struct GenericVectorOfArray{T, N, A} <: AbstractVectorOfArray{T, N, A}
+    u::A
+end
+
+GenericVectorOfArray(u::A) where {A <: AbstractVector} =
+    GenericVectorOfArray{eltype(eltype(u)), 2, A}(u)
+
+Base.size(A::GenericVectorOfArray) = (length(A.u[1]), length(A.u))
+Base.getindex(A::GenericVectorOfArray, i::Int, j::Int) = A.u[j][i]
+Base.getindex(A::GenericVectorOfArray, ::Colon, j::Int) = A.u[j]
+Base.getindex(A::GenericVectorOfArray, i::Int, ::Colon) = [u[i] for u in A.u]
+
+struct GenericDiffEqArray{T, A} <: AbstractDiffEqArray{T, 2, A}
+    u::A
+    t::Vector{Float64}
+    p
+    sys
+    discretes
+    interp
+    dense::Bool
+end
+
+Base.size(A::GenericDiffEqArray) = (length(A.u[1]), length(A.u))
+Base.getindex(A::GenericDiffEqArray, i::Int, j::Int) = A.u[j][i]
+Base.getindex(A::GenericDiffEqArray, ::Colon, j::Int) = A.u[j]
+Base.getindex(A::GenericDiffEqArray, i::Int, ::Colon) = [u[i] for u in A.u]
+
+@testset "Generic AbstractVectorOfArray interface" begin
+    source = GenericVectorOfArray([[1, 2], [3, 4]])
+    destination = GenericVectorOfArray([[0, 0], [0, 0]])
+
+    @test Array(source) == [1 3; 2 4]
+    @test vecarr_to_vectors(source) == [[1, 3], [2, 4]]
+    @test sum(source) == 10
+
+    recursivecopy!(destination, source)
+    @test destination.u == source.u
+    recursivefill!(destination, 0)
+    @test destination.u == [[0, 0], [0, 0]]
+    recursivecopyto!(destination, source)
+    @test destination.u == source.u
+end
+
+@testset "Generic AbstractDiffEqArray interface" begin
+    interp = (t, idxs, deriv, p, continuity) -> t
+    solution = GenericDiffEqArray{Float64, Vector{Vector{Float64}}}(
+        [[1.0, 2.0], [3.0, 4.0]], [0.0, 1.0], nothing, nothing, nothing, interp, true
+    )
+
+    @test solution(0.5) == 0.5
+    @test solution(0.5; continuity = :right) == 0.5
+    @test solution[:, 1] == [1.0, 2.0]
+    @test solution[1, :] == [1.0, 3.0]
+end
+
 if isdefined(Base, :ispublic)
     @testset "Ragged developer API declarations" begin
         for name in (:AbstractRaggedVectorOfArray, :AbstractRaggedDiffEqArray)

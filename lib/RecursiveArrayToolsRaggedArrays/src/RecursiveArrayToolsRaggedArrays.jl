@@ -24,6 +24,16 @@ export RaggedVectorOfArray, RaggedDiffEqArray
 Wrap a collection of arrays while preserving each array's shape. Unlike `VectorOfArray`,
 this type does not present zero-padded ragged data as a rectangular `AbstractArray`.
 
+# Arguments
+
+- `u`: an indexable collection of inner arrays. Each inner array keeps its own shape.
+
+# Returns
+
+A mutable `RaggedVectorOfArray` implementing the ragged indexing and broadcasting
+interface. It does not subtype `AbstractArray` because its columns may have different
+sizes.
+
 # Fields
 
 - `u`: the collection of stored arrays.
@@ -46,6 +56,24 @@ end
 
 Wrap ragged saved states `u` and matching time points `t` with differential-equation and
 symbolic-indexing metadata.
+
+# Arguments
+
+- `u`: an indexable collection of saved ragged state arrays.
+- `t`: the time values corresponding to the entries of `u`.
+
+# Keyword Arguments
+
+- `discretes`: discrete parameter timeseries, or `nothing`.
+- `variables`: variable symbols for symbolic-indexing metadata.
+- `parameters`: parameter symbols for symbolic-indexing metadata.
+- `independent_variables`: independent-variable symbols for symbolic-indexing metadata.
+- `interp`: an interpolation object, or `nothing`.
+- `dense`: whether dense interpolation is available.
+
+# Returns
+
+A mutable `RaggedDiffEqArray` with time, parameter, and symbolic-indexing metadata.
 
 # Fields
 

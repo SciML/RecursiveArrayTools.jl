@@ -23,9 +23,11 @@ SparseArrays = "1.10"
 StaticArraysCore = "1.4.2"
 SymbolicIndexingInterface = "0.3.42"
 Test = "1"
+SciMLTesting = "2.10"
 julia = "1.10"
 
 [extras]
+SciMLTesting = "09d9d899-5365-40a9-917a-5f67fddea283"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SymbolicIndexingInterface = "2efcf032-c050-4f8e-a9bb-153293bab1f5"

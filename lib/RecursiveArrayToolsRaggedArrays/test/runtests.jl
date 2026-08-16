@@ -24,6 +24,8 @@ if TEST_GROUP == "QA"
 end
 
 if TEST_GROUP == "Core" || TEST_GROUP == "All"
+    include("interface_tests.jl")
+
     @testset "RecursiveArrayToolsRaggedArrays" begin
         # ===================================================================
         # Tests ported from v3 basic_indexing.jl
