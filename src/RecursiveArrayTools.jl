@@ -9,8 +9,8 @@ provides array-compatible wrappers such as [`VectorOfArray`](@ref), [`DiffEqArra
 module RecursiveArrayTools
 
     using ArrayInterface: ArrayInterface
-    using LinearAlgebra: LinearAlgebra, Adjoint, Factorization, I, LDLt, LU,
-        LowerTriangular, SymTridiagonal, Transpose, Tridiagonal, UnitLowerTriangular,
+    using LinearAlgebra: LinearAlgebra, Adjoint, I, LU, LowerTriangular, Transpose,
+        Tridiagonal, UnitLowerTriangular,
         UnitUpperTriangular, UpperTriangular, ldiv!, mul!
     using RecipesBase: RecipesBase, @recipe
     using SciMLPublic: @public
