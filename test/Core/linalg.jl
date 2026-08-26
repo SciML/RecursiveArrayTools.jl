@@ -29,6 +29,17 @@ for ff in (lu, svd, qr, Base.Fix2(qr, ColumnNorm()))
     @test A * bbb ≈ b
 end
 
+@testset "VectorOfArray copy intersections" begin
+    destination = VectorOfArray([0.0, 0.0])
+    source = ArrayPartition(1.0, 2.0)
+    @test copyto!(destination, source) == source
+    @test destination.u == [1.0, 2.0]
+
+    source_vector_of_array = VectorOfArray([3.0, 4.0])
+    @test copyto!(destination, source_vector_of_array) == source_vector_of_array
+    @test destination.u == [3.0, 4.0]
+end
+
 # linalg mul! overloads
 n, m, l = 5, 6, 7
 bb = rand(n, n), rand(m, n), rand(l, n)

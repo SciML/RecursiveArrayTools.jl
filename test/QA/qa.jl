@@ -9,9 +9,6 @@ end
 
 run_qa(
     RecursiveArrayTools;
-    # Method-table ambiguities tracked in
-    # https://github.com/SciML/RecursiveArrayTools.jl/issues/326
-    aqua_broken = (:ambiguities,),
     ei_kwargs = (;
         # Non-public names legitimately qualified/imported from upstream packages
         # (Base, Base.Broadcast, LinearAlgebra, StaticArraysCore, ArrayInterface,

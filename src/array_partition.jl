@@ -268,6 +268,25 @@ function Base.copyto!(A::ArrayPartition, src::ArrayPartition)
     return A
 end
 
+function Base.copyto!(
+        dest::AbstractVectorOfArray{T, 1}, src::ArrayPartition{T2}
+    ) where {T, T2}
+    return copyto!(dest.u, src)
+end
+
+function Base.copyto!(
+        dest::AbstractVectorOfArray{T, 1, <:AbstractVector{T}},
+        src::AbstractVectorOfArray{T2, 1}
+    ) where {T, T2}
+    return copyto!(dest.u, src)
+end
+
+function Base.copyto!(
+        dest::AbstractVectorOfArray{T, N, <:AbstractVector{T}}, src::ArrayPartition
+    ) where {T, N}
+    return copyto!(dest.u, src)
+end
+
 function Base.fill!(A::ArrayPartition, x)
     unrolled_foreach!(A.x) do x_
         fill!(x_, x)
@@ -577,26 +596,17 @@ function ArrayInterface.zeromatrix(A::ArrayPartition)
     return x .* x' .* false
 end
 
-function __get_subtypes_in_module(
-        mod, supertype; include_supertype = true, all = false, except = []
-    )
-    return filter([getproperty(mod, name) for name in names(mod; all) if !in(name, except)]) do value
-        return value != Union{} && value isa Type && (value <: supertype) &&
-            (include_supertype || value != supertype) && !in(value, except)
-    end
+function _ldiv_array_partition!(A, b::ArrayPartition)
+    x = ldiv!(A, Array(b))
+    return copyto!(b, x)
 end
 
-for factorization in vcat(
-        __get_subtypes_in_module(
-            LinearAlgebra, Factorization; include_supertype = false,
-            all = true, except = [:LU, :LAPACKFactorizations]
-        ),
-        LDLt{T, <:SymTridiagonal{T, V} where {V <: AbstractVector{T}}} where {T}
-    )
-    @eval function LinearAlgebra.ldiv!(A::T, b::ArrayPartition) where {T <: $factorization}
-        (x = ldiv!(A, Array(b)); copyto!(b, x))
-    end
-end
+LinearAlgebra.ldiv!(A::LinearAlgebra.QR, b::ArrayPartition) =
+    _ldiv_array_partition!(A, b)
+
+LinearAlgebra.ldiv!(
+    A::LinearAlgebra.SVD{T, Tr, M}, b::ArrayPartition
+) where {T, Tr, M <: AbstractArray{T}} = _ldiv_array_partition!(A, b)
 
 function LinearAlgebra.ldiv!(
         A::LinearAlgebra.QRPivoted{T, <:StridedMatrix{T}, <:AbstractVector{T}},
