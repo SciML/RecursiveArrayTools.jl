@@ -58,9 +58,9 @@ version = "1.1.2"
 
 [[deps.ArrayInterface]]
 deps = ["Adapt", "LinearAlgebra"]
-git-tree-sha1 = "13f3b228c230ef0b4ecafd73c8ca9e99987ca692"
+git-tree-sha1 = "daf5b2aab5b1c1fdcb65b05883cdb4b18abac1b9"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "7.30.0"
+version = "7.30.1"
 
     [deps.ArrayInterface.extensions]
     ArrayInterfaceAMDGPUExt = "AMDGPU"
@@ -72,6 +72,7 @@ version = "7.30.0"
     ArrayInterfaceChainRulesExt = "ChainRules"
     ArrayInterfaceFillArraysExt = "FillArrays"
     ArrayInterfaceGPUArraysCoreExt = "GPUArraysCore"
+    ArrayInterfaceGPUArraysCoreTrackerExt = ["GPUArraysCore", "Tracker"]
     ArrayInterfaceMetalExt = "Metal"
     ArrayInterfaceReverseDiffExt = "ReverseDiff"
     ArrayInterfaceSparseArraysExt = "SparseArrays"
@@ -425,9 +426,9 @@ version = "4.5.1"
 
 [[deps.RecursiveArrayToolsRaggedArrays]]
 deps = ["Adapt", "ArrayInterface", "LinearAlgebra", "RecursiveArrayTools", "StaticArraysCore", "SymbolicIndexingInterface"]
-git-tree-sha1 = "60f8bc525c0fc91e4637c471477b4132f960adc2"
+git-tree-sha1 = "4428af60eff41c5a402ba7ba1619214fec902e90"
 uuid = "c384ba91-639a-44ca-823a-e1d3691ab84a"
-version = "1.2.0"
+version = "1.2.1"
 
 [[deps.RegistryInstances]]
 deps = ["LazilyInitializedFields", "Pkg", "TOML", "Tar"]
