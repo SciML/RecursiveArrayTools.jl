@@ -961,31 +961,31 @@ end
     else
         u_slice = [
             begin
-                    resolved_prefix = _resolve_ragged_indices(prefix, A, col)
-                    inner_nd = ndims(A.u[col])
-                    n_missing = inner_nd - length(resolved_prefix)
-                    padded = if n_missing > 0
-                        if all(idx -> idx === Colon(), resolved_prefix)
-                            (
-                                resolved_prefix...,
-                                ntuple(_ -> Colon(), n_missing)...,
-                            )
+                resolved_prefix = _resolve_ragged_indices(prefix, A, col)
+                inner_nd = ndims(A.u[col])
+                n_missing = inner_nd - length(resolved_prefix)
+                padded = if n_missing > 0
+                    if all(idx -> idx === Colon(), resolved_prefix)
+                        (
+                            resolved_prefix...,
+                            ntuple(_ -> Colon(), n_missing)...,
+                        )
                     else
+                        (
+                            resolved_prefix...,
                             (
-                                resolved_prefix...,
-                                (
-                                    lastindex(
-                                        A.u[col],
-                                        length(resolved_prefix) + i
-                                    ) for i in 1:n_missing
-                                )...,
-                            )
+                                lastindex(
+                                    A.u[col],
+                                    length(resolved_prefix) + i
+                                ) for i in 1:n_missing
+                            )...,
+                        )
                     end
                 else
-                        resolved_prefix
+                    resolved_prefix
                 end
-                    A.u[col][padded...]
-                end
+                A.u[col][padded...]
+            end
                 for col in cols
         ]
         # Only preserve RaggedDiffEqArray type if we're selecting actual columns, not inner dimensions
