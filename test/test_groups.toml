@@ -2,6 +2,12 @@
 versions = ["lts", "1", "pre"]
 num_threads = 2
 
+["Core 32-bit"]
+group = "Core"
+versions = ["1"]
+os = ["ubuntu-latest"]
+arch = "x86"
+
 [QA]
 versions = ["lts", "1"]
 num_threads = 2
