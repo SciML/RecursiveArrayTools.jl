@@ -136,7 +136,8 @@ push!(testda, [-1, -2, -3, -4])
 @inferred mapreduce(string, *, testva)
 
 # sum must follow Base's promotion, not the element type (issue #595):
-# `Int8` elements sum to `Int64`, so asserting the result is `::Int8` is wrong.
+# `Int8` elements sum to native `Int` (Int64 on 64-bit, Int32 on 32-bit),
+# so asserting the result is `::Int8` is wrong.
 @test sum(VA[Int8[1, 2, 3]]) === Int(6)
 @test sum(VA[Int8[1, 2], Int8[3, 4]]) === Int(10)
 @test sum(VA[Float32[1, 2, 3]]) === 6.0f0
