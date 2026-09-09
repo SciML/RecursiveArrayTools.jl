@@ -161,9 +161,9 @@ version = "1.7.0"
 
 [[deps.Expat_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "f4d39eee89f1e58c26bf447f1d4156c0125d6838"
+git-tree-sha1 = "2bfb1e047e2ad0a5ca94365340bde8005d637568"
 uuid = "2e619515-83b5-522b-bb60-26c02a35a201"
-version = "2.8.3+0"
+version = "2.8.4+0"
 
 [[deps.ExprTools]]
 git-tree-sha1 = "d2e49e7efd29719d6f28b891b0e0e159daa9d2b4"
@@ -386,7 +386,7 @@ version = "1.3.4"
 
 [[deps.RecursiveArrayTools]]
 deps = ["Adapt", "ArrayInterface", "GPUArraysCore", "LinearAlgebra", "PrecompileTools", "RecipesBase", "SciMLPublic", "SciMLStructures", "StaticArraysCore", "SymbolicIndexingInterface"]
-path = "/home/runner/work/RecursiveArrayTools.jl/RecursiveArrayTools.jl"
+path = "/home/runner/_work/RecursiveArrayTools.jl/RecursiveArrayTools.jl"
 uuid = "731186ca-8d62-57ce-b412-fbd966d074cd"
 version = "4.5.1"
 
