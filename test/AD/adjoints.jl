@@ -118,3 +118,24 @@ let ext = Base.get_extension(RecursiveArrayTools, :RecursiveArrayToolsZygoteExt)
     @test g_dea.u == expected
     @test g_dea.t == dea.t
 end
+
+# Structural per-element cotangents (e.g. the per-solution NamedTuple tangents
+# produced when differentiating `ensemble_sol.u`) cannot be stored in a
+# VectorOfArray; the `u`-field tangent is returned instead
+# (SciML/DifferentialEquations.jl#1149).
+let ext = Base.get_extension(RecursiveArrayTools, :RecursiveArrayToolsZygoteExt)
+    voa = VectorOfArray([Float64[i, i, i] for i in 1:3])
+    dea = DiffEqArray([Float64[i, i, i] for i in 1:3], 1:3)
+    d = Any[
+        (; u = Float64[1, 1, 1], t = 0.5), nothing,
+        (; u = Float64[3, 3, 3], t = 0.25),
+    ]
+
+    g_voa = ext.vofa_u_adjoint(d, voa)
+    @test g_voa isa NamedTuple
+    @test g_voa.u == collect(d)
+
+    g_dea = ext.vofa_u_adjoint(d, dea)
+    @test g_dea isa NamedTuple
+    @test g_dea.u == collect(d)
+end
