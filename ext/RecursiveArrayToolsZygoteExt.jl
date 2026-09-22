@@ -90,6 +90,11 @@ Zygote.@adjoint function Zygote.literal_getproperty(A::RecursiveArrayTools.Abstr
 end
 
 function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
+    # Structural tangents (e.g. per-solution NamedTuples for an
+    # EnsembleSolution's `u`) cannot be stored in a VectorOfArray, so the
+    # cotangent of `A` is the `u`-field tangent itself.
+    all(d_i -> isnothing(d_i) || d_i isa Union{AbstractZero, AbstractArray, Number}, d) ||
+        return (; u = collect(d))
     m = map(enumerate(d)) do (idx, d_i)
         (isnothing(d_i) || d_i isa AbstractZero) && return zero(A.u[idx])
         d_i
@@ -98,6 +103,8 @@ function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractVectorOfArray)
 end
 
 function vofa_u_adjoint(d, A::RecursiveArrayTools.AbstractDiffEqArray)
+    all(d_i -> isnothing(d_i) || d_i isa Union{AbstractZero, AbstractArray, Number}, d) ||
+        return (; u = collect(d))
     m = map(enumerate(d)) do (idx, d_i)
         (isnothing(d_i) || d_i isa AbstractZero) && return zero(A.u[idx])
         d_i
