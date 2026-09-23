@@ -1242,28 +1242,8 @@ DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
 
 # Plot dimensionality is the number of coordinates returned by a series
 # transform `f`, not `length(var) - 1` (input arity). A bare index `3` and
-# `(f, 0, 3, 4)` with `f(t,a,b)=(t,a+b)` both produce 2-D series.
-function plot_series_output_dims(var)
-    f = var[1]
-    return length(f(ntuple(Returns(1), length(var) - 1)...))
-end
-
-function check_plot_series_output_dims(vars)
-    dims = plot_series_output_dims(vars[1])
-    for var in vars
-        d = plot_series_output_dims(var)
-        if d != dims
-            throw(
-                ArgumentError(
-                    "Plot idxs series must all have the same output dimension, but got $dims and $d. " *
-                        "Output dimension is the number of coordinates returned by each series transform " *
-                        "(e.g. `(t, u)` is 2-D), not the number of input indices in the idxs tuple."
-                )
-            )
-        end
-    end
-    return dims
-end
+# `(f, 0, 3, 4)` with `f(t,a,b)=(t,a+b)` both produce 2-D series. Dims are
+# taken from evaluated series output in `solplot_vecs_and_labels` (no probe).
 
 """
     plottable_indices(x)
@@ -1387,7 +1367,7 @@ This is a developer interface for plot recipe implementations.
 """
 function add_labels!(labels, x, dims, A, strs)
     if ((x[2] isa Integer && x[2] == 0) || isequal(x[2], getindepsym_defaultt(A))) &&
-            dims == 2
+            dims == 2 && x[1] === DEFAULT_PLOT_FUNC
         push!(labels, strs[end])
     elseif x[1] !== DEFAULT_PLOT_FUNC
         push!(labels, "f($(join(strs, ',')))")
@@ -1433,21 +1413,21 @@ function diffeq_to_arrays(
         plott = A.t[start_idx:end_idx]
     end
 
-    dims = check_plot_series_output_dims(vars)
-    return solplot_vecs_and_labels(dims, vars, plott, A)
+    return solplot_vecs_and_labels(vars, plott, A)
 end
 
 """
-    solplot_vecs_and_labels(dims, vars, plott, A)
+    solplot_vecs_and_labels(vars, plott, A)
 
 Build plot vectors and labels for interpreted plotting variables over the
 sample points `plott`.
 
 This is a developer interface for plot recipe implementations.
 """
-function solplot_vecs_and_labels(dims, vars, plott, A)
+function solplot_vecs_and_labels(vars, plott, A)
     plot_vecs = []
     labels = String[]
+    dims = 0
     batch_symbolic_vars = []
     for x in vars
         for j in 2:length(x)
@@ -1496,6 +1476,18 @@ function solplot_vecs_and_labels(dims, vars, plott, A)
 
         f = x[1]
         tmp = map(f, tmp...)
+        series_dims = length(tmp[1])
+        if isempty(plot_vecs)
+            dims = series_dims
+        elseif series_dims != dims
+            throw(
+                ArgumentError(
+                    "Plot idxs series must all have the same output dimension, but got $dims and $series_dims. " *
+                        "Output dimension is the number of coordinates returned by each series transform " *
+                        "(e.g. `(t, u)` is 2-D), not the number of input indices in the idxs tuple."
+                )
+            )
+        end
         tmp = tuple((getindex.(tmp, i) for i in eachindex(tmp[1]))...)
         for i in eachindex(tmp)
             if length(plot_vecs) < i

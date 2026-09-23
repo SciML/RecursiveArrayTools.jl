@@ -55,6 +55,8 @@ end
 # Regression for DifferentialEquations.jl#360: input-arity of idxs specs is not
 # plot dimensionality. Mixing a bare index / (0,i) with (f,0,i,j) when f returns
 # a 2-tuple must succeed; mixing a 2-D series with a 3-D series must throw.
+# Labels for custom transforms must stay `f(...)` (not the bare last index),
+# and dims must come from evaluated output (no probe with integer 1s).
 @testset "plot idxs with mixed input arity but matching output dims (#360)" begin
     t = [0.0, 0.25, 0.5, 0.75, 1.0]
     u = [[1.0, 2.0, 10.0 + tt, 20.0 + 2tt] for tt in t]
@@ -62,6 +64,8 @@ end
 
     adder(tt, a, b) = (tt, a + b)
     adder3(tt, a, b) = (tt, a, b)
+    g(tt::Float64, x::Float64) = (tt, x)
+    dom(tt, x) = (tt, sqrt(x - 2))
 
     function plot_sparse(idxs)
         vars = interpret_vars(idxs, A)
@@ -79,8 +83,21 @@ end
         @test plot_vecs[2][:, 1] ≈ u3
         @test plot_vecs[1][:, 2] ≈ t
         @test plot_vecs[2][:, 2] ≈ u3pu4
-        @test length(labels) == 2
+        @test labels == ["u[3]", "f(t,u[3],u[4])"]
     end
+
+    _, labels01 = plot_sparse((0, 1))
+    @test labels01 == ["u[1]"]
+
+    plot_vecs_g, labels_g = plot_sparse([(g, 0, 3)])
+    @test plot_vecs_g[1][:, 1] ≈ t
+    @test plot_vecs_g[2][:, 1] ≈ u3
+    @test labels_g == ["f(t,u[3])"]
+
+    plot_vecs_dom, labels_dom = plot_sparse([(dom, 0, 3)])
+    @test plot_vecs_dom[1][:, 1] ≈ t
+    @test plot_vecs_dom[2][:, 1] ≈ sqrt.(u3 .- 2)
+    @test labels_dom == ["f(t,u[3])"]
 
     err = try
         plot_sparse([3, (adder3, 0, 3, 4)])
