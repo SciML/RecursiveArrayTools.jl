@@ -52,11 +52,7 @@ end
     @test plot_labels == ["u[1]", "u[2]"]
 end
 
-# Regression for DifferentialEquations.jl#360: input-arity of idxs specs is not
-# plot dimensionality. Mixing a bare index / (0,i) with (f,0,i,j) when f returns
-# a 2-tuple must succeed; mixing a 2-D series with a 3-D series must throw.
-# Labels for custom transforms must stay `f(...)` (not the bare last index),
-# and dims must come from evaluated output (no probe with integer 1s).
+# #360: check plot dims from transform output, not idxs input arity.
 @testset "plot idxs with mixed input arity but matching output dims (#360)" begin
     t = [0.0, 0.25, 0.5, 0.75, 1.0]
     u = [[1.0, 2.0, 10.0 + tt, 20.0 + 2tt] for tt in t]
@@ -98,6 +94,14 @@ end
     @test plot_vecs_dom[1][:, 1] ≈ t
     @test plot_vecs_dom[2][:, 1] ≈ sqrt.(u3 .- 2)
     @test labels_dom == ["f(t,u[3])"]
+
+    # Exported 4-arg form: `dims` is accepted and ignored.
+    vars4 = interpret_vars([3, (adder, 0, 3, 4)], A)
+    plot_vecs4, labels4 = solplot_vecs_and_labels(99, vars4, t, A)
+    @test length(plot_vecs4) == 2
+    @test plot_vecs4[2][:, 1] ≈ u3
+    @test plot_vecs4[2][:, 2] ≈ u3pu4
+    @test labels4 == ["u[3]", "f(t,u[3],u[4])"]
 
     err = try
         plot_sparse([3, (adder3, 0, 3, 4)])

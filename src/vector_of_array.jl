@@ -1240,11 +1240,6 @@ function is supplied. This is a developer interface for plot recipe implementati
 DEFAULT_PLOT_FUNC(x, y) = (x, y)
 DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
 
-# Plot dimensionality is the number of coordinates returned by a series
-# transform `f`, not `length(var) - 1` (input arity). A bare index `3` and
-# `(f, 0, 3, 4)` with `f(t,a,b)=(t,a+b)` both produce 2-D series. Dims are
-# taken from evaluated series output in `solplot_vecs_and_labels` (no probe).
-
 """
     plottable_indices(x)
 
@@ -1413,20 +1408,24 @@ function diffeq_to_arrays(
         plott = A.t[start_idx:end_idx]
     end
 
-    return solplot_vecs_and_labels(vars, plott, A)
+    return solplot_vecs_and_labels(length(vars[1]) - 1, vars, plott, A)
 end
 
 """
-    solplot_vecs_and_labels(vars, plott, A)
+    solplot_vecs_and_labels(dims, vars, plott, A)
 
 Build plot vectors and labels for interpreted plotting variables over the
 sample points `plott`.
 
+The `dims` argument is accepted for API compatibility and ignored; the plotted
+dimension is taken from each series transform's evaluated output.
+
 This is a developer interface for plot recipe implementations.
 """
-function solplot_vecs_and_labels(vars, plott, A)
+function solplot_vecs_and_labels(dims, vars, plott, A)
     plot_vecs = []
     labels = String[]
+    # Ignore caller-supplied `dims`; recompute from evaluated series output.
     dims = 0
     batch_symbolic_vars = []
     for x in vars
