@@ -51,3 +51,43 @@ end
     @test plot_vecs == [[0.0 0.0; 1.0 1.0], [1.0 2.0; 3.0 4.0]]
     @test plot_labels == ["u[1]", "u[2]"]
 end
+
+# Regression for DifferentialEquations.jl#360: input-arity of idxs specs is not
+# plot dimensionality. Mixing a bare index / (0,i) with (f,0,i,j) when f returns
+# a 2-tuple must succeed; mixing a 2-D series with a 3-D series must throw.
+@testset "plot idxs with mixed input arity but matching output dims (#360)" begin
+    t = [0.0, 0.25, 0.5, 0.75, 1.0]
+    u = [[1.0, 2.0, 10.0 + tt, 20.0 + 2tt] for tt in t]
+    A = DiffEqArray(u, t)
+
+    adder(tt, a, b) = (tt, a + b)
+    adder3(tt, a, b) = (tt, a, b)
+
+    function plot_sparse(idxs)
+        vars = interpret_vars(idxs, A)
+        return diffeq_to_arrays(A, false, 100, nothing, vars, :identity, nothing)
+    end
+
+    u3 = [uu[3] for uu in u]
+    u3pu4 = [uu[3] + uu[4] for uu in u]
+
+    for idxs in ([3, (adder, 0, 3, 4)], [(0, 3), (adder, 0, 3, 4)])
+        plot_vecs, labels = plot_sparse(idxs)
+        @test length(plot_vecs) == 2
+        @test size(plot_vecs[1], 2) == 2
+        @test plot_vecs[1][:, 1] ≈ t
+        @test plot_vecs[2][:, 1] ≈ u3
+        @test plot_vecs[1][:, 2] ≈ t
+        @test plot_vecs[2][:, 2] ≈ u3pu4
+        @test length(labels) == 2
+    end
+
+    err = try
+        plot_sparse([3, (adder3, 0, 3, 4)])
+        nothing
+    catch e
+        e
+    end
+    @test err isa ArgumentError
+    @test occursin("output dimension", sprint(showerror, err))
+end

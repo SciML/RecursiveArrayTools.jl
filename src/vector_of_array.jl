@@ -1240,6 +1240,31 @@ function is supplied. This is a developer interface for plot recipe implementati
 DEFAULT_PLOT_FUNC(x, y) = (x, y)
 DEFAULT_PLOT_FUNC(x, y, z) = (x, y, z)
 
+# Plot dimensionality is the number of coordinates returned by a series
+# transform `f`, not `length(var) - 1` (input arity). A bare index `3` and
+# `(f, 0, 3, 4)` with `f(t,a,b)=(t,a+b)` both produce 2-D series.
+function plot_series_output_dims(var)
+    f = var[1]
+    return length(f(ntuple(Returns(1), length(var) - 1)...))
+end
+
+function check_plot_series_output_dims(vars)
+    dims = plot_series_output_dims(vars[1])
+    for var in vars
+        d = plot_series_output_dims(var)
+        if d != dims
+            throw(
+                ArgumentError(
+                    "Plot idxs series must all have the same output dimension, but got $dims and $d. " *
+                        "Output dimension is the number of coordinates returned by each series transform " *
+                        "(e.g. `(t, u)` is 2-D), not the number of input indices in the idxs tuple."
+                )
+            )
+        end
+    end
+    return dims
+end
+
 """
     plottable_indices(x)
 
@@ -1408,10 +1433,7 @@ function diffeq_to_arrays(
         plott = A.t[start_idx:end_idx]
     end
 
-    dims = length(vars[1]) - 1
-    for var in vars
-        @assert length(var) - 1 == dims
-    end
+    dims = check_plot_series_output_dims(vars)
     return solplot_vecs_and_labels(dims, vars, plott, A)
 end
 
