@@ -52,3 +52,20 @@ _b = Adapt.adapt(CuArray, b)
 @test _b isa DiffEqArray
 @test _b.u isa Vector{<:CuArray}
 @test _b.t isa CuArray
+
+# Conversion of partitioned solution states must stay on the GPU.
+states = [
+    ArrayPartition(CUDA.fill(1.0f0, 2), CUDA.fill(2.0f0, 3)),
+    ArrayPartition(CUDA.fill(3.0f0, 2), CUDA.fill(4.0f0, 3)),
+]
+partitioned_sol = DiffEqArray(states, Float32[0, 1])
+partitioned_cu = CuArray(partitioned_sol)
+@test partitioned_cu isa CuArray
+@test size(partitioned_cu) == (5, 2)
+@test Array(partitioned_cu) == Float32[1 3; 1 3; 2 4; 2 4; 2 4]
+
+matrix_states = [
+    ArrayPartition(CUDA.fill(1.0f0, 2, 2), CUDA.fill(2.0f0, 1)),
+    ArrayPartition(CUDA.fill(3.0f0, 2, 2), CUDA.fill(4.0f0, 1)),
+]
+@test Array(CuArray(VectorOfArray(matrix_states))) == Float32[1 3; 1 3; 1 3; 1 3; 2 4]
