@@ -48,8 +48,7 @@ run_tests(;
                 @time @safetestset "Event Tests with ArrayPartition" include("Downstream/downstream_events.jl")
                 @time @safetestset "Measurements and Units" include("Downstream/measurements_and_units.jl")
                 @time @safetestset "TrackerExt" include("Downstream/TrackerExt.jl")
-                # TODO: re-enable after SciMLBase compat bump for RAT v4 (SciML/SciMLBase.jl#1297)
-                # @time @safetestset "Downstream Adjoint Tests" include("Downstream/adjoints.jl")
+                @time @safetestset "Downstream Adjoint Tests" include("Downstream/adjoints.jl")
                 return @time @safetestset "DiffEqArray Indexing Tests" include("Downstream/symbol_indexing.jl")
             end,
         ),
