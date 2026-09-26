@@ -60,7 +60,8 @@ run_tests(;
             ],
             body = function ()
                 @time @safetestset "VectorOfArray GPU" include("GPU/vectorofarray_gpu.jl")
-                return @time @safetestset "ArrayPartition GPU" include("GPU/arraypartition_gpu.jl")
+                @time @safetestset "ArrayPartition GPU" include("GPU/arraypartition_gpu.jl")
+                return @time @safetestset "ODE GPU" include("GPU/ode_gpu.jl")
             end,
         ),
         "NoPre" => (;

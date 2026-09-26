@@ -1,4 +1,4 @@
-using CUDA, LinearAlgebra, OrdinaryDiffEq
+using CUDA, LinearAlgebra, OrdinaryDiffEq, Test
 
 u0 = cu(rand(100))
 
@@ -10,7 +10,8 @@ prob = ODEProblem(f, u0, (0.0f0, 1.0f0))
 
 sol = solve(prob, Tsit5())
 
-Array(sol)
+@test SciMLBase.successful_retcode(sol)
+@test size(Array(sol), 1) == 100
 
 # https://discourse.julialang.org/t/results-of-secondorderodeproblem-give-error-this-object-is-not-a-gpu-array/82100
 
@@ -26,4 +27,5 @@ prob = SecondOrderODEProblem(f, du0, u0, (0.0f0, 1.0f0))
 
 sol = solve(prob, Tsit5())
 
-CuArray(sol)
+@test SciMLBase.successful_retcode(sol)
+@test size(CuArray(sol), 1) == 200
