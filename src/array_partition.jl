@@ -321,7 +321,7 @@ end
 
 Returns the entry at index `j, js...` of every partition of `A`.
 Requires at least one index after the colon so that `A[:]` keeps the
-flattening `getindex(::ArrayPartition, ::Colon)` method (issue #661).
+flattening `getindex(::ArrayPartition, ::Colon)` method.
 """
 Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Colon, j, js...)
     return getindex.(A.x, (j, js...))
