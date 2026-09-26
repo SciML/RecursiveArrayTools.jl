@@ -317,12 +317,14 @@ Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int)
 end
 
 """
-    getindex(A::ArrayPartition, i::Colon, j...)
+    getindex(A::ArrayPartition, i::Colon, j, js...)
 
-Returns the entry at index `j...` of  every partition of `A`.
+Returns the entry at index `j, js...` of every partition of `A`.
+Requires at least one index after the colon so that `A[:]` keeps the
+flattening `getindex(::ArrayPartition, ::Colon)` method.
 """
-Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Colon, j...)
-    return getindex.(A.x, (j...,))
+Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Colon, j, js...)
+    return getindex.(A.x, (j, js...))
 end
 
 """

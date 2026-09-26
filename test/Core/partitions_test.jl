@@ -90,6 +90,30 @@ x = AP[[1, 2], [3.0, 4.0]]
 y = ArrayPartition(AP[[1], [2.0]], AP[[3], [4.0]])
 @test x[:, 1] == (1, 3.0)
 
+# Issue #661: A[:] must flatten, not hit the (colon, j...) broadcast path
+@testset "ArrayPartition A[:] flattening (issue #661)" begin
+    v = ArrayPartition([1.0, 2.0], [3.0])
+    @test v[:] == [1.0, 2.0, 3.0]
+    @test v[:] == vec(v)
+    @test v[:] == collect(v)
+    @test v[1:3] == [1.0, 2.0, 3.0]
+
+    m = ArrayPartition([1.0 2.0], [3.0 4.0 5.0])
+    @test m[:] == [1.0, 2.0, 3.0, 4.0, 5.0]
+    @test m[:] == vec(m)
+    @test m[:] == collect(m)
+    @test m[1:4] == [1.0, 2.0, 3.0, 4.0]
+
+    nested = ArrayPartition(ArrayPartition([1.0], [2.0]), ArrayPartition([3.0, 4.0]))
+    @test nested[:] == [1.0, 2.0, 3.0, 4.0]
+    @test nested[:] == vec(nested)
+    @test nested[:] == collect(nested)
+
+    # (colon, j...) from #239 must still work
+    @test x[:, 1] == (1, 3.0)
+    @test x[:, 2] == (2, 4.0)
+end
+
 # similar partitions
 @inferred similar(x)
 @test similar(x, (4,)) isa ArrayPartition{Float64}
