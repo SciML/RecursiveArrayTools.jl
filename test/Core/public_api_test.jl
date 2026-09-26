@@ -51,3 +51,64 @@ end
     @test plot_vecs == [[0.0 0.0; 1.0 1.0], [1.0 2.0; 3.0 4.0]]
     @test plot_labels == ["u[1]", "u[2]"]
 end
+
+# #360: check plot dims from transform output, not idxs input arity.
+@testset "plot idxs with mixed input arity but matching output dims (#360)" begin
+    t = [0.0, 0.25, 0.5, 0.75, 1.0]
+    u = [[1.0, 2.0, 10.0 + tt, 20.0 + 2tt] for tt in t]
+    A = DiffEqArray(u, t)
+
+    adder(tt, a, b) = (tt, a + b)
+    adder3(tt, a, b) = (tt, a, b)
+    g(tt::Float64, x::Float64) = (tt, x)
+    dom(tt, x) = (tt, sqrt(x - 2))
+
+    function plot_sparse(idxs)
+        vars = interpret_vars(idxs, A)
+        return diffeq_to_arrays(A, false, 100, nothing, vars, :identity, nothing)
+    end
+
+    u3 = [uu[3] for uu in u]
+    u3pu4 = [uu[3] + uu[4] for uu in u]
+
+    for idxs in ([3, (adder, 0, 3, 4)], [(0, 3), (adder, 0, 3, 4)])
+        plot_vecs, labels = plot_sparse(idxs)
+        @test length(plot_vecs) == 2
+        @test size(plot_vecs[1], 2) == 2
+        @test plot_vecs[1][:, 1] ≈ t
+        @test plot_vecs[2][:, 1] ≈ u3
+        @test plot_vecs[1][:, 2] ≈ t
+        @test plot_vecs[2][:, 2] ≈ u3pu4
+        @test labels == ["u[3]", "f(t,u[3],u[4])"]
+    end
+
+    _, labels01 = plot_sparse((0, 1))
+    @test labels01 == ["u[1]"]
+
+    plot_vecs_g, labels_g = plot_sparse([(g, 0, 3)])
+    @test plot_vecs_g[1][:, 1] ≈ t
+    @test plot_vecs_g[2][:, 1] ≈ u3
+    @test labels_g == ["f(t,u[3])"]
+
+    plot_vecs_dom, labels_dom = plot_sparse([(dom, 0, 3)])
+    @test plot_vecs_dom[1][:, 1] ≈ t
+    @test plot_vecs_dom[2][:, 1] ≈ sqrt.(u3 .- 2)
+    @test labels_dom == ["f(t,u[3])"]
+
+    # Exported 4-arg form: `dims` is accepted and ignored.
+    vars4 = interpret_vars([3, (adder, 0, 3, 4)], A)
+    plot_vecs4, labels4 = solplot_vecs_and_labels(99, vars4, t, A)
+    @test length(plot_vecs4) == 2
+    @test plot_vecs4[2][:, 1] ≈ u3
+    @test plot_vecs4[2][:, 2] ≈ u3pu4
+    @test labels4 == ["u[3]", "f(t,u[3],u[4])"]
+
+    err = try
+        plot_sparse([3, (adder3, 0, 3, 4)])
+        nothing
+    catch e
+        e
+    end
+    @test err isa ArgumentError
+    @test occursin("output dimension", sprint(showerror, err))
+end

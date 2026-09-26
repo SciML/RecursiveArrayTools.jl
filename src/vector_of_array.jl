@@ -1362,7 +1362,7 @@ This is a developer interface for plot recipe implementations.
 """
 function add_labels!(labels, x, dims, A, strs)
     if ((x[2] isa Integer && x[2] == 0) || isequal(x[2], getindepsym_defaultt(A))) &&
-            dims == 2
+            dims == 2 && x[1] === DEFAULT_PLOT_FUNC
         push!(labels, strs[end])
     elseif x[1] !== DEFAULT_PLOT_FUNC
         push!(labels, "f($(join(strs, ',')))")
@@ -1408,11 +1408,7 @@ function diffeq_to_arrays(
         plott = A.t[start_idx:end_idx]
     end
 
-    dims = length(vars[1]) - 1
-    for var in vars
-        @assert length(var) - 1 == dims
-    end
-    return solplot_vecs_and_labels(dims, vars, plott, A)
+    return solplot_vecs_and_labels(length(vars[1]) - 1, vars, plott, A)
 end
 
 """
@@ -1421,11 +1417,16 @@ end
 Build plot vectors and labels for interpreted plotting variables over the
 sample points `plott`.
 
+The `dims` argument is accepted for API compatibility and ignored; the plotted
+dimension is taken from each series transform's evaluated output.
+
 This is a developer interface for plot recipe implementations.
 """
 function solplot_vecs_and_labels(dims, vars, plott, A)
     plot_vecs = []
     labels = String[]
+    # Ignore caller-supplied `dims`; recompute from evaluated series output.
+    dims = 0
     batch_symbolic_vars = []
     for x in vars
         for j in 2:length(x)
@@ -1474,6 +1475,18 @@ function solplot_vecs_and_labels(dims, vars, plott, A)
 
         f = x[1]
         tmp = map(f, tmp...)
+        series_dims = length(tmp[1])
+        if isempty(plot_vecs)
+            dims = series_dims
+        elseif series_dims != dims
+            throw(
+                ArgumentError(
+                    "Plot idxs series must all have the same output dimension, but got $dims and $series_dims. " *
+                        "Output dimension is the number of coordinates returned by each series transform " *
+                        "(e.g. `(t, u)` is 2-D), not the number of input indices in the idxs tuple."
+                )
+            )
+        end
         tmp = tuple((getindex.(tmp, i) for i in eachindex(tmp[1]))...)
         for i in eachindex(tmp)
             if length(plot_vecs) < i
