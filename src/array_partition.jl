@@ -572,7 +572,7 @@ end
 @inline function unpack_args(i, args::Tuple)
     return (unpack(args[1], i), unpack_args(i, Base.tail(args))...)
 end
-unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
+@inline unpack_args(i, args::Tuple{Any}) = (unpack(args[1], i),)
 unpack_args(::Any, args::Tuple{}) = ()
 
 ## utils
