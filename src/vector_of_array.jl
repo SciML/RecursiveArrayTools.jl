@@ -1167,16 +1167,21 @@ end
 # fill!
 # For DiffEqArray it ignores ts and fills only u
 function Base.fill!(VA::AbstractVectorOfArray, x)
-    for i in 1:length(VA.u)
-        if VA[:, i] isa Union{AbstractArray, AbstractVectorOfArray}
-            if ArrayInterface.ismutable(VA.u[i]) || VA.u[i] isa AbstractVectorOfArray
-                fill!(VA[:, i], x)
+    for i in eachindex(VA.u)
+        # Fill the inner array directly instead of through `VA[:, i]`, which
+        # for a ragged inner array builds and returns a zero-padded *copy* —
+        # filling that copy does not touch (and silently drops writes to) the
+        # real storage.
+        ui = VA.u[i]
+        if ui isa Union{AbstractArray, AbstractVectorOfArray}
+            if ArrayInterface.ismutable(ui) || ui isa AbstractVectorOfArray
+                fill!(ui, x)
             else
                 # For immutable arrays like SVector, create a new filled array
-                VA.u[i] = fill(x, StaticArraysCore.similar_type(VA.u[i]))
+                VA.u[i] = fill(x, StaticArraysCore.similar_type(ui))
             end
         else
-            VA[:, i] = x
+            VA.u[i] = x
         end
     end
     return VA
