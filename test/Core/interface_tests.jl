@@ -248,6 +248,14 @@ testda = DiffEqArray(recursivecopy(testva.u), testts)
 fill!(testda, testval)
 @test all(x -> (x == testval), testda)
 
+# fill! on a ragged VectorOfArray must fill every inner array, not just the
+# longest one. `VA[:, i]` zero-pads a shorter inner array into a throwaway
+# copy, so filling through it (instead of through `VA.u[i]` directly) would
+# silently drop the write for every inner array shorter than the max.
+ragged_fill = VectorOfArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]])
+fill!(ragged_fill, 9.0)
+@test ragged_fill.u == [[9.0, 9.0], [9.0], [9.0, 9.0, 9.0]]
+
 # copyto!
 testva = VectorOfArray(collect(0.1:0.1:1.0))
 arr = 0.2:0.2:2.0

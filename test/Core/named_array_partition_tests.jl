@@ -81,3 +81,31 @@ end
     x[1] = 99.0
     @test x[1] == 99.0
 end
+
+@testset "NamedArrayPartition broadcast instantiates partition Broadcasted" begin
+    # Mirrors the same fix in ArrayPartition broadcast: copyto! unpacks each partition's
+    # slice of the Broadcasted tree without recomputing its axes (unpack drops them), so
+    # the partition's own copyto! must get an instantiated Broadcasted (axes !== nothing).
+    mutable struct RATRecordingArray2{T} <: AbstractVector{T}
+        data::Vector{T}
+        instantiated::Bool
+    end
+    RATRecordingArray2(v::Vector) = RATRecordingArray2(v, false)
+    Base.size(a::RATRecordingArray2) = size(a.data)
+    Base.getindex(a::RATRecordingArray2, i::Int) = a.data[i]
+    Base.setindex!(a::RATRecordingArray2, v, i::Int) = (a.data[i] = v)
+    function Base.similar(a::RATRecordingArray2, ::Type{T}, dims::Dims) where {T}
+        return RATRecordingArray2(similar(a.data, T, dims), false)
+    end
+    Base.BroadcastStyle(::Type{<:RATRecordingArray2}) = Broadcast.ArrayStyle{RATRecordingArray2}()
+    function Base.copyto!(dest::RATRecordingArray2, bc::Broadcast.Broadcasted{<:Broadcast.ArrayStyle{RATRecordingArray2}})
+        dest.instantiated = bc.axes !== nothing
+        copyto!(dest.data, Broadcast.instantiate(bc))
+        return dest
+    end
+
+    nap = NamedArrayPartition(a = RATRecordingArray2([1.0, 2.0]), b = RATRecordingArray2([1.0, 2.0, 3.0]))
+    nap2 = NamedArrayPartition(a = RATRecordingArray2([1.0, 1.0]), b = RATRecordingArray2([1.0, 1.0, 1.0]))
+    nap .= nap .+ nap2
+    @test all(x -> x.instantiated, ArrayPartition(nap).x)
+end

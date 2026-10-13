@@ -439,3 +439,14 @@ struct TestIsnanFunctor end
     copyto!(dest, C)
     @test parent(dest) == [1.0, 2.0, 3.0, 4.0]
 end
+
+@testset "Mixed-eltype in-place broadcast does not allocate" begin
+    # unpack_args(i, ::Tuple{Any}) was missing @inline, forcing a runtime
+    # dispatch at the tuple-recursion base case whenever the partitions
+    # have different element types.
+    f!(a, b, c, d) = (@. a = b + c * d; nothing)
+    mk() = ArrayPartition(rand(10), rand(Float32, 20), rand(5))
+    a, b, c, d = mk(), mk(), mk(), mk()
+    f!(a, b, c, d)
+    @test (@allocated f!(a, b, c, d)) == 0
+end
