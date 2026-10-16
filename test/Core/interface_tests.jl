@@ -208,13 +208,21 @@ testva = VA[VA[ones(2, 2), 2ones(2, 2)], 3ones(2, 2, 2)]
 @test stack(testva) ==
     [1.0 1.0; 1.0 1.0;;; 2.0 2.0; 2.0 2.0;;;; 3.0 3.0; 3.0 3.0;;; 3.0 3.0; 3.0 3.0]
 
-# stack on plain-numeric inner arrays skips `stack.(VA.u)` (an elementwise
-# copy of every inner array before the outer stack): only the final output
-# array is allocated, instead of also allocating one copy per inner array.
 numeric_stack = VectorOfArray([rand(2) for _ in 1:1000])
 stack(numeric_stack) # compile away type instability before measuring
 @test (@allocated stack(numeric_stack)) < 20_000 # final 2x1000 Float64 array alone is 16000 bytes
 @test stack(numeric_stack) == reduce(hcat, numeric_stack.u)
+
+stack_inputs = (
+    [rand(3) for _ in 1:2], [rand(2, 2) for _ in 1:3], [[1, 2], [3, 4]],
+    Vector{Real}[[1, 2.0], [3, 4.0]], [trues(3), falses(3)], [trues(2, 2), falses(2, 2)],
+)
+for u in stack_inputs, dims in (:, 1, 2)
+    @test typeof(stack(VectorOfArray(u); dims)) == typeof(stack(stack.(u); dims))
+    @test stack(VectorOfArray(u); dims) == stack(stack.(u); dims)
+end
+@test_throws BoundsError stack(VectorOfArray([fill(1.0), fill(2.0)]))
+@test_throws ArgumentError stack(VectorOfArray([Float64[], Float64[]]))
 
 # convert array from VectorOfArray/DiffEqArray
 t = 1:8

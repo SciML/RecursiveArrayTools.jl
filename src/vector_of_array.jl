@@ -1045,11 +1045,12 @@ function Base.append!(
 end
 
 function Base.stack(VA::AbstractVectorOfArray; dims = :)
-    # `stack.(VA.u)` exists to collapse any nested `AbstractVectorOfArray`
-    # (or other non-numeric-array) elements of `VA.u` into plain arrays before
-    # the outer `stack`. When the elements are already plain numeric arrays,
-    # that inner `stack.()` call is a redundant elementwise copy.
-    if eltype(VA.u) <: AbstractArray{<:Number}
+    # Skipping the per-element `stack` is only valid where it returns an identical
+    # copy: it turns `BitArray`s into `Array{Bool}`, narrows abstract eltypes,
+    # and throws on 0-d and empty arrays.
+    ET = eltype(VA.u)
+    if ET <: Array{<:Number} && isconcretetype(ET) && isconcretetype(eltype(ET)) &&
+            ndims(ET) >= 1 && !any(isempty, VA.u)
         return stack(VA.u; dims)
     end
     return stack(stack.(VA.u); dims)
