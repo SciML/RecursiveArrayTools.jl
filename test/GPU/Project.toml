@@ -18,7 +18,7 @@ RecursiveArrayToolsArrayPartitionAnyAll = {path = "../../lib/RecursiveArrayTools
 Adapt = "4"
 ArrayInterface = "7.17.0"
 CUDA = "6"
-KernelAbstractions = "0.9.36"
+KernelAbstractions = "0.9.36, 0.10"
 LinearAlgebra = "1.10"
 OrdinaryDiffEq = "6.31, 7"
 RecursiveArrayTools = "4"
