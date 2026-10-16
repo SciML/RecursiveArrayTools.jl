@@ -355,8 +355,9 @@ end
 """
     copyat_or_push!(a, i, x[, perform_copy = true]) -> nothing
 
-Recursively copy `x` into `a[i]` when that element exists, or append a recursive copy
-of `x` otherwise. Set `perform_copy = false` to assign or append `x` directly.
+Recursively copy `x` into `a[i]` when `i` is an index of `a`, or append a recursive copy
+of `x` when `i > lastindex(a)`. Set `perform_copy = false` to assign or append `x`
+directly. Throws a `BoundsError` when `i < firstindex(a)`.
 
 # Examples
 
@@ -368,8 +369,8 @@ values == [[1, 2], [3, 4]]
 """
 function copyat_or_push!(a::AbstractVector{T}, i::Int, x, perform_copy = true) where {T}
     i >= firstindex(a) || throw(BoundsError(a, i))
-    @inbounds if length(a) >= i
-        if !ArrayInterface.ismutable(T) || !perform_copy
+    if i <= lastindex(a)
+        @inbounds if !ArrayInterface.ismutable(T) || !perform_copy
             # TODO: Check for `setindex!`` if T <: StaticArraysCore.StaticArray and use `copy!(b[i],a[i])`
             #       or `b[i] = a[i]`, see https://github.com/JuliaDiffEq/RecursiveArrayTools.jl/issues/19
             a[i] = x
