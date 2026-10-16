@@ -20,7 +20,7 @@ run_qa(
                 :QRCompactWY, :SolvedVariables, :StaticArray, :StaticVecOrMat,
                 :SymbolicTypeTrait, :_InitialValue, :_ipiv_rows!, :_maybe_reshape,
                 :_swap_rows!, :_unsafe_getindex, :_unsafe_getindex!, :adapt_structure,
-                :add_sum, :flatten, :front, :index_shape, :ismutable, :issingular,
+                :add_sum, :flatten, :front, :index_shape, :instantiate, :ismutable, :issingular,
                 :promote_op, :restructure, :result_style, :similar_type, :tail,
                 :unalias, :zeromatrix,
             ),

@@ -220,7 +220,7 @@ end
     )
     N = npartitions(dest, bc)
     @inbounds for i in 1:N
-        copyto!(getfield(dest, :array_partition).x[i], unpack(bc, i))
+        copyto!(getfield(dest, :array_partition).x[i], Broadcast.instantiate(unpack(bc, i)))
     end
     return dest
 end
