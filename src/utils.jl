@@ -86,7 +86,8 @@ function recursivecopy!(
         T2 <: StaticArraysCore.StaticArray,
         N,
     }
-    return @inbounds for i in eachindex(b, a)
+    checkbounds(b, eachindex(a))
+    return @inbounds for i in eachindex(a)
         # TODO: Check for `setindex!`` and use `copy!(b[i],a[i])` or `b[i] = a[i]`, see #19
         b[i] = copy(a[i])
     end

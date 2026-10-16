@@ -165,15 +165,20 @@ end
     @test a.u[1][1] == 1.0
 end
 
-@testset "recursivecopy! of StaticArray elements requires matching axes" begin
+@testset "recursivecopy! of StaticArray elements checks destination bounds" begin
     a = [MVector{2, Float64}(1, 1), MVector{2, Float64}(2, 2)]
     shorter = [MVector{2, Float64}(0, 0)]
-    @test_throws DimensionMismatch recursivecopy!(shorter, a)
-    longer = [MVector{2, Float64}(0, 0) for _ in 1:3]
-    @test_throws DimensionMismatch recursivecopy!(longer, a)
-    @test all(iszero, longer)
+    @test_throws BoundsError recursivecopy!(shorter, a)
+    @test all(iszero, shorter)
     offset = OffsetVec([MVector{2, Float64}(0, 0) for _ in 1:2], 0)
-    @test_throws DimensionMismatch recursivecopy!(offset, a)
+    @test_throws BoundsError recursivecopy!(offset, a)
+    @test all(iszero, offset.data)
+    @test_throws BoundsError recursivecopy!(zeros(SVector{2, Float64}, 2, 2), fill(SVector(1.0, 1.0), 3, 3))
+
+    longer = [MVector{2, Float64}(0, 0) for _ in 1:3]
+    recursivecopy!(longer, a)
+    @test longer == [[1, 1], [2, 2], [0, 0]]
+    @test longer[1] !== a[1]
 
     b = [MVector{2, Float64}(0, 0), MVector{2, Float64}(0, 0)]
     recursivecopy!(b, a)
