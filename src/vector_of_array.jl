@@ -679,7 +679,7 @@ Base.@propagate_inbounds function _getindex(
     col_idxs = last(I)
     front = Base.front(I)
     if _is_numeric_row(A, front)
-        cols = col_idxs isa Colon ? A.u : view(A.u, col_idxs)
+        cols = col_idxs isa Colon ? vec(A.u) : view(A.u, col_idxs)
         return [u[front...] for u in cols]
     end
     return stack(getindex.(A.u[col_idxs], tuple.(front)...))
@@ -706,7 +706,7 @@ Base.@propagate_inbounds function _getindex(
         # Return as DiffEqArray with sliced time values
         return DiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A))
     elseif _is_numeric_row(A, front)
-        cols = col_idxs isa Colon ? A.u : view(A.u, col_idxs)
+        cols = col_idxs isa Colon ? vec(A.u) : view(A.u, col_idxs)
         return [u[front...] for u in cols]
     else
         # Prefix indices are not all Colons or all Ints - do the same as VectorOfArray

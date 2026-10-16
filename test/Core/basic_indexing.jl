@@ -428,6 +428,12 @@ y = 2 * x
     @test B[1, :, 2:3] == stack([B.u[c][1, :] for c in 2:3])
     @test B[:, 2, 2:3] == stack([B.u[c][:, 2] for c in 2:3])
 
+    M = VectorOfArray(reshape([[1.0, 2.0] .+ 10j for j in 1:4], 2, 2))
+    @test same(M[2, :], [12.0, 22.0, 32.0, 42.0])
+    @test same(M[2, 2:3], [22.0, 32.0])
+    M3 = VectorOfArray(reshape([[1.0 2.0; 3.0 4.0] .+ 10j for j in 1:8], 2, 2, 2))
+    @test same(M3[1, 2, :], [10j + 2.0 for j in 1:8])
+
     # Array-valued and abstract element types are still stacked and promoted.
     S = [[SVector(1.0, 2, 3) .+ j, SVector(4.0, 5, 6) .+ j] for j in 1:3]
     for X in (
