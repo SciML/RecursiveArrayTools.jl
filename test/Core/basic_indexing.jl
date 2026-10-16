@@ -395,38 +395,47 @@ y = 2 * x
 @. x = y
 @test all(all.(y .== x))
 
-@testset "A[i, cols]/A[i, :] scalar-row indexing is O(1) per column, ragged unaffected" begin
-    # A[i, :] and A[i, range] (a scalar row index, selecting many columns) do
-    # not grow the outer container: the result is read straight from A.u
-    # without first copying A.u[col_idxs] or going through tuple-broadcast
-    # machinery, so allocation does not scale with `n` beyond the output.
+@testset "A[i, cols] with scalar prefix indices" begin
+    same(x, y) = typeof(x) == typeof(y) && x == y
+
     n = 1000
     A = VectorOfArray([rand(5) for _ in 1:n])
     get_row(A, i) = A[i, :]
-    get_row(A, 2) # compile away type instability before measuring
+    get_row(A, 2) # compile before measuring
     @test (@allocated get_row(A, 2)) < 10_000 # n Float64s alone is 8000 bytes
     @test A[2, :] == [A.u[j][2] for j in 1:n]
     @test A[1, 1:10] == [A.u[j][1] for j in 1:10]
 
     t = collect(range(0, 1, length = n))
     D = DiffEqArray([rand(5) for _ in 1:n], t)
-    get_row(D, 2) # compile away type instability before measuring
+    get_row(D, 2)
     @test (@allocated get_row(D, 2)) < 10_000
     @test D[2, :] == [D.u[j][2] for j in 1:n]
     @test D[1, 1:10] == [D.u[j][1] for j in 1:10]
 
-    # Ragged behavior is unaffected by the fast path: `R[i, :]`/`R[i, range]`
-    # still throws (only `R[i, j]` zero-pads), and in-bounds scalar-row reads
-    # across ragged columns are unaffected.
+    for X in (A, D), cols in (1:0, Int[], falses(n))
+        @test same(X[2, cols], Float64[])
+    end
+
     R = VectorOfArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]])
     @test_throws BoundsError R[2, :]
     @test R[1, 1:3] == [1.0, 3.0, 4.0]
     @test R[1, 1] == 1.0
-    @test R[3, 2] == 0.0 # zero-padded, untouched by this fast path
+    @test R[3, 2] == 0.0
 
-    # Mixed Int/Colon prefixes (not all-Int, so outside the fast path) still
-    # take the stack-based fallback and are unaffected.
     B = VectorOfArray([rand(3, 4) for _ in 1:5])
+    @test same(B[1, 2, 1:0], Float64[])
     @test B[1, :, 2:3] == stack([B.u[c][1, :] for c in 2:3])
     @test B[:, 2, 2:3] == stack([B.u[c][:, 2] for c in 2:3])
+
+    # Array-valued and abstract element types are still stacked and promoted.
+    S = [[SVector(1.0, 2, 3) .+ j, SVector(4.0, 5, 6) .+ j] for j in 1:3]
+    for X in (
+            VectorOfArray(S), DiffEqArray(S, [0.0, 1, 2]),
+            VectorOfArray([[[1.0, 2], [3.0, 4]] for _ in 1:3]),
+            VectorOfArray([Real[1, 2.0], Real[3.0, 4]]),
+        )
+        @test same(X[2, :], stack(getindex.(X.u, 2)))
+        @test same(X[2, 1:2], stack(getindex.(X.u[1:2], 2)))
+    end
 end

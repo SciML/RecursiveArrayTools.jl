@@ -660,6 +660,15 @@ Base.@propagate_inbounds function _getindex(
     return result
 end
 
+# With all-Int `front` and a concrete numeric element type, collecting `u[front...]`
+# over the selected columns matches the `stack` fallback (which throws on an empty
+# selection) without copying `A.u[col_idxs]`. `stack` stacks array-valued elements
+# and promotes abstract element types, so those keep the fallback.
+function _is_numeric_row(A::AbstractVectorOfArray, front)
+    T = eltype(eltype(A.u))
+    return all(idx -> idx isa Int, front) && isconcretetype(T) && T <: Number
+end
+
 Base.@propagate_inbounds function _getindex(
         A::AbstractVectorOfArray, ::NotSymbolic,
         I::Union{Int, AbstractArray{Int}, AbstractArray{Bool}, Colon}...
@@ -669,11 +678,7 @@ Base.@propagate_inbounds function _getindex(
     end
     col_idxs = last(I)
     front = Base.front(I)
-    # Fast path: when every prefix index is a scalar Int, the result is a
-    # plain Vector of scalars, one per selected column. A direct
-    # comprehension over A.u avoids both the `A.u[col_idxs]` copy of the
-    # outer container and the tuple-broadcast machinery of the fallback.
-    if all(idx -> idx isa Int, front)
+    if _is_numeric_row(A, front)
         cols = col_idxs isa Colon ? A.u : view(A.u, col_idxs)
         return [u[front...] for u in cols]
     end
@@ -700,9 +705,7 @@ Base.@propagate_inbounds function _getindex(
         u_slice = [A.u[col][front...] for col in col_idxs]
         # Return as DiffEqArray with sliced time values
         return DiffEqArray(u_slice, A.t[col_idxs], parameter_values(A), symbolic_container(A))
-    elseif all(idx -> idx isa Int, front)
-        # Same fast path as the AbstractVectorOfArray fallback above: a
-        # scalar prefix selects a plain Vector of scalars, one per column.
+    elseif _is_numeric_row(A, front)
         cols = col_idxs isa Colon ? A.u : view(A.u, col_idxs)
         return [u[front...] for u in cols]
     else
