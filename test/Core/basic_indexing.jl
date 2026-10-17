@@ -394,3 +394,54 @@ x = VectorOfArray(StructArray{SVector{1, Float64}}(ntuple(_ -> [1.0, 2.0], 1)))
 y = 2 * x
 @. x = y
 @test all(all.(y .== x))
+
+@testset "A[i, cols] with scalar prefix indices" begin
+    same(x, y) = typeof(x) == typeof(y) && x == y
+
+    n = 1000
+    A = VectorOfArray([rand(5) for _ in 1:n])
+    get_row(A, i) = A[i, :]
+    get_row(A, 2) # compile before measuring
+    @test (@allocated get_row(A, 2)) < 10_000 # n Float64s alone is 8000 bytes
+    @test A[2, :] == [A.u[j][2] for j in 1:n]
+    @test A[1, 1:10] == [A.u[j][1] for j in 1:10]
+
+    t = collect(range(0, 1, length = n))
+    D = DiffEqArray([rand(5) for _ in 1:n], t)
+    get_row(D, 2)
+    @test (@allocated get_row(D, 2)) < 10_000
+    @test D[2, :] == [D.u[j][2] for j in 1:n]
+    @test D[1, 1:10] == [D.u[j][1] for j in 1:10]
+
+    for X in (A, D), cols in (1:0, Int[], falses(n))
+        @test same(X[2, cols], Float64[])
+    end
+
+    R = VectorOfArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]])
+    @test_throws BoundsError R[2, :]
+    @test R[1, 1:3] == [1.0, 3.0, 4.0]
+    @test R[1, 1] == 1.0
+    @test R[3, 2] == 0.0
+
+    B = VectorOfArray([rand(3, 4) for _ in 1:5])
+    @test same(B[1, 2, 1:0], Float64[])
+    @test B[1, :, 2:3] == stack([B.u[c][1, :] for c in 2:3])
+    @test B[:, 2, 2:3] == stack([B.u[c][:, 2] for c in 2:3])
+
+    M = VectorOfArray(reshape([[1.0, 2.0] .+ 10j for j in 1:4], 2, 2))
+    @test same(M[2, :], [12.0, 22.0, 32.0, 42.0])
+    @test same(M[2, 2:3], [22.0, 32.0])
+    M3 = VectorOfArray(reshape([[1.0 2.0; 3.0 4.0] .+ 10j for j in 1:8], 2, 2, 2))
+    @test same(M3[1, 2, :], [10j + 2.0 for j in 1:8])
+
+    # Array-valued and abstract element types are still stacked and promoted.
+    S = [[SVector(1.0, 2, 3) .+ j, SVector(4.0, 5, 6) .+ j] for j in 1:3]
+    for X in (
+            VectorOfArray(S), DiffEqArray(S, [0.0, 1, 2]),
+            VectorOfArray([[[1.0, 2], [3.0, 4]] for _ in 1:3]),
+            VectorOfArray([Real[1, 2.0], Real[3.0, 4]]),
+        )
+        @test same(X[2, :], stack(getindex.(X.u, 2)))
+        @test same(X[2, 1:2], stack(getindex.(X.u[1:2], 2)))
+    end
+end
