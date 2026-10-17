@@ -500,25 +500,34 @@ end
     }
     N = npartitions(bc)
     @inline function f(i)
-        return copy(unpack(bc, i))
+        return copy(Broadcast.instantiate(unpack(bc, i)))
     end
     return ArrayPartition(f, N)
 end
+
+# Whether every partition of an ArrayPartition, or every ArrayPartition argument of a
+# Broadcasted tree, has the same partition type. A type-level check so it constant-folds.
+@inline _homog_ap(::ArrayPartition{T, S}) where {T, S} = fieldcount(S) == 0 || S <: NTuple{fieldcount(S), fieldtype(S, 1)}
+@inline _homog_ap(bc::Broadcast.Broadcasted) = _homog_ap_args(bc.args)
+@inline _homog_ap(x) = true
+@inline _homog_ap_args(args::Tuple) = _homog_ap(first(args)) && _homog_ap_args(Base.tail(args))
+@inline _homog_ap_args(::Tuple{}) = true
 
 @inline function Base.copyto!(
         dest::ArrayPartition,
         bc::Broadcast.Broadcasted{ArrayPartitionStyle{Style}}
     ) where {Style}
     N = npartitions(dest, bc)
-    # If dest is all the same underlying array type, use for-loop
-    if all(x isa typeof(first(dest.x)) for x in dest.x)
+    # If dest and every ArrayPartition argument share a single partition type, use a
+    # for-loop; otherwise unroll into an ntuple so each partition's type is known.
+    if _homog_ap(dest) && _homog_ap(bc)
         @inbounds for i in 1:N
-            copyto!(dest.x[i], unpack(bc, i))
+            copyto!(dest.x[i], Broadcast.instantiate(unpack(bc, i)))
         end
     else
         # Fall back to original implementation for complex broadcasts
         @inline function f(i)
-            return copyto!(dest.x[i], unpack(bc, i))
+            return copyto!(dest.x[i], Broadcast.instantiate(unpack(bc, i)))
         end
         ntuple(f, Val(N))
     end
