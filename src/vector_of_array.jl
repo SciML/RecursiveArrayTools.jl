@@ -955,10 +955,35 @@ end
 Base.@propagate_inbounds function Base.getindex(
         A::AbstractVectorOfArray{T, N}, I::Vararg{Int, N}
     ) where {T, N}
-    @boundscheck checkbounds(A, I...)
     col = I[N]
     inner_I = Base.front(I)
-    u_col = A.u[col]
+    u = A.u
+    # Fast path avoiding the O(n) `size(A)` scan below. `size(u_col, d) <=
+    # size(A, d)` always holds, so a 1-based bound against `size(u_col, d)` is
+    # sufficient for an in-bounds index into `A`. Must not use
+    # `checkbounds(u_col, ...)`: that respects a non-1-based inner axis (e.g.
+    # OffsetArray) and would wrongly accept an index `A`'s 1-based contract
+    # must reject. N == 1 stores scalars in `u` directly (no inner array),
+    # where `size(A)` is already O(1); skip the fast path there.
+    # `A`'s column dimension is likewise 1-based over `length(u)` regardless
+    # of `u`'s own axes (e.g. an OffsetVector container): `1 <= col <=
+    # length(u)` matches that contract, and `checkbounds(Bool, u, col)` is
+    # still required since `u`'s own axes need not be `1:length(u)`.
+    if N > 1 && 1 <= col <= length(u) && checkbounds(Bool, u, col)
+        u_col = @inbounds u[col]
+        in_inner_bounds = true
+        for d in 1:(N - 1)
+            if !(1 <= inner_I[d] <= size(u_col, d))
+                in_inner_bounds = false
+                break
+            end
+        end
+        if in_inner_bounds
+            return @inbounds u_col[inner_I...]
+        end
+    end
+    @boundscheck checkbounds(A, I...)
+    u_col = u[col]
     # Return zero for indices outside ragged storage
     for d in 1:(N - 1)
         if inner_I[d] > size(u_col, d)
