@@ -61,6 +61,7 @@ LinearAlgebra = "1.10"
 Measurements = "2.11"
 MonteCarloMeasurements = "1.2"
 Mooncake = "0.5"
+OffsetArrays = "1.17"
 Pkg = "1"
 Polyester = "0.7.16"
 PrecompileTools = "1.2.1"
@@ -90,6 +91,7 @@ FastBroadcast = "7034ab61-46d4-4ed7-9d0f-46aef9175898"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
 Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 MonteCarloMeasurements = "0987c9cc-fe09-11e8-30f0-b96dd679fdca"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
 Polyester = "f517fe37-dbe3-4b94-8317-1923a5111588"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -105,4 +107,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["FastBroadcast", "KernelAbstractions", "Measurements", "Pkg", "Polyester", "Random", "RecursiveArrayToolsShorthandConstructors", "SafeTestsets", "SciMLTesting", "SparseArrays", "StaticArrays", "Statistics", "StructArrays", "Tables", "Test", "Unitful"]
+test = ["FastBroadcast", "KernelAbstractions", "Measurements", "OffsetArrays", "Pkg", "Polyester", "Random", "RecursiveArrayToolsShorthandConstructors", "SafeTestsets", "SciMLTesting", "SparseArrays", "StaticArrays", "Statistics", "StructArrays", "Tables", "Test", "Unitful"]
