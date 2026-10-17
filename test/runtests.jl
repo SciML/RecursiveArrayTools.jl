@@ -18,6 +18,7 @@ run_tests(;
         @time @safetestset "Partitions Tests" include("Core/partitions_test.jl")
         @time @safetestset "Partitions and StaticArrays Tests" include("Core/partitions_and_static_arrays.jl")
         @time @safetestset "VecOfArr Indexing Tests" include("Core/basic_indexing.jl")
+        @time @safetestset "VecOfArr Broadcast Dimensions" include("Core/voa_broadcast_dimensions.jl")
         @time @safetestset "VecOfArr Interface Tests" include("Core/interface_tests.jl")
         @time @safetestset "Public API Tests" include("Core/public_api_test.jl")
         @time @safetestset "Table traits" include("Core/tabletraits.jl")
