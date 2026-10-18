@@ -1162,11 +1162,7 @@ end
     ) where {T}
     return similar(Array{T}, dims)
 end
-# On Julia versions where Base.similar(::AbstractArray, ::Type, ::Tuple{Integer,
-# Vararg{Integer}}) still exists (removed upstream in 1.12), that method and the
-# one above are each more specific than the other in one argument position,
-# which Aqua reports as an ambiguity. Pin down the Integer-only intersection
-# explicitly, mirroring the equivalent pair of methods Base itself defines.
+# Disambiguates against Base's integer-dimension similar fallback on Julia ≤ 1.11.
 @inline function Base.similar(
         VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{Integer, Vararg{Integer}}
     ) where {T}
