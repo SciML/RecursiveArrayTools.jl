@@ -1187,6 +1187,12 @@ end
     ) where {T}
     return similar(Array{T}, dims)
 end
+# Disambiguates against Base's integer-dimension similar fallback on Julia ≤ 1.11.
+@inline function Base.similar(
+        VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{Integer, Vararg{Integer}}
+    ) where {T}
+    return similar(Array{T}, dims)
+end
 
 
 # fill!
