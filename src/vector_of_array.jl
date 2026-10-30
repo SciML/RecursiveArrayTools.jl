@@ -1646,11 +1646,11 @@ end
         # this is the default behavior in v3.15.0
         N = narrays(bc)
         map(1:N) do i
-            copy(unpack_voa(bc, i))
+            copy(unpack_voa(bc, i, Val(ndims(bc))))
         end
     else # if parent isa AbstractArray
         map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
-            copy(unpack_voa(bc, i))
+            copy(unpack_voa(bc, i, Val(ndims(bc))))
         end
     end
     return VectorOfArray(rewrap(parent, u))
@@ -1676,9 +1676,12 @@ for (type, N_expr) in [
             inner = dest.u[i]
             if inner isa AbstractArray
                 if ArrayInterface.ismutable(inner)
-                    copyto!(inner, unpack_voa(bc, i))
+                    Broadcast.materialize!(inner, unpack_voa(bc, i, Val(ndims(dest))))
                 else
-                    unpacked = unpack_voa(bc, i)
+                    inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+                    unpacked = Broadcast.instantiate(
+                        Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(inner))
+                    )
                     arr_type = StaticArraysCore.similar_type(inner)
                     dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
                         arr_type(unpacked[1])
@@ -1689,7 +1692,7 @@ for (type, N_expr) in [
                     end
                 end
             else
-                dest.u[i] = copy(unpack_voa(bc, i))
+                dest.u[i] = copy(unpack_voa(bc, i, Val(ndims(dest))))
             end
         end
         return dest
@@ -1724,24 +1727,24 @@ _narrays(args::AbstractVectorOfArray) = length(args.u)
 _narrays(args::Tuple{Any}) = _narrays(args[1])
 _narrays(::Any) = 0
 
-# drop axes because it is easier to recompute
-@inline function unpack_voa(bc::Broadcast.Broadcasted{Style}, i) where {Style}
-    return Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
+# Slice along the destination's outer dimension; lower-dimensional arguments
+# broadcast unchanged across all inner arrays.
+@inline function unpack_voa(bc::Broadcast.Broadcasted, i, n)
+    return Broadcast.Broadcasted(bc.f, unpack_args_voa(i, n, bc.args))
 end
-@inline function unpack_voa(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle}, i)
-    return Broadcast.Broadcasted(bc.f, unpack_args_voa(i, bc.args))
+unpack_voa(x, ::Any, ::Any) = x
+function unpack_voa(x::AbstractVectorOfArray{T, M}, i, ::Val{N}) where {T, M, N}
+    return M < N ? x : x.u[length(x.u) == 1 ? 1 : i]
 end
-unpack_voa(x, ::Any) = x
-unpack_voa(x::AbstractVectorOfArray, i) = x.u[i]
-function unpack_voa(x::AbstractArray{T, N}, i) where {T, N}
-    return @view x[ntuple(x -> Colon(), N - 1)..., i]
+function unpack_voa(x::AbstractArray{T, M}, i, ::Val{N}) where {T, M, N}
+    M < N && return x
+    return @view x[ntuple(_ -> Colon(), Val(N - 1))..., size(x, N) == 1 ? 1 : i]
 end
 
-@inline function unpack_args_voa(i, args::Tuple)
-    return (unpack_voa(args[1], i), unpack_args_voa(i, Base.tail(args))...)
+@inline function unpack_args_voa(i, n, args::Tuple)
+    return (unpack_voa(args[1], i, n), unpack_args_voa(i, n, Base.tail(args))...)
 end
-unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
-unpack_args_voa(::Any, args::Tuple{}) = ()
+unpack_args_voa(::Any, ::Any, args::Tuple{}) = ()
 
 """
     VA
