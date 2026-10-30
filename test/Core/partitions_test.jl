@@ -427,3 +427,56 @@ struct TestIsnanFunctor end
     f!(a, b, c, d)
     @test (@allocated f!(a, b, c, d)) == 0
 end
+
+# copyto!/copy on an ArrayPartition broadcast unpack each partition's slice of the
+# Broadcasted tree without recomputing its axes (unpack drops them). Without
+# Broadcast.instantiate before handing that slice to the partition's own copyto!,
+# the partition sees a non-instantiated Broadcasted (axes === nothing).
+mutable struct RATRecordingArray{T} <: AbstractVector{T}
+    data::Vector{T}
+    instantiated::Bool
+end
+RATRecordingArray(v::Vector) = RATRecordingArray(v, false)
+Base.size(a::RATRecordingArray) = size(a.data)
+Base.getindex(a::RATRecordingArray, i::Int) = a.data[i]
+Base.setindex!(a::RATRecordingArray, v, i::Int) = (a.data[i] = v)
+function Base.similar(a::RATRecordingArray, ::Type{T}, dims::Dims) where {T}
+    return RATRecordingArray(similar(a.data, T, dims), false)
+end
+function Base.similar(::Type{RATRecordingArray}, dims::Tuple{Union{Integer, Base.OneTo}, Vararg{Union{Integer, Base.OneTo}}})
+    return RATRecordingArray(Vector{Float64}(undef, map(length, dims)))
+end
+Base.BroadcastStyle(::Type{<:RATRecordingArray}) = Broadcast.ArrayStyle{RATRecordingArray}()
+function Base.similar(bc::Broadcast.Broadcasted{Broadcast.ArrayStyle{RATRecordingArray}}, ::Type{ElType}) where {ElType}
+    return similar(RATRecordingArray, axes(bc))
+end
+function Base.copyto!(dest::RATRecordingArray, bc::Broadcast.Broadcasted{<:Broadcast.ArrayStyle{RATRecordingArray}})
+    dest.instantiated = bc.axes !== nothing
+    copyto!(dest.data, Broadcast.instantiate(bc))
+    return dest
+end
+
+@testset "ArrayPartition broadcast instantiates partition Broadcasted" begin
+    a = ArrayPartition(RATRecordingArray([1.0, 2.0]), RATRecordingArray([1.0, 2.0, 3.0]))
+    b = ArrayPartition(RATRecordingArray([1.0, 1.0]), RATRecordingArray([1.0, 1.0, 1.0]))
+    a .= a .+ b
+    @test all(x -> x.instantiated, a.x)
+
+    c = copy(Broadcast.broadcasted(+, a, b))
+    @test all(x -> x.instantiated, c.x)
+end
+
+@testset "Broadcast on 0-partition ArrayPartition" begin
+    # _homog_ap(::ArrayPartition{T,S}) called fieldtype(S, 1) without guarding
+    # fieldcount(S) == 0, throwing BoundsError(Tuple{}, 1) for ArrayPartition().
+    dest = ArrayPartition()
+    dest .= ArrayPartition() .+ 1
+    @test dest == ArrayPartition()
+
+    @test copy(Broadcast.broadcasted(+, ArrayPartition(), 1)) == ArrayPartition()
+    @test ArrayPartition() .+ 1 == ArrayPartition()
+
+    dest2 = ArrayPartition()
+    copyto!(dest2, ArrayPartition())
+    @test dest2 == ArrayPartition()
+end
