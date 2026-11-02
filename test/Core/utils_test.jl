@@ -2,6 +2,19 @@ using RecursiveArrayTools, StaticArrays
 using RecursiveArrayToolsShorthandConstructors
 using Test
 
+# A vector whose indices start at `first`, like an `OffsetArrays.OffsetVector`:
+# `OffsetVec(v, 0)` has axes `0:length(v)-1`.
+struct OffsetVec{T} <: AbstractVector{T}
+    data::Vector{T}
+    first::Int
+end
+Base.axes(o::OffsetVec) = (o.first:(o.first + length(o.data) - 1),)
+Base.size(o::OffsetVec) = size(o.data)
+Base.getindex(o::OffsetVec, i::Int) = o.data[i - o.first + 1]
+Base.setindex!(o::OffsetVec, v, i::Int) = (o.data[i - o.first + 1] = v)
+Base.push!(o::OffsetVec, v) = (push!(o.data, v); o)
+Base.IndexStyle(::Type{<:OffsetVec}) = IndexLinear()
+
 t = collect(range(0, stop = 10, length = 200))
 randomized = VectorOfArray([0.01randn(2) for i in 1:10])
 data = convert(Array, randomized)
@@ -150,6 +163,55 @@ end
     @test !(b.u[2] === a.u[2])
     b.u[1][1] = 99.0
     @test a.u[1][1] == 1.0
+end
+
+@testset "recursivecopy! of StaticArray elements checks destination bounds" begin
+    a = [MVector{2, Float64}(1, 1), MVector{2, Float64}(2, 2)]
+    shorter = [MVector{2, Float64}(0, 0)]
+    @test_throws BoundsError recursivecopy!(shorter, a)
+    @test all(iszero, shorter)
+    offset = OffsetVec([MVector{2, Float64}(0, 0) for _ in 1:2], 0)
+    @test_throws BoundsError recursivecopy!(offset, a)
+    @test all(iszero, offset.data)
+    @test_throws BoundsError recursivecopy!(zeros(SVector{2, Float64}, 2, 2), fill(SVector(1.0, 1.0), 3, 3))
+
+    longer = [MVector{2, Float64}(0, 0) for _ in 1:3]
+    recursivecopy!(longer, a)
+    @test longer == [[1, 1], [2, 2], [0, 0]]
+    @test longer[1] !== a[1]
+
+    b = [MVector{2, Float64}(0, 0), MVector{2, Float64}(0, 0)]
+    recursivecopy!(b, a)
+    @test b == a
+    @test b[1] !== a[1]
+end
+
+@testset "copyat_or_push! uses the indices of the destination" begin
+    vals = [[1, 2], [3, 4]]
+    @test_throws BoundsError copyat_or_push!(vals, 0, [9, 9])
+    @test_throws BoundsError copyat_or_push!(vals, -1, [9, 9])
+    @test vals == [[1, 2], [3, 4]]
+    copyat_or_push!(vals, 1, [9, 9])
+    @test vals == [[9, 9], [3, 4]]
+    copyat_or_push!(vals, 3, [5, 6])
+    @test vals == [[9, 9], [3, 4], [5, 6]]
+
+    z = OffsetVec([[1, 2], [3, 4]], 0)
+    @test_throws BoundsError copyat_or_push!(z, -1, [9, 9])
+    copyat_or_push!(z, 0, [9, 9])
+    @test z.data == [[9, 9], [3, 4]]
+    copyat_or_push!(z, 2, [5, 6])
+    @test z.data == [[9, 9], [3, 4], [5, 6]]
+
+    o = OffsetVec([[1, 2], [3, 4]], 2)
+    @test_throws BoundsError copyat_or_push!(o, 1, [9, 9])
+    copyat_or_push!(o, 3, [8, 8])
+    @test o.data == [[1, 2], [8, 8]]
+    x = [7, 7]
+    copyat_or_push!(o, 2, x, false)
+    @test o.data[1] === x
+    copyat_or_push!(o, 4, [5, 6])
+    @test o.data == [[7, 7], [8, 8], [5, 6]]
 end
 
 # OrdinaryDiffEq.jl#1365: recursivecopy must not broadcast-assign into an
