@@ -537,10 +537,10 @@ version = "1.11.0"
 
 [[deps.SymbolicIndexingInterface]]
 deps = ["Accessors", "ArrayInterface", "PrecompileTools", "RuntimeGeneratedFunctions", "StaticArraysCore"]
-git-tree-sha1 = "7eb6da9656581ac9fbffaef3ef7950a090a5002a"
+git-tree-sha1 = "42dd4c193a1bacea5b6adf78b6224de907b06351"
 registries = "General"
 uuid = "2efcf032-c050-4f8e-a9bb-153293bab1f5"
-version = "0.3.55"
+version = "0.3.56"
 
     [deps.SymbolicIndexingInterface.extensions]
     SymbolicIndexingInterfacePrettyTablesExt = "PrettyTables"
