@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt
+using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt, OffsetArrays
 using RecursiveArrayToolsShorthandConstructors
 
 @test length(ArrayPartition()) == 0
@@ -416,6 +416,29 @@ end
 struct TestIsnanFunctor end
 (::TestIsnanFunctor)(x) = isnan(x)
 @test all(TestIsnanFunctor(), AP[[NaN], [NaN]])
+
+@testset "OffsetArray partitions index correctly" begin
+    # getindex/setindex! and copyto!(::AbstractArray, ::ArrayPartition) assumed every
+    # partition (and the destination) were 1-based, silently reading/writing the wrong
+    # element for a partition with non-1-based indices.
+    o = OffsetArray([10.0, 20.0, 30.0], 0:2)
+    A = ArrayPartition([1.0, 2.0], o)
+    @test A[3] == 10.0
+    @test A[4] == 20.0
+    @test A[5] == 30.0
+    @test collect(A) == [1.0, 2.0, 10.0, 20.0, 30.0]
+
+    o2 = OffsetArray(zeros(3), 0:2)
+    B = ArrayPartition([1.0, 2.0], o2)
+    B[5] = 99.0
+    @test parent(o2) == [0.0, 0.0, 99.0]
+    @test B[5] == 99.0
+
+    C = ArrayPartition([1.0, 2.0], [3.0, 4.0])
+    dest = OffsetArray(zeros(4), 0:3)
+    copyto!(dest, C)
+    @test parent(dest) == [1.0, 2.0, 3.0, 4.0]
+end
 
 @testset "Mixed-eltype in-place broadcast does not allocate" begin
     # unpack_args(i, ::Tuple{Any}) was missing @inline, forcing a runtime
