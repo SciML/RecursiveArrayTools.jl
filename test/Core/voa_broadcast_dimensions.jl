@@ -1,7 +1,10 @@
 using Test, RecursiveArrayTools, StaticArrays, FastBroadcast, Polyester, StructArrays
 
 @testset "VectorOfArray broadcast dimensions" begin
-    for wrap in (identity, SVector{3}, MVector{3}), storage in (identity, StructArray)
+    for (wrap, storage) in (
+            (identity, identity), (SVector{3}, identity), (MVector{3}, identity),
+            (SizedVector{3}, StructArray), (SVector{3}, StructArray), (MVector{3}, StructArray),
+        )
         original = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         make() = VectorOfArray(storage(wrap.(deepcopy(original))))
         dense = Array(make())
