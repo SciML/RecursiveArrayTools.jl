@@ -42,9 +42,12 @@ for (type, N_expr) in [
             dest_i = dest[:, i]
             if dest_i isa AbstractArray
                 if ArrayInterface.ismutable(dest_i)
-                    copyto!(dest_i, unpack_voa(bc, i))
+                    Broadcast.materialize!(dest_i, unpack_voa(bc, i, Val(ndims(dest))))
                 else
-                    unpacked = unpack_voa(bc, i)
+                    inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+                    unpacked = Broadcast.instantiate(
+                        Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(dest_i))
+                    )
                     arr_type = StaticArraysCore.similar_type(dest_i)
                     dest_i = if length(unpacked) == 1 && length(dest_i) == 1
                         arr_type(unpacked[1])
@@ -55,7 +58,7 @@ for (type, N_expr) in [
                     end
                 end
             else
-                dest_i = copy(unpack_voa(bc, i))
+                dest_i = copy(unpack_voa(bc, i, Val(ndims(dest))))
             end
             dest[:, i] = dest_i
         end
