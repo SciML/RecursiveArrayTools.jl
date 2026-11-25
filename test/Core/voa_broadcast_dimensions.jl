@@ -57,7 +57,7 @@ using Test, RecursiveArrayTools, StaticArrays, FastBroadcast, Polyester, StructA
     end
 
     for (wrap, storage) in (
-            (identity, identity), (SVector{2}, identity), (identity, StructArray),
+            (identity, identity), (SVector{2}, identity), (SVector{2}, StructArray),
         )
         make() = VectorOfArray(storage(wrap.([[1, 2], [3, 4], [5, 6]])))
         v = make()
