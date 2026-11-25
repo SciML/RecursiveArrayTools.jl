@@ -29,7 +29,7 @@ function Base.setindex!(
 end
 
 for (type, N_expr) in [
-        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
+        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(length(dest.u))),
         (Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle}, :(length(dest.u))),
     ]
     @eval @inline function Base.copyto!(
@@ -38,27 +38,32 @@ for (type, N_expr) in [
         )
         bc = Broadcast.flatten(bc)
         N = $N_expr
+        slices = map(1:N) do i
+            dest_i = dest[:, i]
+            inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+            if dest_i isa AbstractArray
+                Broadcast.materialize!(similar(dest_i), inner_bc)
+            else
+                copy(inner_bc)
+            end
+        end
         @inbounds for i in 1:N
             dest_i = dest[:, i]
             if dest_i isa AbstractArray
                 if ArrayInterface.ismutable(dest_i)
-                    Broadcast.materialize!(dest_i, unpack_voa(bc, i, Val(ndims(dest))))
+                    copyto!(dest_i, slices[i])
                 else
-                    inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
-                    unpacked = Broadcast.instantiate(
-                        Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(dest_i))
-                    )
                     arr_type = StaticArraysCore.similar_type(dest_i)
-                    dest_i = if length(unpacked) == 1 && length(dest_i) == 1
-                        arr_type(unpacked[1])
-                    elseif length(unpacked) == 1
-                        fill(copy(unpacked), arr_type)
+                    dest_i = if length(slices[i]) == 1 && length(dest_i) == 1
+                        arr_type(slices[i][1])
+                    elseif length(slices[i]) == 1
+                        fill(copy(slices[i]), arr_type)
                     else
-                        arr_type(unpacked[j] for j in eachindex(unpacked))
+                        arr_type(slices[i][j] for j in eachindex(slices[i]))
                     end
                 end
             else
-                dest_i = copy(unpack_voa(bc, i, Val(ndims(dest))))
+                dest_i = slices[i]
             end
             dest[:, i] = dest_i
         end

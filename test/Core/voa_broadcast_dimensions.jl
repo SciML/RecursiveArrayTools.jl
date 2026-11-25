@@ -55,4 +55,63 @@ using Test, RecursiveArrayTools, StaticArrays, FastBroadcast, Polyester, StructA
             @test Array(v) == expected
         end
     end
+
+    for (wrap, storage) in (
+            (identity, identity), (SVector{2}, identity), (identity, StructArray),
+        )
+        make() = VectorOfArray(storage(wrap.([[1, 2], [3, 4], [5, 6]])))
+        v = make()
+        v .= 10 .* view(v, :, 1)
+        @test Array(v) == [10 10 10; 20 20 20]
+
+        if wrap === identity && storage === identity
+            v = make()
+            v .= 10 .* v.u[1]
+            @test Array(v) == [10 10 10; 20 20 20]
+        end
+    end
+
+    v = VectorOfArray([[1, 2], [3, 4], [5, 6]])
+    singleton = VectorOfArray([[10, 20]])
+    expected_singleton = [10 10 10; 20 20 20]
+    @test Array(v .+ singleton) == [11 13 15; 22 24 26]
+    @test Array(singleton .+ v) == [11 13 15; 22 24 26]
+    v .= singleton
+    @test Array(v) == expected_singleton
+
+    v = VectorOfArray([[1, 2], [3, 4], [5, 6]])
+    v .= v .+ singleton
+    @test Array(v) == [11 13 15; 22 24 26]
+    v = VectorOfArray([[1, 2], [3, 4], [5, 6]])
+    v .= singleton .+ v
+    @test Array(v) == [11 13 15; 22 24 26]
+
+    matrices = [reshape(collect(1:4) .+ 4(i - 1), 2, 2) for i in 1:3]
+    v = VectorOfArray(matrices)
+    lower_rank = VectorOfArray([[10, 20], [30, 40]])
+    expected_mixed = cat(
+        [11 33; 22 44], [15 37; 26 48], [19 41; 30 52]; dims = 3
+    )
+    @test Array(v .+ lower_rank) == expected_mixed
+    @test Array(lower_rank .+ v) == expected_mixed
+    v .= lower_rank
+    @test Array(v) == repeat(reshape([10, 20, 30, 40], 2, 2, 1), 1, 1, 3)
+
+    v = VectorOfArray([reshape(collect(1:4) .+ 4(i - 1), 2, 2) for i in 1:3])
+    v .= v .+ lower_rank
+    @test Array(v) == expected_mixed
+    v = VectorOfArray([reshape(collect(1:4) .+ 4(i - 1), 2, 2) for i in 1:3])
+    v .= lower_rank .+ v
+    @test Array(v) == expected_mixed
+
+    v = VectorOfArray([SVector(1, 2), SVector(3, 4), SVector(5, 6)])
+    x = reshape([10, 50, 20, 60, 30, 70], 2, 3, 1)
+    expected_trailing_singleton = [11 23 35; 52 64 76]
+    v .= v .+ x
+    @test Array(v) == expected_trailing_singleton
+    for threaded in (false, true)
+        v = VectorOfArray([SVector(1, 2), SVector(3, 4), SVector(5, 6)])
+        @.. thread = threaded v = v + x
+        @test Array(v) == expected_trailing_singleton
+    end
 end

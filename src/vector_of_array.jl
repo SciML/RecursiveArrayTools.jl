@@ -1623,32 +1623,77 @@ function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {
     return VectorOfArrayStyle{N}()
 end
 
-# recurse through broadcast arguments and return a parent array for
-# the first VoA or DiffEqArray in the bc arguments
-function find_VoA_parent(args)
-    arg = Base.first(args)
-    if arg isa AbstractDiffEqArray
-        # if first(args) is a DiffEqArray, use the underlying
-        # field `u` of DiffEqArray as a parent array.
-        return arg.u
-    elseif arg isa AbstractVectorOfArray
-        return parent(arg)
-    else
-        return find_VoA_parent(Base.tail(args))
+# Prefer a full-rank operand that spans the combined outer axis, so a singleton
+# wrapped operand cannot determine the result's slice count or parent layout.
+function find_VoA_parent(args, rank, outer_length)
+    fallback = nothing
+    for arg in args
+        (arg isa AbstractDiffEqArray || arg isa AbstractVectorOfArray) || continue
+        operand_rank = ndims(arg)
+        operand_rank == rank || continue
+        parent_value = arg isa AbstractDiffEqArray ? arg.u : parent(arg)
+        length(parent_value) == outer_length && return parent_value
+        fallback === nothing && (fallback = parent_value)
     end
+    fallback === nothing && throw(ArgumentError("broadcast has no full-rank VectorOfArray operand"))
+    return fallback
+end
+
+@inline function broadcast_arrays_share_storage(arg::AbstractArray, target::AbstractArray)
+    arg === target && return true
+    parent_arg = parent(arg)
+    if parent_arg isa AbstractArray && parent_arg !== arg &&
+            broadcast_arrays_share_storage(parent_arg, target)
+        return true
+    end
+    parent_target = parent(target)
+    return parent_target isa AbstractArray && parent_target !== target &&
+        broadcast_arrays_share_storage(arg, parent_target)
+end
+
+@inline function broadcast_argument_mightalias(arg, target)
+    arg isa AbstractArray && target isa AbstractArray || return false
+    ArrayInterface.ismutable(arg) && ArrayInterface.ismutable(target) || return false
+    return broadcast_arrays_share_storage(arg, target)
+end
+
+@inline function broadcast_argument_mightalias(arg::AbstractVectorOfArray, dest::AbstractVectorOfArray)
+    arg === dest && return false
+    arg.u === dest.u && return true
+    for source in arg.u, target in dest.u
+        broadcast_argument_mightalias(source, target) && return true
+    end
+    return false
+end
+
+@inline function broadcast_argument_mightalias(arg::AbstractArray, dest::AbstractVectorOfArray)
+    if ArrayInterface.ismutable(arg) && broadcast_arrays_share_storage(arg, dest)
+        return true
+    end
+    for target in dest.u
+        broadcast_argument_mightalias(arg, target) && return true
+    end
+    parent_arg = parent(arg)
+    parent_arg isa AbstractVectorOfArray && return true
+    return parent_arg === arg ? false : broadcast_argument_mightalias(parent_arg, dest)
+end
+
+@inline broadcast_arguments_mightalias(::Tuple{}, ::AbstractVectorOfArray) = false
+@inline function broadcast_arguments_mightalias(args::Tuple{Any, Vararg}, dest::AbstractVectorOfArray)
+    return broadcast_argument_mightalias(args[1], dest) ||
+        broadcast_arguments_mightalias(Base.tail(args), dest)
 end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
-    parent = find_VoA_parent(bc.args)
-
+    broadcast_axes = axes(Broadcast.instantiate(bc))
+    outer_length = length(last(broadcast_axes))
+    parent = find_VoA_parent(bc.args, ndims(bc), outer_length)
     u = if parent isa AbstractVector
-        # this is the default behavior in v3.15.0
-        N = narrays(bc)
-        map(1:N) do i
+        map(1:outer_length) do i
             copy(unpack_voa(bc, i, Val(ndims(bc))))
         end
-    else # if parent isa AbstractArray
+    else
         map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
             copy(unpack_voa(bc, i, Val(ndims(bc))))
         end
@@ -1659,8 +1704,69 @@ end
 rewrap(::Array, u) = u
 rewrap(parent, u) = convert(typeof(parent), u)
 
+@inline function copyto_voa_nonaliased!(dest, bc, N)
+    @inbounds for i in 1:N
+        # Index the backing storage directly to avoid zero-padding ragged slices.
+        inner = dest.u[i]
+        if inner isa AbstractArray
+            if ArrayInterface.ismutable(inner)
+                Broadcast.materialize!(inner, unpack_voa(bc, i, Val(ndims(dest))))
+            else
+                inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+                unpacked = Broadcast.instantiate(
+                    Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(inner))
+                )
+                arr_type = StaticArraysCore.similar_type(inner)
+                dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
+                    arr_type(unpacked[1])
+                elseif length(unpacked) == 1
+                    fill(copy(unpacked), arr_type)
+                else
+                    arr_type(unpacked[j] for j in eachindex(unpacked))
+                end
+            end
+        else
+            dest.u[i] = copy(unpack_voa(bc, i, Val(ndims(dest))))
+        end
+    end
+    return dest
+end
+
+@inline function copyto_voa_aliased!(dest, bc, N)
+    slices = map(1:N) do i
+        inner = dest.u[i]
+        inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+        if inner isa AbstractArray
+            Broadcast.materialize!(similar(inner), inner_bc)
+        else
+            copy(inner_bc)
+        end
+    end
+    @inbounds for i in 1:N
+        inner = dest.u[i]
+        if inner isa AbstractArray
+            if ArrayInterface.ismutable(inner)
+                copyto!(inner, slices[i])
+            else
+                arr_type = StaticArraysCore.similar_type(inner)
+                unpacked = slices[i]
+                dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
+                    arr_type(unpacked[1])
+                elseif length(unpacked) == 1
+                    fill(copy(unpacked), arr_type)
+                else
+                    arr_type(unpacked[j] for j in eachindex(unpacked))
+                end
+            end
+        else
+            dest.u[i] = slices[i]
+        end
+    end
+    return dest
+end
+
 for (type, N_expr) in [
-        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
+        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(length(dest.u))),
         (Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle}, :(length(dest.u))),
     ]
     @eval @inline function Base.copyto!(
@@ -1669,33 +1775,11 @@ for (type, N_expr) in [
         )
         bc = Broadcast.flatten(bc)
         N = $N_expr
-        @inbounds for i in 1:N
-            # Use dest.u[i] directly to get the actual inner array without
-            # zero-padding (dest[:, i] zero-pads ragged arrays, causing
-            # DimensionMismatch when the source inner array has a different size)
-            inner = dest.u[i]
-            if inner isa AbstractArray
-                if ArrayInterface.ismutable(inner)
-                    Broadcast.materialize!(inner, unpack_voa(bc, i, Val(ndims(dest))))
-                else
-                    inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
-                    unpacked = Broadcast.instantiate(
-                        Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(inner))
-                    )
-                    arr_type = StaticArraysCore.similar_type(inner)
-                    dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
-                        arr_type(unpacked[1])
-                    elseif length(unpacked) == 1
-                        fill(copy(unpacked), arr_type)
-                    else
-                        arr_type(unpacked[j] for j in eachindex(unpacked))
-                    end
-                end
-            else
-                dest.u[i] = copy(unpack_voa(bc, i, Val(ndims(dest))))
-            end
+        return if broadcast_arguments_mightalias(bc.args, dest)
+            copyto_voa_aliased!(dest, bc, N)
+        else
+            copyto_voa_nonaliased!(dest, bc, N)
         end
-        return dest
     end
 end
 
@@ -1738,7 +1822,11 @@ function unpack_voa(x::AbstractVectorOfArray{T, M}, i, ::Val{N}) where {T, M, N}
 end
 function unpack_voa(x::AbstractArray{T, M}, i, ::Val{N}) where {T, M, N}
     M < N && return x
-    return @view x[ntuple(_ -> Colon(), Val(N - 1))..., size(x, N) == 1 ? 1 : i]
+    return @view x[
+        ntuple(_ -> Colon(), Val(N - 1))...,
+        size(x, N) == 1 ? 1 : i,
+        ntuple(_ -> 1, Val(M - N))...,
+    ]
 end
 
 @inline function unpack_args_voa(i, n, args::Tuple)
