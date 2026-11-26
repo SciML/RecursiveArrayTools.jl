@@ -1637,34 +1637,163 @@ function Broadcast.BroadcastStyle(::Type{<:AbstractVectorOfArray{T, N}}) where {
     return VectorOfArrayStyle{N}()
 end
 
-# recurse through broadcast arguments and return a parent array for
-# the first VoA or DiffEqArray in the bc arguments
-function find_VoA_parent(args)
-    arg = Base.first(args)
-    if arg isa AbstractDiffEqArray
-        # if first(args) is a DiffEqArray, use the underlying
-        # field `u` of DiffEqArray as a parent array.
-        return arg.u
-    elseif arg isa AbstractVectorOfArray
-        return parent(arg)
-    else
-        return find_VoA_parent(Base.tail(args))
+# Prefer a full-rank operand that spans the combined outer axis, so a singleton
+# wrapped operand cannot determine the result's slice count or parent layout.
+function find_VoA_parent(args, rank, outer_length)
+    fallback = nothing
+    for arg in args
+        (arg isa AbstractDiffEqArray || arg isa AbstractVectorOfArray) || continue
+        operand_rank = ndims(arg)
+        operand_rank == rank || continue
+        parent_value = arg isa AbstractDiffEqArray ? arg.u : parent(arg)
+        length(parent_value) == outer_length && return parent_value
+        fallback === nothing && (fallback = parent_value)
     end
+    fallback === nothing && throw(ArgumentError("broadcast has no full-rank VectorOfArray operand"))
+    return fallback
+end
+
+# `true` once `f(lo, hi)` holds for the address range of some memory reachable through
+# `A`, or when `A` has storage that cannot be identified.
+function any_storage(f::F, A::Array) where {F}
+    isempty(A) && return false
+    lo = UInt(pointer(A))
+    return f(lo, lo + sizeof(A))
+end
+function any_storage(f::F, A::StaticArraysCore.MArray) where {F}
+    lo = UInt(pointer_from_objref(A))
+    return f(lo, lo + sizeof(A))
+end
+any_storage(::F, ::Union{StaticArraysCore.SArray, AbstractRange}) where {F} = false
+any_storage(f::F, A::AbstractVectorOfArray) where {F} = any_slice_storage(f, A.u)
+function any_storage(f::F, A::SubArray) where {F}
+    return any_storage(f, parent(A)) ||
+        any(i -> i isa AbstractArray && any_storage(f, i), parentindices(A))
+end
+function any_storage(f::F, A::AbstractArray) where {F}
+    A isa ArrayPartition && return any(x -> any_element_storage(f, x), A.x)
+    A isa NamedArrayPartition && return any_storage(f, getfield(A, :array_partition))
+    backing = parent(A)
+    # An unfamiliar array that is its own parent may share memory with anything.
+    return backing === A ? ArrayInterface.ismutable(A) : any_storage(f, backing)
+end
+
+any_element_storage(f::F, x) where {F} = x isa AbstractArray && any_storage(f, x)
+
+# Storage of an outer container and of every slice held by it.
+function any_slice_storage(f::F, u) where {F}
+    any_storage(f, u) && return true
+    for x in u
+        any_element_storage(f, x) && return true
+    end
+    return false
+end
+
+has_slice_storage(u) = any(x -> any_element_storage((_, _) -> true, x), u)
+
+# Below this many slices, pairwise comparison is cheap and does not allocate.
+const PAIRWISE_ALIAS_LIMIT = 16
+
+# Whether writing one slice of `dest` leaves what every other slice reads untouched.
+function slices_write_independently(dest::AbstractVectorOfArray)
+    u = dest.u
+    layout = u isa StaticArraysCore.SizedArray ? parent(u) : u
+    layout isa Union{Array, StaticArraysCore.SArray, StaticArraysCore.MArray} || return false
+    has_slice_storage(u) || return true
+    if length(u) <= PAIRWISE_ALIAS_LIMIT
+        for i in eachindex(u)
+            shared = any_element_storage(u[i]) do lo, hi
+                any(eachindex(u)) do j
+                    j < i && any_element_storage((l, h) -> lo < h && l < hi, u[j])
+                end
+            end
+            shared && return false
+        end
+    else
+        ranges = Tuple{UInt, UInt, Int}[]
+        for (i, x) in enumerate(u)
+            unknown = any_element_storage(x) do lo, hi
+                push!(ranges, (lo, hi, i))
+                false
+            end
+            unknown && return false
+        end
+        sort!(ranges)
+        stop, owner = zero(UInt), 0
+        for (lo, hi, i) in ranges
+            lo < stop && i != owner && return false
+            hi > stop && ((stop, owner) = (hi, i))
+        end
+    end
+    return true
+end
+
+@inline broadcast_argument_mightalias(arg, dest::AbstractVectorOfArray) = false
+
+function broadcast_argument_mightalias(arg::AbstractArray, dest::AbstractVectorOfArray)
+    return any_storage(arg) do lo, hi
+        any_slice_storage((l, h) -> lo < h && l < hi, dest.u)
+    end
+end
+
+function broadcast_argument_mightalias(arg::AbstractVectorOfArray, dest::AbstractVectorOfArray)
+    arg === dest && return !slices_write_independently(dest)
+    if !has_slice_storage(dest.u)
+        # The outer container is all there is to overlap, so skip walking its elements.
+        return any_storage(arg) do lo, hi
+            any_storage((l, h) -> lo < h && l < hi, dest.u)
+        end
+    elseif length(dest.u) <= PAIRWISE_ALIAS_LIMIT
+        return any_storage(arg) do lo, hi
+            any_slice_storage((l, h) -> lo < h && l < hi, dest.u)
+        end
+    end
+    # Index the destination once: sorted by start, each entry carrying the largest end so far.
+    ranges = Tuple{UInt, UInt}[]
+    unknown = any_slice_storage(dest.u) do lo, hi
+        push!(ranges, (lo, hi))
+        false
+    end
+    unknown && return any_storage((_, _) -> true, arg)
+    sort!(ranges)
+    stop = zero(UInt)
+    for k in eachindex(ranges)
+        lo, hi = ranges[k]
+        stop = max(stop, hi)
+        ranges[k] = (lo, stop)
+    end
+    return any_storage(arg) do lo, hi
+        k = searchsortedfirst(ranges, (hi, zero(UInt))) - 1
+        k > 0 && ranges[k][2] > lo
+    end
+end
+
+@inline broadcast_arguments_mightalias(::Tuple{}, ::AbstractVectorOfArray) = false
+@inline function broadcast_arguments_mightalias(args::Tuple{Any, Vararg}, dest::AbstractVectorOfArray)
+    return broadcast_argument_mightalias(args[1], dest) ||
+        broadcast_arguments_mightalias(Base.tail(args), dest)
+end
+
+# Throws on mismatched shapes before anything is written, and returns whether `dest` can
+# be filled slice by slice without overwriting memory that `bc` has yet to read.
+function can_materialize_slicewise(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted)
+    flat = Broadcast.flatten(bc)
+    Broadcast.instantiate(Broadcast.Broadcasted(flat.f, flat.args, axes(dest)))
+    return !broadcast_arguments_mightalias(flat.args, dest)
 end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})
     bc = Broadcast.flatten(bc)
-    parent = find_VoA_parent(bc.args)
-
+    broadcast_axes = axes(Broadcast.instantiate(bc))
+    outer_length = length(last(broadcast_axes))
+    parent = find_VoA_parent(bc.args, ndims(bc), outer_length)
     u = if parent isa AbstractVector
-        # this is the default behavior in v3.15.0
-        N = narrays(bc)
-        map(1:N) do i
-            copy(unpack_voa(bc, i))
+        map(1:outer_length) do i
+            copy(unpack_voa(bc, i, Val(ndims(bc))))
         end
-    else # if parent isa AbstractArray
+    else
         map(enumerate(Iterators.product(axes(parent)...))) do (i, _)
-            copy(unpack_voa(bc, i))
+            copy(unpack_voa(bc, i, Val(ndims(bc))))
         end
     end
     return VectorOfArray(rewrap(parent, u))
@@ -1673,8 +1802,69 @@ end
 rewrap(::Array, u) = u
 rewrap(parent, u) = convert(typeof(parent), u)
 
+@inline function copyto_voa_nonaliased!(dest, bc, N)
+    @inbounds for i in 1:N
+        # Index the backing storage directly to avoid zero-padding ragged slices.
+        inner = dest.u[i]
+        if inner isa AbstractArray
+            if ArrayInterface.ismutable(inner)
+                Broadcast.materialize!(inner, unpack_voa(bc, i, Val(ndims(dest))))
+            else
+                inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+                unpacked = Broadcast.instantiate(
+                    Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(inner))
+                )
+                arr_type = StaticArraysCore.similar_type(inner)
+                dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
+                    arr_type(unpacked[1])
+                elseif length(unpacked) == 1
+                    fill(copy(unpacked), arr_type)
+                else
+                    arr_type(unpacked[j] for j in eachindex(unpacked))
+                end
+            end
+        else
+            dest.u[i] = copy(unpack_voa(bc, i, Val(ndims(dest))))
+        end
+    end
+    return dest
+end
+
+@inline function copyto_voa_aliased!(dest, bc, N)
+    slices = map(1:N) do i
+        inner = dest.u[i]
+        inner_bc = unpack_voa(bc, i, Val(ndims(dest)))
+        if inner isa AbstractArray
+            Broadcast.materialize!(similar(inner), inner_bc)
+        else
+            copy(inner_bc)
+        end
+    end
+    @inbounds for i in 1:N
+        inner = dest.u[i]
+        if inner isa AbstractArray
+            if ArrayInterface.ismutable(inner)
+                copyto!(inner, slices[i])
+            else
+                arr_type = StaticArraysCore.similar_type(inner)
+                unpacked = slices[i]
+                dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
+                    arr_type(unpacked[1])
+                elseif length(unpacked) == 1
+                    fill(copy(unpacked), arr_type)
+                else
+                    arr_type(unpacked[j] for j in eachindex(unpacked))
+                end
+            end
+        else
+            dest.u[i] = slices[i]
+        end
+    end
+    return dest
+end
+
 for (type, N_expr) in [
-        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(narrays(bc))),
+        (Broadcast.Broadcasted{<:VectorOfArrayStyle}, :(length(dest.u))),
         (Broadcast.Broadcasted{<:Broadcast.DefaultArrayStyle}, :(length(dest.u))),
     ]
     @eval @inline function Base.copyto!(
@@ -1683,30 +1873,11 @@ for (type, N_expr) in [
         )
         bc = Broadcast.flatten(bc)
         N = $N_expr
-        @inbounds for i in 1:N
-            # Use dest.u[i] directly to get the actual inner array without
-            # zero-padding (dest[:, i] zero-pads ragged arrays, causing
-            # DimensionMismatch when the source inner array has a different size)
-            inner = dest.u[i]
-            if inner isa AbstractArray
-                if ArrayInterface.ismutable(inner)
-                    copyto!(inner, unpack_voa(bc, i))
-                else
-                    unpacked = unpack_voa(bc, i)
-                    arr_type = StaticArraysCore.similar_type(inner)
-                    dest.u[i] = if length(unpacked) == 1 && length(inner) == 1
-                        arr_type(unpacked[1])
-                    elseif length(unpacked) == 1
-                        fill(copy(unpacked), arr_type)
-                    else
-                        arr_type(unpacked[j] for j in eachindex(unpacked))
-                    end
-                end
-            else
-                dest.u[i] = copy(unpack_voa(bc, i))
-            end
+        return if broadcast_arguments_mightalias(bc.args, dest)
+            copyto_voa_aliased!(dest, bc, N)
+        else
+            copyto_voa_nonaliased!(dest, bc, N)
         end
-        return dest
     end
 end
 
@@ -1738,24 +1909,28 @@ _narrays(args::AbstractVectorOfArray) = length(args.u)
 _narrays(args::Tuple{Any}) = _narrays(args[1])
 _narrays(::Any) = 0
 
-# drop axes because it is easier to recompute
-@inline function unpack_voa(bc::Broadcast.Broadcasted{Style}, i) where {Style}
-    return Broadcast.Broadcasted{Style}(bc.f, unpack_args_voa(i, bc.args))
+# Slice along the destination's outer dimension; lower-dimensional arguments
+# broadcast unchanged across all inner arrays.
+@inline function unpack_voa(bc::Broadcast.Broadcasted, i, n)
+    return Broadcast.Broadcasted(bc.f, unpack_args_voa(i, n, bc.args))
 end
-@inline function unpack_voa(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle}, i)
-    return Broadcast.Broadcasted(bc.f, unpack_args_voa(i, bc.args))
+unpack_voa(x, ::Any, ::Any) = x
+function unpack_voa(x::AbstractVectorOfArray{T, M}, i, ::Val{N}) where {T, M, N}
+    return M < N ? x : x.u[length(x.u) == 1 ? 1 : i]
 end
-unpack_voa(x, ::Any) = x
-unpack_voa(x::AbstractVectorOfArray, i) = x.u[i]
-function unpack_voa(x::AbstractArray{T, N}, i) where {T, N}
-    return @view x[ntuple(x -> Colon(), N - 1)..., i]
+function unpack_voa(x::AbstractArray{T, M}, i, ::Val{N}) where {T, M, N}
+    M < N && return x
+    return @view x[
+        ntuple(_ -> Colon(), Val(N - 1))...,
+        size(x, N) == 1 ? 1 : i,
+        ntuple(_ -> 1, Val(M - N))...,
+    ]
 end
 
-@inline function unpack_args_voa(i, args::Tuple)
-    return (unpack_voa(args[1], i), unpack_args_voa(i, Base.tail(args))...)
+@inline function unpack_args_voa(i, n, args::Tuple)
+    return (unpack_voa(args[1], i, n), unpack_args_voa(i, n, Base.tail(args))...)
 end
-unpack_args_voa(i, args::Tuple{Any}) = (unpack_voa(args[1], i),)
-unpack_args_voa(::Any, args::Tuple{}) = ()
+unpack_args_voa(::Any, ::Any, args::Tuple{}) = ()
 
 """
     VA

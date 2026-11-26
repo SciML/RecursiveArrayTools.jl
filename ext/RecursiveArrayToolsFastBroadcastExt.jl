@@ -13,9 +13,13 @@ const AbstractVectorOfSArray = AbstractVectorOfArray{
         ::Serial, dst::AbstractVectorOfSArray,
         bc::Broadcast.Broadcasted{S}
     ) where {S}
-    if FastBroadcast.use_fast_broadcast(S)
+    if FastBroadcast.use_fast_broadcast(S) &&
+            RecursiveArrayTools.can_materialize_slicewise(dst, bc)
         for i in 1:length(dst.u)
-            unpacked = RecursiveArrayTools.unpack_voa(bc, i)
+            inner_bc = RecursiveArrayTools.unpack_voa(bc, i, Val(ndims(dst)))
+            unpacked = Broadcast.instantiate(
+                Broadcast.Broadcasted(inner_bc.f, inner_bc.args, axes(dst.u[i]))
+            )
             dst.u[i] = StaticArraysCore.similar_type(dst.u[i])(
                 unpacked[j]
                     for j in eachindex(unpacked)
