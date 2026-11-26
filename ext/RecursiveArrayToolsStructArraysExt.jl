@@ -4,7 +4,7 @@ import RecursiveArrayTools, StructArrays
 RecursiveArrayTools.rewrap(::StructArrays.StructArray, u) = StructArrays.StructArray(u)
 
 using RecursiveArrayTools: VectorOfArray, VectorOfArrayStyle, ArrayInterface, unpack_voa,
-    narrays, StaticArraysCore
+    StaticArraysCore
 using StructArrays: StructArray
 
 const VectorOfStructArray{T, N} = VectorOfArray{T, N, <:StructArray}

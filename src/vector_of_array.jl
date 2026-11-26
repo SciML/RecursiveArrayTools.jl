@@ -1653,49 +1653,128 @@ function find_VoA_parent(args, rank, outer_length)
     return fallback
 end
 
-@inline function broadcast_arrays_share_storage(arg::AbstractArray, target::AbstractArray)
-    arg === target && return true
-    parent_arg = parent(arg)
-    if parent_arg isa AbstractArray && parent_arg !== arg &&
-            broadcast_arrays_share_storage(parent_arg, target)
-        return true
-    end
-    parent_target = parent(target)
-    return parent_target isa AbstractArray && parent_target !== target &&
-        broadcast_arrays_share_storage(arg, parent_target)
+# `true` once `f(lo, hi)` holds for the address range of some memory reachable through
+# `A`, or when `A` has storage that cannot be identified.
+function any_storage(f::F, A::Array) where {F}
+    isempty(A) && return false
+    lo = UInt(pointer(A))
+    return f(lo, lo + sizeof(A))
+end
+function any_storage(f::F, A::StaticArraysCore.MArray) where {F}
+    lo = UInt(pointer_from_objref(A))
+    return f(lo, lo + sizeof(A))
+end
+any_storage(::F, ::Union{StaticArraysCore.SArray, AbstractRange}) where {F} = false
+any_storage(f::F, A::AbstractVectorOfArray) where {F} = any_slice_storage(f, A.u)
+function any_storage(f::F, A::SubArray) where {F}
+    return any_storage(f, parent(A)) ||
+        any(i -> i isa AbstractArray && any_storage(f, i), parentindices(A))
+end
+function any_storage(f::F, A::AbstractArray) where {F}
+    A isa ArrayPartition && return any(x -> any_element_storage(f, x), A.x)
+    A isa NamedArrayPartition && return any_storage(f, getfield(A, :array_partition))
+    backing = parent(A)
+    # An unfamiliar array that is its own parent may share memory with anything.
+    return backing === A ? ArrayInterface.ismutable(A) : any_storage(f, backing)
 end
 
-@inline function broadcast_argument_mightalias(arg, target)
-    arg isa AbstractArray && target isa AbstractArray || return false
-    ArrayInterface.ismutable(arg) && ArrayInterface.ismutable(target) || return false
-    return broadcast_arrays_share_storage(arg, target)
-end
+any_element_storage(f::F, x) where {F} = x isa AbstractArray && any_storage(f, x)
 
-@inline function broadcast_argument_mightalias(arg::AbstractVectorOfArray, dest::AbstractVectorOfArray)
-    arg === dest && return false
-    arg.u === dest.u && return true
-    for source in arg.u, target in dest.u
-        broadcast_argument_mightalias(source, target) && return true
+# Storage of an outer container and of every slice held by it.
+function any_slice_storage(f::F, u) where {F}
+    any_storage(f, u) && return true
+    for x in u
+        any_element_storage(f, x) && return true
     end
     return false
 end
 
-@inline function broadcast_argument_mightalias(arg::AbstractArray, dest::AbstractVectorOfArray)
-    if ArrayInterface.ismutable(arg) && broadcast_arrays_share_storage(arg, dest)
-        return true
+has_slice_storage(u) = any(x -> any_element_storage((_, _) -> true, x), u)
+
+# Below this many slices, pairwise comparison is cheap and does not allocate.
+const PAIRWISE_ALIAS_LIMIT = 16
+
+# Whether writing one slice of `dest` leaves what every other slice reads untouched.
+function slices_write_independently(dest::AbstractVectorOfArray)
+    u = dest.u
+    layout = u isa StaticArraysCore.SizedArray ? parent(u) : u
+    layout isa Union{Array, StaticArraysCore.SArray, StaticArraysCore.MArray} || return false
+    has_slice_storage(u) || return true
+    if length(u) <= PAIRWISE_ALIAS_LIMIT
+        for i in eachindex(u)
+            shared = any_element_storage(u[i]) do lo, hi
+                any(eachindex(u)) do j
+                    j < i && any_element_storage((l, h) -> lo < h && l < hi, u[j])
+                end
+            end
+            shared && return false
+        end
+    else
+        ranges = Tuple{UInt, UInt, Int}[]
+        for (i, x) in enumerate(u)
+            unknown = any_element_storage(x) do lo, hi
+                push!(ranges, (lo, hi, i))
+                false
+            end
+            unknown && return false
+        end
+        sort!(ranges)
+        stop, owner = zero(UInt), 0
+        for (lo, hi, i) in ranges
+            lo < stop && i != owner && return false
+            hi > stop && ((stop, owner) = (hi, i))
+        end
     end
-    for target in dest.u
-        broadcast_argument_mightalias(arg, target) && return true
+    return true
+end
+
+@inline broadcast_argument_mightalias(arg, dest::AbstractVectorOfArray) = false
+
+function broadcast_argument_mightalias(arg::AbstractArray, dest::AbstractVectorOfArray)
+    return any_storage(arg) do lo, hi
+        any_slice_storage((l, h) -> lo < h && l < hi, dest.u)
     end
-    parent_arg = parent(arg)
-    parent_arg isa AbstractVectorOfArray && return true
-    return parent_arg === arg ? false : broadcast_argument_mightalias(parent_arg, dest)
+end
+
+function broadcast_argument_mightalias(arg::AbstractVectorOfArray, dest::AbstractVectorOfArray)
+    arg === dest && return !slices_write_independently(dest)
+    if length(dest.u) <= PAIRWISE_ALIAS_LIMIT || !has_slice_storage(dest.u)
+        return any_storage(arg) do lo, hi
+            any_slice_storage((l, h) -> lo < h && l < hi, dest.u)
+        end
+    end
+    # Index the destination once: sorted by start, each entry carrying the largest end so far.
+    ranges = Tuple{UInt, UInt}[]
+    unknown = any_slice_storage(dest.u) do lo, hi
+        push!(ranges, (lo, hi))
+        false
+    end
+    unknown && return any_storage((_, _) -> true, arg)
+    sort!(ranges)
+    stop = zero(UInt)
+    for k in eachindex(ranges)
+        lo, hi = ranges[k]
+        stop = max(stop, hi)
+        ranges[k] = (lo, stop)
+    end
+    return any_storage(arg) do lo, hi
+        k = searchsortedfirst(ranges, (hi, zero(UInt))) - 1
+        k > 0 && ranges[k][2] > lo
+    end
 end
 
 @inline broadcast_arguments_mightalias(::Tuple{}, ::AbstractVectorOfArray) = false
 @inline function broadcast_arguments_mightalias(args::Tuple{Any, Vararg}, dest::AbstractVectorOfArray)
     return broadcast_argument_mightalias(args[1], dest) ||
         broadcast_arguments_mightalias(Base.tail(args), dest)
+end
+
+# Throws on mismatched shapes before anything is written, and returns whether `dest` can
+# be filled slice by slice without overwriting memory that `bc` has yet to read.
+function can_materialize_slicewise(dest::AbstractVectorOfArray, bc::Broadcast.Broadcasted)
+    flat = Broadcast.flatten(bc)
+    Broadcast.instantiate(Broadcast.Broadcasted(flat.f, flat.args, axes(dest)))
+    return !broadcast_arguments_mightalias(flat.args, dest)
 end
 
 @inline function Base.copy(bc::Broadcast.Broadcasted{<:VectorOfArrayStyle})

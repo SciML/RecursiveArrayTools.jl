@@ -1,5 +1,15 @@
 using Test, RecursiveArrayTools, StaticArrays, FastBroadcast, Polyester, StructArrays
 
+# Counts how often the storage behind a slice is looked up.
+struct CountedSlice <: AbstractVector{Int}
+    data::Vector{Int}
+    lookups::Base.RefValue{Int}
+end
+Base.size(x::CountedSlice) = size(x.data)
+Base.getindex(x::CountedSlice, i::Int) = x.data[i]
+Base.setindex!(x::CountedSlice, v, i::Int) = (x.data[i] = v)
+Base.parent(x::CountedSlice) = (x.lookups[] += 1; x.data)
+
 @testset "VectorOfArray broadcast dimensions" begin
     for (wrap, storage) in (
             (identity, identity), (SVector{3}, identity), (MVector{3}, identity),
@@ -113,5 +123,88 @@ using Test, RecursiveArrayTools, StaticArrays, FastBroadcast, Polyester, StructA
         v = VectorOfArray([SVector(1, 2), SVector(3, 4), SVector(5, 6)])
         @.. thread = threaded v = v + x
         @test Array(v) == expected_trailing_singleton
+    end
+
+    static_voa() = VectorOfArray([SVector(1, 2), SVector(3, 4), SVector(5, 6)])
+    @testset "FastBroadcast aliased operands, thread=$threaded" for threaded in (false, true)
+        v = static_voa()
+        x = view(v, :, 1)
+        @.. thread = threaded v = 10 * x
+        @test Array(v) == [10 10 10; 20 20 20]
+        v = static_voa()
+        x = view(v, :, 1)
+        @.. thread = threaded v = 10 * x + (x - x)
+        @test Array(v) == [10 10 10; 20 20 20]
+    end
+
+    @testset "shared storage" begin
+        m = reshape([1, 2], 2, 1)
+        a, x = vec(m), vec(m)
+        v = VectorOfArray([a, [3, 4], [5, 6]])
+        v .= 10 .* x
+        @test Array(v) == [10 10 10; 20 20 20]
+
+        v = static_voa()
+        x = VectorOfArray(view(parent(v), [2, 1, 3]))
+        v .= 10 .* x
+        @test Array(v) == [30 10 50; 40 20 60]
+
+        a = [1, 2]
+        v = VectorOfArray([a, a, [3, 4]])
+        v .= 10 .* v
+        @test Array(v) == [10 10 30; 20 20 40]
+
+        u = static_voa().u
+        v = VectorOfArray(view(u, [1, 1, 2]))
+        v .= 10 .* v
+        @test u == [SVector(10, 20), SVector(30, 40), SVector(5, 6)]
+    end
+
+    @testset "shared storage with many slices" begin
+        make() = VectorOfArray([[i, 2i] for i in 1:40])
+        dense = Array(make())
+
+        v = make()
+        x = VectorOfArray(v.u[40:-1:1])
+        v .= 10 .* x
+        @test Array(v) == 10 .* dense[:, 40:-1:1]
+
+        v = make()
+        v.u[40] = v.u[1]
+        v .= 10 .* v
+        @test Array(v) == 10 .* dense[:, [1:39; 1]]
+
+        dest, source = make(), make()
+        dest .= 10 .* source
+        @test Array(dest) == 10 .* dense
+        @test Array(source) == dense
+        dest .= dest .+ source
+        @test Array(dest) == 11 .* dense
+    end
+
+    @testset "alias detection visits each slice a bounded number of times" begin
+        for n in (100, 400)
+            lookups = Ref(0)
+            make() = VectorOfArray([CountedSlice([i, 2i], lookups) for i in 1:n])
+            dest, source = make(), make()
+            dest .= source
+            @test Array(dest) == Array(source)
+            lookups[] = 0
+            dest .= source
+            @test lookups[] <= 4n
+            lookups[] = 0
+            dest .= dest .+ 1
+            @test lookups[] <= 4n
+        end
+    end
+
+    @testset "FastBroadcast rejects mismatched trailing axes, thread=$threaded" for threaded in
+        (false, true)
+
+        for x in (reshape(collect(1:24), 2, 3, 4), reshape(collect(1:8), 2, 4))
+            v = static_voa()
+            @test_throws DimensionMismatch @.. thread = threaded v = 10 * x
+            @test Array(v) == [1 3 5; 2 4 6]
+        end
     end
 end

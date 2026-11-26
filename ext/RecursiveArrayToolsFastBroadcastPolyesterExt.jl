@@ -23,7 +23,8 @@ end
         dst::AbstractVectorOfSArray,
         bc::Broadcast.Broadcasted{S}
     ) where {S}
-    if FastBroadcast.use_fast_broadcast(S)
+    if FastBroadcast.use_fast_broadcast(S) &&
+            RecursiveArrayTools.can_materialize_slicewise(dst, bc)
         @batch for i in 1:length(dst.u)
             dst.u[i] = materialize_inner(dst.u[i], bc, i, Val(ndims(dst)))
         end
