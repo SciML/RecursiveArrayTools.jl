@@ -238,12 +238,15 @@ Base.filter(f, A::ArrayPartition) = ArrayPartition(map(x -> filter(f, x), A.x))
 for type in [AbstractArray, PermutedDimsArray]
     @eval function Base.copyto!(dest::$(type), A::ArrayPartition)
         @assert length(dest) == length(A)
-        cur = 1
+        cur = firstindex(dest)
         @inbounds for i in 1:length(A.x)
             if A.x[i] isa Number
                 dest[cur:(cur + length(A.x[i]) - 1)] .= A.x[i]
             else
-                dest[cur:(cur + length(A.x[i]) - 1)] .= vec(A.x[i])
+                # copyto!(dest, doffs, src) copies src by linear index regardless of
+                # src's own indexing, so a non-1-based partition (e.g. OffsetArray)
+                # still lands at the right destination offset.
+                copyto!(dest, cur, A.x[i])
             end
             cur += length(A.x[i])
         end
@@ -308,9 +311,10 @@ end
 Base.@propagate_inbounds function Base.getindex(A::ArrayPartition, i::Int)
     @boundscheck checkbounds(A, i)
     @inbounds for j in 1:length(A.x)
-        i -= length(A.x[j])
+        x = A.x[j]
+        i -= length(x)
         if i <= 0
-            return A.x[j][length(A.x[j]) + i]
+            return x[firstindex(x) + length(x) + i - 1]
         end
     end
     throw(BoundsError(A, i))
@@ -337,9 +341,10 @@ Base.getindex(A::ArrayPartition{T, S}, ::Colon) where {T, S} = T[a for a in Chai
 Base.@propagate_inbounds function Base.setindex!(A::ArrayPartition, v, i::Int)
     @boundscheck checkbounds(A, i)
     return @inbounds for j in 1:length(A.x)
-        i -= length(A.x[j])
+        x = A.x[j]
+        i -= length(x)
         if i <= 0
-            A.x[j][length(A.x[j]) + i] = v
+            x[firstindex(x) + length(x) + i - 1] = v
             break
         end
     end

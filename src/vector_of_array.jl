@@ -1070,6 +1070,14 @@ function Base.append!(
 end
 
 function Base.stack(VA::AbstractVectorOfArray; dims = :)
+    # Skipping the per-element `stack` is only valid where it returns an identical
+    # copy: it turns `BitArray`s into `Array{Bool}`, narrows abstract eltypes,
+    # and throws on 0-d and empty arrays.
+    ET = eltype(VA.u)
+    if ET <: Array{<:Number} && isconcretetype(ET) && isconcretetype(eltype(ET)) &&
+            ndims(ET) >= 1 && !any(isempty, VA.u)
+        return stack(VA.u; dims)
+    end
     return stack(stack.(VA.u); dims)
 end
 
@@ -1184,6 +1192,12 @@ end
             Union{Integer, Base.OneTo},
             Vararg{Union{Integer, Base.OneTo}},
         }
+    ) where {T}
+    return similar(Array{T}, dims)
+end
+# Disambiguates against Base's integer-dimension similar fallback on Julia ≤ 1.11.
+@inline function Base.similar(
+        VA::AbstractVectorOfArray, ::Type{T}, dims::Tuple{Integer, Vararg{Integer}}
     ) where {T}
     return similar(Array{T}, dims)
 end

@@ -20,6 +20,7 @@ run_tests(;
         @time @safetestset "VecOfArr Indexing Tests" include("Core/basic_indexing.jl")
         @time @safetestset "VecOfArr Broadcast Dimensions" include("Core/voa_broadcast_dimensions.jl")
         @time @safetestset "VecOfArr Interface Tests" include("Core/interface_tests.jl")
+        @time @safetestset "VecOfArr Similar Tests" include("Core/similar_tests.jl")
         @time @safetestset "Public API Tests" include("Core/public_api_test.jl")
         @time @safetestset "Table traits" include("Core/tabletraits.jl")
         @time @safetestset "StaticArrays Tests" include("Core/copy_static_array_test.jl")
