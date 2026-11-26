@@ -10,6 +10,16 @@ Base.getindex(x::CountedSlice, i::Int) = x.data[i]
 Base.setindex!(x::CountedSlice, v, i::Int) = (x.data[i] = v)
 Base.parent(x::CountedSlice) = (x.lookups[] += 1; x.data)
 
+# Counts how often an element of the outer container is read.
+struct CountedOuter <: AbstractVector{AbstractVector{Int}}
+    data::Vector{AbstractVector{Int}}
+    reads::Base.RefValue{Int}
+end
+Base.size(x::CountedOuter) = size(x.data)
+Base.getindex(x::CountedOuter, i::Int) = (x.reads[] += 1; x.data[i])
+Base.setindex!(x::CountedOuter, v, i::Int) = (x.data[i] = v)
+Base.parent(x::CountedOuter) = x.data
+
 @testset "VectorOfArray broadcast dimensions" begin
     for (wrap, storage) in (
             (identity, identity), (SVector{3}, identity), (MVector{3}, identity),
@@ -196,6 +206,34 @@ Base.parent(x::CountedSlice) = (x.lookups[] += 1; x.data)
             dest .= dest .+ 1
             @test lookups[] <= 4n
         end
+    end
+
+    @testset "static slices behind an abstract eltype are read a linear number of times" begin
+        for n in (100, 400)
+            reads = Ref(0)
+            data = AbstractVector{Int}[SVector(i, 2i) for i in 1:n]
+            dest = VectorOfArray(CountedOuter(data, reads))
+            src = VectorOfArray([[3i, 4i] for i in 1:n])
+            dest .= src
+            @test reads[] <= 8n
+            @test data == src.u
+        end
+    end
+
+    # The two rows of column `j` of `x` are both `j`.
+    @testset "repeated destination slot, thread=$threaded" for threaded in (false, true)
+        u = fill(SVector(0, 0), 63)
+        v = VectorOfArray(view(u, [1:63; 1]))
+        x = repeat(reshape(1:64, 1, 64), 2, 1)
+        slower_first(a) = (a == 1 && sleep(0.025); 10a)
+        @.. thread = threaded v = slower_first(x)
+        @test u[1] == SVector(640, 640)
+        @test u[2:63] == [SVector(10i, 10i) for i in 2:63]
+
+        evaluators = Vector{Task}(undef, 64)
+        record(a) = (evaluators[a] = current_task(); 10a)
+        @.. thread = threaded v = record(x)
+        @test all(==(current_task()), evaluators)
     end
 
     @testset "FastBroadcast rejects mismatched trailing axes, thread=$threaded" for threaded in
