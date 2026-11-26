@@ -1738,7 +1738,12 @@ end
 
 function broadcast_argument_mightalias(arg::AbstractVectorOfArray, dest::AbstractVectorOfArray)
     arg === dest && return !slices_write_independently(dest)
-    if length(dest.u) <= PAIRWISE_ALIAS_LIMIT || !has_slice_storage(dest.u)
+    if !has_slice_storage(dest.u)
+        # The outer container is all there is to overlap, so skip walking its elements.
+        return any_storage(arg) do lo, hi
+            any_storage((l, h) -> lo < h && l < hi, dest.u)
+        end
+    elseif length(dest.u) <= PAIRWISE_ALIAS_LIMIT
         return any_storage(arg) do lo, hi
             any_slice_storage((l, h) -> lo < h && l < hi, dest.u)
         end
