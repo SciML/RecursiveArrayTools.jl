@@ -24,7 +24,8 @@ end
         bc::Broadcast.Broadcasted{S}
     ) where {S}
     if FastBroadcast.use_fast_broadcast(S) &&
-            RecursiveArrayTools.can_materialize_slicewise(dst, bc)
+            RecursiveArrayTools.can_materialize_slicewise(dst, bc) &&
+            RecursiveArrayTools.slices_write_independently(dst)
         @batch for i in 1:length(dst.u)
             dst.u[i] = materialize_inner(dst.u[i], bc, i, Val(ndims(dst)))
         end
