@@ -4,11 +4,16 @@ using RecursiveArrayToolsShorthandConstructors
 # Counts calls to `size` on its wrapped vector, used to check that an inner
 # array is not scanned once per column of an `AbstractVectorOfArray`.
 const counter = Ref(0)
+const range_getindex_calls = Ref(0)
 struct CountingVec{T} <: AbstractVector{T}
     data::Vector{T}
 end
 Base.size(c::CountingVec) = (counter[] += 1; size(c.data))
 Base.getindex(c::CountingVec, i::Int) = c.data[i]
+function Base.getindex(c::CountingVec, r::UnitRange{Int})
+    range_getindex_calls[] += 1
+    return c.data[r]
+end
 Base.IndexStyle(::Type{<:CountingVec}) = IndexLinear()
 
 # A vector whose own indices do not start at 1, e.g. `OffsetVec(v, -1)` has
@@ -530,13 +535,12 @@ end
     @test R_empty[1:2, 2] == [0.0, 0.0]
 
     # Slice O(1) fast path and non-1-based bounds checks
-    A_count = VectorOfArray([CountingVec(rand(2)) for _ in 1:100])
+    A_count = VectorOfArray([CountingVec([i, -i]) for i in 1:100])
     counter[] = 0
-    direct = A_count.u[7][1:2]
-    direct_calls = counter[]
-    counter[] = 0
-    @test A_count[1:2, 7] == direct
-    @test counter[] == direct_calls + 1
+    range_getindex_calls[] = 0
+    @test A_count[1:2, 7] == [7, -7]
+    @test counter[] == 1
+    @test range_getindex_calls[] == 1
 
     O0 = VA[OffsetVec([1.0, 2.0, 3.0], -1), OffsetVec([4.0, 5.0, 6.0], -1)]
     @test_throws BoundsError O0[0:1, :]
