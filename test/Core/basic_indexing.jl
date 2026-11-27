@@ -4,11 +4,16 @@ using RecursiveArrayToolsShorthandConstructors
 # Counts calls to `size` on its wrapped vector, used to check that an inner
 # array is not scanned once per column of an `AbstractVectorOfArray`.
 const counter = Ref(0)
+const range_getindex_calls = Ref(0)
 struct CountingVec{T} <: AbstractVector{T}
     data::Vector{T}
 end
 Base.size(c::CountingVec) = (counter[] += 1; size(c.data))
 Base.getindex(c::CountingVec, i::Int) = c.data[i]
+function Base.getindex(c::CountingVec, r::UnitRange{Int})
+    range_getindex_calls[] += 1
+    return c.data[r]
+end
 Base.IndexStyle(::Type{<:CountingVec}) = IndexLinear()
 
 # A vector whose own indices do not start at 1, e.g. `OffsetVec(v, -1)` has
@@ -473,4 +478,71 @@ end
     @test_throws BoundsError C0[1, 4]
     @test_throws BoundsError C2[1, 1]
     @test_throws BoundsError C2[1, 6]
+    @test_throws BoundsError C0[1, 0:1]
+    @test_throws BoundsError C0[1, 1:4]
+    @test_throws BoundsError C0[1, :]
+end
+
+@testset "Ragged row and range slices zero-pad consistently" begin
+    R = VectorOfArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]])
+    D = DiffEqArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]], [0.1, 0.2, 0.3])
+    expected = Array(R)
+
+    slice_cases = (
+        (2, :), (2, 1:3), (3, :), (1:2, 2), (2:3, 2), (1:3, 1:2), (2:3, 1:2),
+        ([1, 3], [2, 3]), ([true, false, true], :), (2, [false, true, true]),
+        (2, Int[]), (3:-1:1, 2:-1:1),
+    )
+    for V in (R, D)
+        for idxs in slice_cases
+            @test V[idxs...] == expected[idxs...]
+            @test typeof(V[idxs...]) == typeof(expected[idxs...])
+        end
+        for bad in (
+                (4, :), (0, :), (2, 4), (2, 0), (2, 1:4), (1:4, 2),
+                (4:5, 1:2), ([1, 4], :), ([true, false], :), (2, [true, false]),
+            )
+            @test_throws BoundsError V[bad...]
+        end
+    end
+    @test R[:, :] == expected
+    @test (@inbounds R[2, :]) == [2.0, 0.0, 5.0]
+    @inferred R[2, :]
+    @inferred R[2, 1:3]
+    @inferred R[1:2, 2]
+    @inferred R[1:3, 1:2]
+
+    # 3D ragged inner matrices
+    M = VectorOfArray(
+        [
+            [1.0 2.0; 3.0 4.0],
+            reshape([5.0, 6.0, 7.0], 3, 1),
+            reshape([8.0, 9.0, 10.0], 1, 3),
+        ]
+    )
+    AM = Array(M)
+    for idxs in ((2, 2, :), (1:2, 2, :), (:, :, 2), (1:2, 1:2, 2), (:, :, :), (1:2, 2:3, 1:2))
+        @test M[idxs...] == AM[idxs...]
+        @test typeof(M[idxs...]) == typeof(AM[idxs...])
+    end
+    for bad in ((4, :, :), (:, 4, :), (:, :, 4), (1:4, 1:2, 2))
+        @test_throws BoundsError M[bad...]
+    end
+
+    # Ragged with an empty inner vector
+    R_empty = VectorOfArray([[1.0, 2.0], Float64[], [3.0]])
+    @test R_empty[2, :] == [2.0, 0.0, 0.0]
+    @test R_empty[1:2, 2] == [0.0, 0.0]
+
+    # Slice O(1) fast path and non-1-based bounds checks
+    A_count = VectorOfArray([CountingVec([i, -i]) for i in 1:100])
+    counter[] = 0
+    range_getindex_calls[] = 0
+    @test A_count[1:2, 7] == [7, -7]
+    @test counter[] == 1
+    @test range_getindex_calls[] == 1
+
+    O0 = VA[OffsetVec([1.0, 2.0, 3.0], -1), OffsetVec([4.0, 5.0, 6.0], -1)]
+    @test_throws BoundsError O0[0:1, :]
+    @test_throws BoundsError O0[4, :]
 end

@@ -224,6 +224,24 @@ end
 @test_throws BoundsError stack(VectorOfArray([fill(1.0), fill(2.0)]))
 @test_throws ArgumentError stack(VectorOfArray([Float64[], Float64[]]))
 
+# Ragged stack zero-pads consistently with Array
+ragged_stack = VectorOfArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]])
+ragged_diffeq_stack = DiffEqArray([[1.0, 2.0], [3.0], [4.0, 5.0, 6.0]], [0.1, 0.2, 0.3])
+for V in (ragged_stack, ragged_diffeq_stack)
+    A = Array(V)
+    @test stack(V) == A
+    @test stack(V; dims = 1) == permutedims(A)
+    @test stack(V; dims = 2) == A
+end
+ragged_3d = VectorOfArray(
+    [
+        [1.0 2.0; 3.0 4.0],
+        reshape([5.0, 6.0, 7.0], 3, 1),
+        reshape([8.0, 9.0, 10.0], 1, 3),
+    ]
+)
+@test stack(ragged_3d) == Array(ragged_3d)
+
 # convert array from VectorOfArray/DiffEqArray
 t = 1:8
 recs = [rand(10, 7) for i in 1:8]
