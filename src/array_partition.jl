@@ -111,6 +111,11 @@ Base.zero(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = zero(A)
 ## Array
 
 Base.Array(A::ArrayPartition) = reduce(vcat, Array.(A.x))
+
+function Base.Vector(A::ArrayPartition{T}) where {T}
+    dest = Vector{T}(undef, length(A))
+    return copyto!(dest, A)
+end
 function Base.Array(
         VA::AbstractVectorOfArray{
             T,
@@ -233,6 +238,38 @@ end
         _mapreduce_impl_init(f, op, A, init)
     end
 end
+
+# Base's public any/all methods route full AbstractArray reductions through these
+# private hooks. Specializing them keeps ArrayPartition reductions partition-wise
+# without adding public any/all methods, which invalidate many Base specializations
+# on Julia < 1.13. The optional RecursiveArrayToolsArrayPartitionAnyAll package
+# still provides direct public methods for callers that load it.
+function Base._any(f, A::ArrayPartition, ::Colon)
+    anymissing = false
+    for x in A.x
+        v = any(f, x)
+        if ismissing(v)
+            anymissing = true
+        elseif v
+            return true
+        end
+    end
+    return anymissing ? missing : false
+end
+
+function Base._all(f, A::ArrayPartition, ::Colon)
+    allmissing = false
+    for x in A.x
+        v = all(f, x)
+        if ismissing(v)
+            allmissing = true
+        elseif !v
+            return false
+        end
+    end
+    return allmissing ? missing : true
+end
+
 Base.filter(f, A::ArrayPartition) = ArrayPartition(map(x -> filter(f, x), A.x))
 
 for type in [AbstractArray, PermutedDimsArray]
@@ -594,6 +631,53 @@ end
 
 ## Linear Algebra
 
+function LinearAlgebra.norm(A::ArrayPartition, p::Real = 2)
+    isempty(A) && return float(norm(zero(eltype(A))))
+
+    if p == 2
+        return mapreduce(norm, hypot, A.x)
+    elseif p == 1
+        return mapreduce(x -> norm(x, 1), +, A.x)
+    elseif p == Inf
+        return float(mapreduce(x -> norm(x, Inf), max, A.x))
+    elseif p == 0
+        T = typeof(float(norm(A.x[1])))
+        return T(mapreduce(x -> count(!iszero, x), +, A.x))
+    elseif p == -Inf
+        return float(mapreduce(x -> norm(x, -Inf), min, A.x))
+    end
+
+    norms = map(x -> norm(x, p), A.x)
+    T = typeof(first(norms))
+    if p > 1
+        scale = maximum(norms)
+        (ismissing(scale) || iszero(scale) || isinf(scale)) && return scale
+        return convert(T, scale * sum((x / scale)^p for x in norms)^inv(p))
+    elseif p < -1
+        scale = minimum(norms)
+        (ismissing(scale) || iszero(scale) || isinf(scale)) && return scale
+        return convert(T, scale * sum((x / scale)^p for x in norms)^inv(p))
+    else
+        return convert(T, sum(x^p for x in norms)^inv(p))
+    end
+end
+
+function LinearAlgebra.dot(A::ArrayPartition, B::ArrayPartition)
+    lx = length(A)
+    ly = length(B)
+    lx == ly || throw(DimensionMismatch(
+        "first array has length $lx which does not match the length of the second, $ly."
+    ))
+    isempty(A) && return zero(dot(zero(eltype(A)), zero(eltype(B))))
+
+    # Matching layouts reduce directly on the device. Different layouts still
+    # have ordinary linear dot-product semantics, so use the host Vector path.
+    if length(A.x) == length(B.x) && all(length.(A.x) .== length.(B.x))
+        return mapreduce(((a, b),) -> dot(a, b), +, zip(A.x, B.x))
+    end
+    return dot(Vector(A), Vector(B))
+end
+
 function ArrayInterface.zeromatrix(A::ArrayPartition)
     # Use foldl with explicit init to preserve array type (important for GPU arrays)
     # Starting with vec of first element ensures the result type matches the input
@@ -778,9 +862,6 @@ A == ArrayPartition([1, 2], [3.0, 4.0])
 """
 struct AP end
 
-# Optimized partition-level any/all for ArrayPartition lives in
-# RecursiveArrayToolsArrayPartitionAnyAll to avoid ~780 invalidations.
-# Without the extension, any/all uses the AbstractArray element-by-element
-# fallback, which triggers scalar indexing errors on GPU arrays.
-# Load the subpackage to fix:
-#     using RecursiveArrayToolsArrayPartitionAnyAll
+# Optimized direct any/all methods for ArrayPartition live in
+# RecursiveArrayToolsArrayPartitionAnyAll. The base package specializes Base's
+# full-reduction hooks above so GPU partitions do not require scalar indexing.

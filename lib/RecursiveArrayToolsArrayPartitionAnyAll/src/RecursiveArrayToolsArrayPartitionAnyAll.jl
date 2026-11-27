@@ -1,11 +1,12 @@
 """
     RecursiveArrayToolsArrayPartitionAnyAll
 
-Optimized `any`/`all` for `ArrayPartition` that iterates partition-by-partition
-instead of using the generic `AbstractArray` element iteration. This gives
-~1.5-1.8x speedup on full scans because it avoids per-element partition lookup
-overhead. Separated into its own subpackage because `any(f::Function, ::ArrayPartition)`
-invalidates ~780 specializations of `any(f::Function, ::AbstractArray)`.
+Optimized `any`/`all` for `ArrayPartition` that installs direct public methods
+instead of using the generic `AbstractArray` entry points. The base package's
+full-reduction fallback is also partition-wise and safe for GPU arrays; this
+subpackage remains available for callers that explicitly load direct methods.
+It is separated because `any(f::Function, ::ArrayPartition)` invalidates ~780
+specializations of `any(f::Function, ::AbstractArray)` on Julia < 1.13.
 
 ```julia
 using RecursiveArrayToolsArrayPartitionAnyAll

@@ -11,7 +11,7 @@ module RecursiveArrayTools
     using ArrayInterface: ArrayInterface
     using LinearAlgebra: LinearAlgebra, Adjoint, I, LU, LowerTriangular, Transpose,
         Tridiagonal, UnitLowerTriangular,
-        UnitUpperTriangular, UpperTriangular, ldiv!, mul!
+        UnitUpperTriangular, UpperTriangular, dot, ldiv!, mul!, norm
     using RecipesBase: RecipesBase, @recipe
     using SciMLPublic: @public
     using SciMLStructures: SciMLStructures, Tunable

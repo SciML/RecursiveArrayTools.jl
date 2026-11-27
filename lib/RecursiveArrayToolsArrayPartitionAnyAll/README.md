@@ -9,13 +9,15 @@
 RecursiveArrayToolsArrayPartitionAnyAll.jl is a component of the [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) monorepo. Optimized `any` and `all` for the `ArrayPartition` type.
 While completely independent and usable on its own, users wanting the full functionality should use [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl).
 
-`ArrayPartition` stores data as a tuple of arrays. The default `AbstractArray`
-`any`/`all` iterates element-by-element through the partition, which incurs
-per-element partition lookup overhead. This subpackage provides methods that
-iterate partition-by-partition instead, giving ~1.5-1.8x speedup on full scans.
+`ArrayPartition` stores data as a tuple of arrays. Both the base package's
+full-reduction fallback and this subpackage's direct public methods iterate
+partition-by-partition, avoiding per-element partition lookup and scalar GPU
+indexing.
 
 It is separated from the main package because `any(f::Function, ::ArrayPartition)`
-invalidates ~780 compiled specializations of `any(f::Function, ::AbstractArray)`.
+invalidates ~780 compiled specializations of `any(f::Function, ::AbstractArray)`
+on Julia < 1.13. The base package instead specializes Base's internal full-reduction
+hooks, preserving the public `any`/`all` dispatch while remaining GPU-safe.
 
 ## Installation
 
@@ -38,5 +40,6 @@ any(isnan, ap)
 all(x -> x > 0, ap)
 ```
 
-Without this package, `any`/`all` use the default `AbstractArray` implementation
-which is correct but ~1.5x slower due to per-element partition indexing overhead.
+Without this package, the base package's full reductions still iterate
+partition-by-partition and support GPU arrays. Loading this package installs
+direct public `any`/`all` methods for `ArrayPartition`.
