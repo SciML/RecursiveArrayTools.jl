@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test
+using RecursiveArrayTools, Test, OffsetArrays
 using RecursiveArrayToolsShorthandConstructors
 
 # Counts calls to `size` on its wrapped vector, used to check that an inner
@@ -473,4 +473,21 @@ end
     @test_throws BoundsError C0[1, 4]
     @test_throws BoundsError C2[1, 1]
     @test_throws BoundsError C2[1, 6]
+end
+
+@testset "Offset inner arrays use positional indices" begin
+    O = VectorOfArray([OffsetArray([1.0, 2.0, 3.0], 0:2), OffsetArray([4.0, 5.0, 6.0], 0:2)])
+    @test O[1, 1] == 1.0
+    @test O[3, 1] == 3.0
+    @test collect(O) == [1.0 4.0; 2.0 5.0; 3.0 6.0]
+    O[3, 1] = 9.0
+    @test O.u[1][2] == 9.0
+    M = VectorOfArray([OffsetArray(reshape(1:6, 2, 3), -1:0, 4:6)])
+    @test M[2, 3, 1] == 6
+    @test collect(M) == reshape(1:6, 2, 3, 1)
+    R = VectorOfArray([OffsetArray([1.0], -2:-2), OffsetArray([2.0, 3.0], 4:5)])
+    @test R[2, 1] == 0.0
+    @test R[2, 2] == 3.0
+    @test_throws BoundsError O[0, 1]
+    @test_throws BoundsError O[4, 1]
 end
