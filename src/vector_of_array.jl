@@ -619,8 +619,113 @@ Base.@propagate_inbounds function Base.setindex!(A::AbstractVectorOfArray{T, N},
 end
 
 
-Base.@propagate_inbounds function _getindex(
-        A::AbstractVectorOfArray{T, N}, ::NotSymbolic, ::Colon, I::Int
+function _pad_inner_array(u_col, ::Type{T}, leading_size::Tuple) where {T}
+    result = zeros(T, leading_size)
+    for ci in CartesianIndices(size(u_col))
+        result[ci] = u_col[ci]
+    end
+    return result
+end
+
+# Check whether an index along one inner dimension lies within 1:sz without
+# querying size(A). Colon and Bool masks depend on global size(A, d) and
+# return false so bounds checks and ragged sizes are handled via size(A).
+@inline _in_inner_bounds(idx::Int, sz::Int) = 1 <= idx <= sz
+@inline function _in_inner_bounds(idx::AbstractRange{Int}, sz::Int)
+    return isempty(idx) || (1 <= minimum(idx) && maximum(idx) <= sz)
+end
+@inline function _in_inner_bounds(idx::AbstractArray{Int}, sz::Int)
+    return all(i -> 1 <= i <= sz, idx)
+end
+@inline _in_inner_bounds(::Union{Colon, AbstractArray{Bool}}, ::Int) = false
+
+@inline _all_in_inner_bounds(::Tuple{}, u_col, ::Int) = true
+@inline function _all_in_inner_bounds(inner_I::Tuple, u_col, d::Int)
+    _in_inner_bounds(first(inner_I), size(u_col, d)) || return false
+    return _all_in_inner_bounds(Base.tail(inner_I), u_col, d + 1)
+end
+
+@inline _has_colon_or_bool(::Tuple{}) = false
+@inline function _has_colon_or_bool(I::Tuple)
+    return first(I) isa Union{Colon, AbstractArray{Bool}} ||
+        _has_colon_or_bool(Base.tail(I))
+end
+
+@inline _resolve_slice_index(idx::Int, ::Int) = idx
+@inline _resolve_slice_index(::Colon, sz::Int) = 1:sz
+@inline _resolve_slice_index(idx::AbstractArray{Int}, ::Int) = idx
+@inline _resolve_slice_index(idx::AbstractArray{Bool}, ::Int) = findall(vec(idx))
+
+@inline _resolve_slice_indices(::Tuple{}, ::Tuple{}) = ()
+@inline function _resolve_slice_indices(I::Tuple, sz::Tuple)
+    return (
+        _resolve_slice_index(first(I), first(sz)),
+        _resolve_slice_indices(Base.tail(I), Base.tail(sz))...,
+    )
+end
+
+@inline _slice_out_size() = ()
+@inline _slice_out_size(r::Int, rest...) = _slice_out_size(rest...)
+@inline _slice_out_size(r::AbstractArray, rest...) = (size(r)..., _slice_out_size(rest...)...)
+@inline _slice_out_size(t::Tuple) = _slice_out_size(t...)
+
+function _copy_padded_slice!(
+        dest, u_col, out_prefix::Tuple, src_prefix::Tuple,
+        ::Tuple{}, ::Int, col_suffix::Tuple
+    )
+    @inbounds dest[out_prefix..., col_suffix...] = u_col[src_prefix...]
+    return dest
+end
+function _copy_padded_slice!(
+        dest, u_col, out_prefix::Tuple, src_prefix::Tuple,
+        resolved_rest::Tuple, d::Int, col_suffix::Tuple
+    )
+    r = first(resolved_rest)
+    rest = Base.tail(resolved_rest)
+    sz_d = size(u_col, d)
+    if r isa Int
+        1 <= r <= sz_d || return dest
+        return _copy_padded_slice!(
+            dest, u_col, out_prefix, (src_prefix..., r), rest, d + 1, col_suffix
+        )
+    end
+    for ci in CartesianIndices(r)
+        s = r[ci]
+        1 <= s <= sz_d || continue
+        _copy_padded_slice!(
+            dest, u_col, (out_prefix..., Tuple(ci)...), (src_prefix..., s),
+            rest, d + 1, col_suffix
+        )
+    end
+    return dest
+end
+
+function _padded_slice(
+        u_col, ::Type{T}, leading_size::Tuple, inner_I::Tuple
+    ) where {T}
+    resolved_inner = _resolve_slice_indices(inner_I, leading_size)
+    out_size = _slice_out_size(resolved_inner)
+    result = zeros(T, out_size)
+    _copy_padded_slice!(result, u_col, (), (), resolved_inner, 1, ())
+    return result
+end
+
+function _padded_slice_multi(
+        selected_u, ::Type{T}, full_size::Tuple, inner_I::Tuple, cols
+    ) where {T}
+    leading_size = Base.front(full_size)
+    resolved_inner = _resolve_slice_indices(inner_I, leading_size)
+    resolved_col = _resolve_slice_index(cols, last(full_size))
+    out_size = _slice_out_size((resolved_inner..., resolved_col))
+    result = zeros(T, out_size)
+    for (u_col, col_ci) in zip(selected_u, CartesianIndices(resolved_col))
+        _copy_padded_slice!(result, u_col, (), (), resolved_inner, 1, Tuple(col_ci))
+    end
+    return result
+end
+
+Base.@propagate_inbounds function _getindex_colon_col(
+        A::AbstractVectorOfArray{T, N}, I::Int
     ) where {T, N}
     u_col = A.u[I]
     s = size(A)
@@ -634,30 +739,73 @@ Base.@propagate_inbounds function _getindex(
         return u_col
     end
     # Zero-padded for ragged arrays with same ndims but different sizes
-    result = zeros(T, leading_size)
-    for ci in CartesianIndices(size(u_col))
-        result[ci] = u_col[ci]
+    return _pad_inner_array(u_col, T, leading_size)
+end
+
+Base.@propagate_inbounds function _getindex_single_col(
+        A::AbstractVectorOfArray{T, N}, I::Tuple
+    ) where {T, N}
+    col = last(I)::Int
+    inner_I = Base.front(I)
+    u = A.u
+    if N >= 2 && length(inner_I) == N - 1 && 1 <= col <= length(u) &&
+            checkbounds(Bool, u, col)
+        u_col = @inbounds u[col]
+        if ndims(u_col) == N - 1 && _all_in_inner_bounds(inner_I, u_col, 1)
+            return @inbounds u_col[inner_I...]
+        end
     end
-    return result
+    @boundscheck checkbounds(A, I...)
+    u_col = u[col]
+    if N >= 2 && length(inner_I) == N - 1 && ndims(u_col) == N - 1
+        leading_size = Base.front(size(A))
+        if size(u_col) == leading_size
+            return u_col[inner_I...]
+        end
+        return _padded_slice(u_col, T, leading_size, inner_I)
+    end
+    return u_col[inner_I...]
+end
+
+Base.@propagate_inbounds function _getindex_multi_col(
+        A::AbstractVectorOfArray{T, N}, I::Tuple
+    ) where {T, N}
+    col_idxs = last(I)
+    inner_I = Base.front(I)
+    if N >= 2 && length(inner_I) == N - 1
+        @boundscheck checkbounds(A, I...)
+        cols = col_idxs isa Colon ? (1:length(A.u)) : col_idxs
+        selected_u = A.u[cols]
+        if isempty(selected_u)
+            return _padded_slice_multi(selected_u, T, size(A), inner_I, cols)
+        end
+        if all(u -> ndims(u) == N - 1, selected_u)
+            in_bounds = if _has_colon_or_bool(inner_I)
+                leading_size = Base.front(size(A))
+                all(u -> size(u) == leading_size, selected_u)
+            else
+                all(u -> _all_in_inner_bounds(inner_I, u, 1), selected_u)
+            end
+            if in_bounds
+                return stack(getindex.(selected_u, tuple.(inner_I)...))
+            end
+            return _padded_slice_multi(selected_u, T, size(A), inner_I, cols)
+        end
+        return stack(getindex.(selected_u, tuple.(inner_I)...))
+    end
+    return stack(getindex.(A.u[col_idxs], tuple.(inner_I)...))
+end
+
+Base.@propagate_inbounds function _getindex(
+        A::AbstractVectorOfArray{T, N}, ::NotSymbolic, ::Colon, I::Int
+    ) where {T, N}
+    return _getindex_colon_col(A, I)
 end
 
 Base.@propagate_inbounds function _getindex(
         A::AbstractDiffEqArray{T, N}, ::NotSymbolic, ::Colon, I::Int
     ) where {T, N}
-    u_col = A.u[I]
-    s = size(A)
-    leading_size = Base.front(s)
-    if size(u_col) == leading_size
-        return u_col
-    end
-    if ndims(u_col) != N - 1
-        return u_col
-    end
-    result = zeros(T, leading_size)
-    for ci in CartesianIndices(size(u_col))
-        result[ci] = u_col[ci]
-    end
-    return result
+    return _getindex_colon_col(A, I)
 end
 
 Base.@propagate_inbounds function _getindex(
@@ -665,9 +813,9 @@ Base.@propagate_inbounds function _getindex(
         I::Union{Int, AbstractArray{Int}, AbstractArray{Bool}, Colon}...
     )
     return if last(I) isa Int
-        A.u[last(I)][Base.front(I)...]
+        _getindex_single_col(A, I)
     else
-        stack(getindex.(A.u[last(I)], tuple.(Base.front(I))...))
+        _getindex_multi_col(A, I)
     end
 end
 
@@ -676,7 +824,7 @@ Base.@propagate_inbounds function _getindex(
         I::Union{Int, AbstractArray{Int}, AbstractArray{Bool}, Colon}...
     )
     return if last(I) isa Int
-        A.u[last(I)][Base.front(I)...]
+        _getindex_single_col(A, I)
     else
         col_idxs = last(I)
         # Only preserve DiffEqArray type if all prefix indices are Colons (selecting whole inner arrays)
@@ -693,7 +841,7 @@ Base.@propagate_inbounds function _getindex(
         else
             # Prefix indices are not all Colons - do the same as VectorOfArray
             # (stack the results into a higher-dimensional array)
-            return stack(getindex.(A.u[col_idxs], tuple.(Base.front(I))...))
+            return _getindex_multi_col(A, I)
         end
     end
 end
@@ -1069,7 +1217,18 @@ function Base.append!(
     return VA
 end
 
-function Base.stack(VA::AbstractVectorOfArray; dims = :)
+function Base.stack(VA::AbstractVectorOfArray{T, N}; dims = :) where {T, N}
+    if !isempty(VA.u) && N >= 2
+        s1 = size(first(VA.u))
+        if !all(u -> size(u) == s1, VA.u) && all(u -> ndims(u) == N - 1, VA.u)
+            if dims isa Colon || dims == N
+                return Array(VA)
+            end
+            leading_size = Base.front(size(VA))
+            padded = [_pad_inner_array(u, T, leading_size) for u in VA.u]
+            return stack(padded; dims)
+        end
+    end
     # Skipping the per-element `stack` is only valid where it returns an identical
     # copy: it turns `BitArray`s into `Array{Bool}`, narrows abstract eltypes,
     # and throws on 0-d and empty arrays.
