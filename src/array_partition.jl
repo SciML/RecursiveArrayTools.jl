@@ -665,9 +665,11 @@ end
 function LinearAlgebra.dot(A::ArrayPartition, B::ArrayPartition)
     lx = length(A)
     ly = length(B)
-    lx == ly || throw(DimensionMismatch(
-        "first array has length $lx which does not match the length of the second, $ly."
-    ))
+    lx == ly || throw(
+        DimensionMismatch(
+            "first array has length $lx which does not match the length of the second, $ly."
+        )
+    )
     isempty(A) && return zero(dot(zero(eltype(A)), zero(eltype(B))))
 
     # Matching layouts reduce directly on the device. Different layouts still

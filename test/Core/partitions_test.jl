@@ -184,11 +184,15 @@ end
     @test norm(ArrayPartition(Float64[], Float64[])) == 0.0
 
     @test dot(ap, ap) == 30.0
-    @test dot(ArrayPartition([1, 2], [3.0, 4.0]),
-        ArrayPartition([1.0, 2.0, 3.0], [4.0])) == 30.0
+    @test dot(
+        ArrayPartition([1, 2], [3.0, 4.0]),
+        ArrayPartition([1.0, 2.0, 3.0], [4.0])
+    ) == 30.0
     @test dot(ArrayPartition(1.0, -2.0), ArrayPartition(1.0, -2.0)) == 5.0
-    @test dot(ArrayPartition(Float64[], Float64[]),
-        ArrayPartition(Float64[], Float64[])) == 0.0
+    @test dot(
+        ArrayPartition(Float64[], Float64[]),
+        ArrayPartition(Float64[], Float64[])
+    ) == 0.0
     @test_throws DimensionMismatch dot(ap, ArrayPartition([1.0], [2.0]))
 
     complex_ap = ArrayPartition(ComplexF64[1 + 2im], ComplexF64[3 - im])
