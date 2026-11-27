@@ -1,4 +1,4 @@
-using RecursiveArrayTools, RecursiveArrayToolsArrayPartitionAnyAll, ArrayInterface, CUDA, Adapt, Test
+using RecursiveArrayTools, ArrayInterface, CUDA, Adapt, LinearAlgebra, KernelAbstractions, Test
 CUDA.allowscalar(false)
 
 # Test indexing with colon
@@ -46,3 +46,13 @@ x = ArrayPartition((CUDA.zeros(2), CUDA.zeros(2)))
 @test ArrayInterface.zeromatrix(x) isa CuMatrix
 @test size(ArrayInterface.zeromatrix(x)) == (4, 4)
 @test maximum(abs, x) == 0.0f0
+
+@testset "Partition-wise operations with scalar indexing disabled" begin
+    ap = ArrayPartition(CUDA.fill(1.0f0, 2), CUDA.fill(3.0f0, 2))
+    @test norm(ap) ≈ sqrt(20.0f0)
+    @test dot(ap, ap) ≈ 20.0f0
+    @test Vector(ap) == [1.0f0, 1.0f0, 3.0f0, 3.0f0]
+    @test !any(isnan, ap)
+    @test any(isnan, ArrayPartition(CUDA.fill(NaN, 1), CUDA.fill(1.0f0, 1)))
+    @test KernelAbstractions.get_backend(ap) isa CUDA.CUDABackend
+end

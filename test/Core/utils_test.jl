@@ -365,4 +365,8 @@ import KernelAbstractions: get_backend
 @testset "KernelAbstractions" begin
     v = VectorOfArray([randn(2) for i in 1:10])
     @test get_backend(v) === get_backend(parent(v)[1])
+
+    ap = ArrayPartition([randn(2), randn(3)])
+    @test get_backend(ap) === get_backend(ap.x[1])
+    @test_throws ErrorException get_backend(ArrayPartition())
 end
