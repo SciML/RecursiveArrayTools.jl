@@ -111,11 +111,6 @@ Base.zero(A::ArrayPartition, dims::NTuple{N, Int}) where {N} = zero(A)
 ## Array
 
 Base.Array(A::ArrayPartition) = reduce(vcat, Array.(A.x))
-
-function Base.Vector(A::ArrayPartition{T}) where {T}
-    dest = Vector{T}(undef, length(A))
-    return copyto!(dest, A)
-end
 function Base.Array(
         VA::AbstractVectorOfArray{
             T,
@@ -631,38 +626,60 @@ end
 
 ## Linear Algebra
 
+const PartitionNormReal = Union{Integer, Rational, AbstractFloat}
+const PartitionNormNumber = Union{PartitionNormReal, Complex{<:PartitionNormReal}}
+
 function LinearAlgebra.norm(A::ArrayPartition, p::Real = 2)
-    isempty(A) && return float(norm(zero(eltype(A))))
+    parts = filter(!isempty, A.x)
+    isempty(parts) && return float(norm(zero(eltype(A))))
 
-    if p == 2
-        return mapreduce(norm, hypot, A.x)
+    types = map(eltype, parts)
+    if !all(T -> isconcretetype(T) && T <: PartitionNormNumber, types)
+        return invoke(norm, Tuple{Any, Real}, A, p)
+    end
+    T = promote_type(map(float, types)...)
+    R = real(T)
+    # Widen before computing partial norms so their range does not depend on the partition.
+    W = promote_type(Float32, T)
+    if p == 0
+        return R(mapreduce(x -> count(!iszero, x), +, parts))
+    end
+
+    norms = map(parts) do x
+        values = eltype(x) === W ? x : W.(x)
+        n = norm(values, p)
+        if p == 2 && isinf(n) && any(v -> isnan(norm(v)), values)
+            return oftype(n, NaN)
+        end
+        return n
+    end
+    result = if p == 2
+        any(isnan, norms) ? oftype(first(norms), NaN) : reduce(hypot, norms)
     elseif p == 1
-        return mapreduce(x -> norm(x, 1), +, A.x)
+        sum(norms)
     elseif p == Inf
-        return float(mapreduce(x -> norm(x, Inf), max, A.x))
-    elseif p == 0
-        T = typeof(float(norm(A.x[1])))
-        return T(mapreduce(x -> count(!iszero, x), +, A.x))
+        maximum(norms)
     elseif p == -Inf
-        return float(mapreduce(x -> norm(x, -Inf), min, A.x))
-    end
-
-    norms = map(x -> norm(x, p), A.x)
-    T = typeof(first(norms))
-    if p > 1
-        scale = maximum(norms)
-        (ismissing(scale) || iszero(scale) || isinf(scale)) && return scale
-        return convert(T, scale * sum((x / scale)^p for x in norms)^inv(p))
-    elseif p < -1
-        scale = minimum(norms)
-        (ismissing(scale) || iszero(scale) || isinf(scale)) && return scale
-        return convert(T, scale * sum((x / scale)^p for x in norms)^inv(p))
+        minimum(norms)
+    elseif p > 1 || p < -1
+        scale = p > 1 ? maximum(norms) : minimum(norms)
+        (iszero(scale) || !isfinite(scale)) ? scale :
+            scale * sum((x / scale)^p for x in norms)^inv(p)
     else
-        return convert(T, sum(x^p for x in norms)^inv(p))
+        sum(x^p for x in norms)^inv(p)
     end
+    return convert(R, result)
 end
 
+_is_gpu_partition(x) = x isa GPUArraysCore.AnyGPUArray
+_is_gpu_partition(x::ArrayPartition) = any(_is_gpu_partition, x.x)
+
 function LinearAlgebra.dot(A::ArrayPartition, B::ArrayPartition)
+    if !any(_is_gpu_partition, A.x) && !any(_is_gpu_partition, B.x)
+        # Preserve the scalar products and accumulation order of the flattened vector.
+        return invoke(dot, Tuple{AbstractArray, AbstractArray}, A, B)
+    end
+
     lx = length(A)
     ly = length(B)
     lx == ly || throw(
@@ -672,12 +689,15 @@ function LinearAlgebra.dot(A::ArrayPartition, B::ArrayPartition)
     )
     isempty(A) && return zero(dot(zero(eltype(A)), zero(eltype(B))))
 
-    # Matching layouts reduce directly on the device. Different layouts still
-    # have ordinary linear dot-product semantics, so use the host Vector path.
-    if length(A.x) == length(B.x) && all(length.(A.x) .== length.(B.x))
-        return mapreduce(((a, b),) -> dot(a, b), +, zip(A.x, B.x))
+    a = filter(!isempty, A.x)
+    b = filter(!isempty, B.x)
+    if length(a) == length(b) &&
+            all(map((x, y) -> length(x) == length(y) && _is_gpu_partition(x) == _is_gpu_partition(y), a, b))
+        return mapreduce(((x, y),) -> _is_gpu_partition(x) ? dot(vec(x), vec(y)) : dot(x, y), +, zip(a, b))
     end
-    return dot(Vector(A), Vector(B))
+
+    host_partition(x) = _is_gpu_partition(x) ? Array(x) : x
+    return dot(ArrayPartition(map(host_partition, a)), ArrayPartition(map(host_partition, b)))
 end
 
 function ArrayInterface.zeromatrix(A::ArrayPartition)

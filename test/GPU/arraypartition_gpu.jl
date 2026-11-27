@@ -50,7 +50,13 @@ x = ArrayPartition((CUDA.zeros(2), CUDA.zeros(2)))
 @testset "Partition-wise operations with scalar indexing disabled" begin
     ap = ArrayPartition(CUDA.fill(1.0f0, 2), CUDA.fill(3.0f0, 2))
     @test norm(ap) ≈ sqrt(20.0f0)
+    @test norm(ArrayPartition(CuArray(Float16[1]), CuArray([1.0e8])), 3) ≈ 1.0e8
+    @test norm(ArrayPartition(CUDA.zeros(Float64, 0), CuArray([3.0, 4.0])), -0.5) ≈
+        0.86156123669389
+    @test isnan(norm(ArrayPartition(CuArray([Inf]), CuArray([NaN]))))
     @test dot(ap, ap) ≈ 20.0f0
+    @test dot(ArrayPartition(ap.x[1], Any[], ap.x[2]), ap) ≈ 20.0f0
+    @test dot(ap, ArrayPartition(CuArray([1.0f0, 1.0f0, 3.0f0, 3.0f0]))) ≈ 20.0f0
     @test Vector(ap) == [1.0f0, 1.0f0, 3.0f0, 3.0f0]
     @test !any(isnan, ap)
     @test any(isnan, ArrayPartition(CUDA.fill(NaN, 1), CUDA.fill(1.0f0, 1)))

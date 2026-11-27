@@ -54,11 +54,13 @@ u0 = ArrayPartition(x0, v0, a0)
 
 ## RecursiveArrayToolsArrayPartitionAnyAll
 
-Optimized `any` and `all` for `ArrayPartition` that iterate partition-by-partition
-instead of element-by-element, giving ~1.5-1.8x speedup on full scans.
+Loading this subpackage installs direct `any` and `all` methods for
+`ArrayPartition`, including partitions backed by GPU arrays.
+The main package already reduces `any` and `all` partition by partition,
+so full reductions on GPU-backed partitions work with scalar indexing disabled.
 
-This is separated from the main package because `any(f::Function, ::ArrayPartition)`
-invalidates ~780 compiled specializations of `any(f::Function, ::AbstractArray)`.
+The direct methods are opt-in because they can invalidate compiled
+specializations of `any` and `all` on Julia versions before 1.13.
 
 ```julia
 using RecursiveArrayToolsArrayPartitionAnyAll
@@ -72,17 +74,6 @@ using RecursiveArrayToolsArrayPartitionAnyAll
 
 ap = ArrayPartition(rand(1000), rand(1000), rand(1000))
 
-# These now use the optimized partition-by-partition iteration
-any(isnan, ap)       # ~1.5x faster than default
-all(x -> x > 0, ap)  # ~1.8x faster than default
+any(isnan, ap)
+all(x -> x > 0, ap)
 ```
-
-Without this package, `any`/`all` use the default `AbstractArray` implementation
-which is correct but slower due to per-element partition indexing overhead.
-
-### Why is it faster?
-
-`ArrayPartition` stores data as a tuple of arrays. The default `AbstractArray`
-`any`/`all` iterates element-by-element, which requires computing which partition
-each linear index falls into. The optimized methods iterate over each partition
-array directly, avoiding that lookup overhead entirely.

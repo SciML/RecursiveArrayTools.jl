@@ -182,8 +182,21 @@ end
     end
     @test norm(ArrayPartition([1 2], [3.0 4.0])) ≈ sqrt(30.0)
     @test norm(ArrayPartition(Float64[], Float64[])) == 0.0
+    @test norm(ArrayPartition(Float16[1], [1.0e8]), 3) ≈ 1.0e8
+    @test norm(ArrayPartition(Float64[], [3.0, 4.0]), -0.5) ≈ 0.86156123669389
+    @test isnan(norm(ArrayPartition([Inf], [NaN])))
+    @test norm(ArrayPartition(Float16[60000, 60000], [1.0])) ≈ hypot(60000.0, 60000.0, 1.0)
 
     @test dot(ap, ap) == 30.0
+    @test dot(
+        ArrayPartition([1.0, 2.0], Any[]),
+        ArrayPartition([3.0, 4.0], Any[])
+    ) == 11.0
+    @test dot(
+        ArrayPartition([1.0e16], [1.0, -1.0e16, 1.0]),
+        ArrayPartition([1.0], [1.0, 1.0, 1.0])
+    ) == 1.0
+    @test dot(ArrayPartition([typemax(Int)], [1.0]), ArrayPartition([2, 1])) == -1.0
     @test dot(
         ArrayPartition([1, 2], [3.0, 4.0]),
         ArrayPartition([1.0, 2.0, 3.0], [4.0])
