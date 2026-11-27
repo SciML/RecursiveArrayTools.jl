@@ -167,6 +167,12 @@ end
 @inferred y + y
 @inferred y - y
 
+function mixed_norm_allocations(n)
+    ap = ArrayPartition(ones(Int, n), ones(Float64, n))
+    norm(ap)
+    return @allocated norm(ap)
+end
+
 @testset "Partition-wise Vector, norm, and dot" begin
     ap = ArrayPartition([1, 2], [3.0, 4.0])
     dense = collect(ap)
@@ -185,7 +191,14 @@ end
     @test norm(ArrayPartition(Float16[1], [1.0e8]), 3) ≈ 1.0e8
     @test norm(ArrayPartition(Float64[], [3.0, 4.0]), -0.5) ≈ 0.86156123669389
     @test isnan(norm(ArrayPartition([Inf], [NaN])))
+    tiny = nextfloat(0.0)
+    @test norm(ArrayPartition([tiny], [tiny, tiny])) === 2tiny
+    mixed = ArrayPartition(Float16[1], [1.0])
+    @test norm(mixed, 0) === Float16(2)
+    @test norm(mixed, 0.5) === Float16(4)
     @test norm(ArrayPartition(Float16[60000, 60000], [1.0])) ≈ hypot(60000.0, 60000.0, 1.0)
+    mixed_norm_allocations(500)
+    @test mixed_norm_allocations(500_000) <= mixed_norm_allocations(500)
 
     @test dot(ap, ap) == 30.0
     @test dot(
@@ -248,11 +261,11 @@ recursivecopy!(dest_ap, src_ap)
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
-# any/all — the base package specializes Base's full-reduction hooks so these
-# stay partition-wise and avoid scalar GPU indexing. Loading
-# RecursiveArrayToolsArrayPartitionAnyAll replaces the public methods directly.
+# CPU partitions use Base's public reductions unless the subpackage is loaded.
 @test which(any, Tuple{Function, ArrayPartition}).module === Base
 @test which(all, Tuple{Function, ArrayPartition}).module === Base
+@test any(AP[[false], [true]]; dims = 1) == [true]
+@test all(identity, AP[[false], [true]]; dims = 1) == [false]
 
 # Correctness tests, including Base's three-valued missing semantics.
 @test !any(isnan, AP[[1, 2], [3.0, 4.0]])

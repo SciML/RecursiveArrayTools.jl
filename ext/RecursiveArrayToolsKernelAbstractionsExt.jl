@@ -13,10 +13,21 @@ function KernelAbstractions.get_backend(x::VectorOfArray)
 end
 
 function KernelAbstractions.get_backend(x::ArrayPartition)
-    if isempty(x.x)
-        error("ArrayPartition is empty, cannot determine backend.")
+    backend = common_backend(nothing, x)
+    if backend === nothing
+        throw(ArgumentError("ArrayPartition has no array leaves, cannot determine backend."))
     end
-    return KernelAbstractions.get_backend(first(x.x))
+    return backend
+end
+
+common_backend(backend, x) = backend
+common_backend(backend, x::ArrayPartition) = foldl(common_backend, x.x; init = backend)
+function common_backend(backend, x::AbstractArray)
+    leaf = KernelAbstractions.get_backend(x)
+    if backend !== nothing && !isequal(backend, leaf)
+        throw(ArgumentError("ArrayPartition contains incompatible backends: $backend and $leaf."))
+    end
+    return leaf
 end
 
 end

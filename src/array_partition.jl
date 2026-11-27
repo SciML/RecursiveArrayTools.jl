@@ -5,6 +5,10 @@ Wrap arrays with potentially different types as one linear `AbstractVector`. Ind
 traverses the partitions in order, while broadcasting operates partition-by-partition
 without losing the individual array types.
 
+With KernelAbstractions loaded, `get_backend(A)` returns the common backend of
+the array leaves, including leaves in nested partitions. Scalar leaves are ignored.
+A partition with incompatible backends or no array leaves throws an `ArgumentError`.
+
 # Arguments
 
 - `parts...`: arrays or scalar values to store as the partitions.
@@ -224,45 +228,16 @@ end
     end
 end
 @inline function Base.mapreduce(
-        f, op, A::ArrayPartition;
-        init = Base._InitialValue(), kwargs...
+        f, op, A::ArrayPartition; dims = :, init = Base._InitialValue()
     )
+    if dims !== (:)
+        return invoke(mapreduce, Tuple{Any, Any, AbstractArray}, f, op, A; dims, init)
+    end
     return if init isa Base._InitialValue
         _mapreduce_impl(f, op, A)
     else
         _mapreduce_impl_init(f, op, A, init)
     end
-end
-
-# Base's public any/all methods route full AbstractArray reductions through these
-# private hooks. Specializing them keeps ArrayPartition reductions partition-wise
-# without adding public any/all methods, which invalidate many Base specializations
-# on Julia < 1.13. The optional RecursiveArrayToolsArrayPartitionAnyAll package
-# still provides direct public methods for callers that load it.
-function Base._any(f, A::ArrayPartition, ::Colon)
-    anymissing = false
-    for x in A.x
-        v = any(f, x)
-        if ismissing(v)
-            anymissing = true
-        elseif v
-            return true
-        end
-    end
-    return anymissing ? missing : false
-end
-
-function Base._all(f, A::ArrayPartition, ::Colon)
-    allmissing = false
-    for x in A.x
-        v = all(f, x)
-        if ismissing(v)
-            allmissing = true
-        elseif !v
-            return false
-        end
-    end
-    return allmissing ? missing : true
 end
 
 Base.filter(f, A::ArrayPartition) = ArrayPartition(map(x -> filter(f, x), A.x))
@@ -629,33 +604,60 @@ end
 const PartitionNormReal = Union{Integer, Rational, AbstractFloat}
 const PartitionNormNumber = Union{PartitionNormReal, Complex{<:PartitionNormReal}}
 
+_is_gpu_partition(x) = x isa GPUArraysCore.AnyGPUArray
+_is_gpu_partition(x::ArrayPartition) = any(_is_gpu_partition, x.x)
+
+_host_partition(x) = x
+_host_partition(x::GPUArraysCore.AnyGPUArray) = Array(x)
+function _host_partition(x::ArrayPartition{T}) where {T}
+    parts = map(_host_partition, x.x)
+    return ArrayPartition{T, typeof(parts)}(parts)
+end
+
+_partition_leaves(x) = (x,)
+_partition_leaves(x::ArrayPartition) =
+    mapreduce(_partition_leaves, (a, b) -> (a..., b...), x.x; init = ())
+
+function _partition_norm2_summary(x, ::Type{W}) where {W}
+    magnitude(v) = abs(convert(W, v))
+    scale = mapreduce(magnitude, max, x; init = zero(real(W)))
+    (iszero(scale) || !isfinite(scale)) && return (scale, zero(scale))
+    squares = mapreduce(v -> abs2(magnitude(v) / scale), +, x; init = zero(scale))
+    return (scale, squares)
+end
+
+function _partition_norm2(parts, ::Type{R}) where {R}
+    summaries = map(parts) do x
+        W = promote_type(_is_gpu_partition(x) ? Float32 : Float64, float(eltype(x)))
+        return _partition_norm2_summary(x, W)
+    end
+    W = promote_type(map(s -> typeof(first(s)), summaries)...)
+    scale = mapreduce(s -> convert(W, first(s)), max, summaries)
+    (iszero(scale) || !isfinite(scale)) && return convert(R, scale)
+    squares = sum(s -> last(s) * abs2(first(s) / scale), summaries)
+    return convert(R, scale * sqrt(squares))
+end
+
 function LinearAlgebra.norm(A::ArrayPartition, p::Real = 2)
-    parts = filter(!isempty, A.x)
+    parts = filter(!isempty, _partition_leaves(A))
     isempty(parts) && return float(norm(zero(eltype(A))))
 
     types = map(eltype, parts)
-    if !all(T -> isconcretetype(T) && T <: PartitionNormNumber, types)
-        return invoke(norm, Tuple{Any, Real}, A, p)
+    if p == 0 || 0 < abs(p) < 1 ||
+            !all(T -> isconcretetype(T) && T <: PartitionNormNumber, types)
+        host = any(_is_gpu_partition, parts) ? _host_partition(A) : A
+        return invoke(norm, Tuple{Any, Real}, host, p)
     end
     T = promote_type(map(float, types)...)
     R = real(T)
-    # Widen before computing partial norms so their range does not depend on the partition.
-    W = promote_type(Float32, T)
-    if p == 0
-        return R(mapreduce(x -> count(!iszero, x), +, parts))
-    end
+    p == 2 && return _partition_norm2(parts, R)
 
     norms = map(parts) do x
+        W = promote_type(Float32, _is_gpu_partition(x) ? float(eltype(x)) : T)
         values = eltype(x) === W ? x : W.(x)
-        n = norm(values, p)
-        if p == 2 && isinf(n) && any(v -> isnan(norm(v)), values)
-            return oftype(n, NaN)
-        end
-        return n
+        return norm(values, p)
     end
-    result = if p == 2
-        any(isnan, norms) ? oftype(first(norms), NaN) : reduce(hypot, norms)
-    elseif p == 1
+    result = if p == 1
         sum(norms)
     elseif p == Inf
         maximum(norms)
@@ -671,10 +673,7 @@ function LinearAlgebra.norm(A::ArrayPartition, p::Real = 2)
     return convert(R, result)
 end
 
-_is_gpu_partition(x) = x isa GPUArraysCore.AnyGPUArray
-_is_gpu_partition(x::ArrayPartition) = any(_is_gpu_partition, x.x)
-
-function LinearAlgebra.dot(A::ArrayPartition, B::ArrayPartition)
+function LinearAlgebra.dot(A::ArrayPartition{T}, B::ArrayPartition) where {T}
     if !any(_is_gpu_partition, A.x) && !any(_is_gpu_partition, B.x)
         # Preserve the scalar products and accumulation order of the flattened vector.
         return invoke(dot, Tuple{AbstractArray, AbstractArray}, A, B)
@@ -691,13 +690,17 @@ function LinearAlgebra.dot(A::ArrayPartition, B::ArrayPartition)
 
     a = filter(!isempty, A.x)
     b = filter(!isempty, B.x)
-    if length(a) == length(b) &&
-            all(map((x, y) -> length(x) == length(y) && _is_gpu_partition(x) == _is_gpu_partition(y), a, b))
-        return mapreduce(((x, y),) -> _is_gpu_partition(x) ? dot(vec(x), vec(y)) : dot(x, y), +, zip(a, b))
+    if T <: Union{Float32, Float64, ComplexF32, ComplexF64} && length(a) == length(b) &&
+            all(
+            map(a, b) do x, y
+                x isa GPUArraysCore.AbstractGPUArray{T} &&
+                    y isa typeof(x) && length(x) == length(y)
+            end
+        )
+        return mapreduce(((x, y),) -> dot(vec(x), vec(y)), +, zip(a, b))
     end
 
-    host_partition(x) = _is_gpu_partition(x) ? Array(x) : x
-    return dot(ArrayPartition(map(host_partition, a)), ArrayPartition(map(host_partition, b)))
+    return invoke(dot, Tuple{AbstractArray, AbstractArray}, _host_partition(A), _host_partition(B))
 end
 
 function ArrayInterface.zeromatrix(A::ArrayPartition)

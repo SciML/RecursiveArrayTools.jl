@@ -9,15 +9,15 @@
 RecursiveArrayToolsArrayPartitionAnyAll.jl is a component of the [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl) monorepo. Optimized `any` and `all` for the `ArrayPartition` type.
 While completely independent and usable on its own, users wanting the full functionality should use [RecursiveArrayTools.jl](https://github.com/SciML/RecursiveArrayTools.jl).
 
-`ArrayPartition` stores data as a tuple of arrays. Both the base package's
-full-reduction fallback and this subpackage's direct public methods iterate
-partition-by-partition, avoiding per-element partition lookup and scalar GPU
-indexing.
+`ArrayPartition` stores data as a tuple of arrays. Loading a GPUArrays-based
+backend such as CUDA or JLArrays automatically enables public `any` and `all`
+methods for partitions whose immediate blocks are all GPU arrays. Full
+reductions on these partitions work with scalar indexing disabled. CPU
+partitions use Julia's generic reductions by default.
 
-It is separated from the main package because `any(f::Function, ::ArrayPartition)`
-invalidates ~780 compiled specializations of `any(f::Function, ::AbstractArray)`
-on Julia < 1.13. The base package instead specializes Base's internal full-reduction
-hooks, preserving the public `any`/`all` dispatch while remaining GPU-safe.
+Loading this subpackage adds partition-wise full reductions for CPU,
+mixed-storage and nested partitions. These broader methods are opt-in
+because they can invalidate compiled code on older Julia versions.
 
 ## Installation
 
@@ -39,7 +39,3 @@ ap = ArrayPartition(rand(1000), rand(1000), rand(1000))
 any(isnan, ap)
 all(x -> x > 0, ap)
 ```
-
-Without this package, the base package's full reductions still iterate
-partition-by-partition and support GPU arrays. Loading this package installs
-direct public `any`/`all` methods for `ArrayPartition`.

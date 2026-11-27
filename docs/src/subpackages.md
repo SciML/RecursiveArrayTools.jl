@@ -54,13 +54,14 @@ u0 = ArrayPartition(x0, v0, a0)
 
 ## RecursiveArrayToolsArrayPartitionAnyAll
 
-Loading this subpackage installs direct `any` and `all` methods for
-`ArrayPartition`, including partitions backed by GPU arrays.
-The main package already reduces `any` and `all` partition by partition,
-so full reductions on GPU-backed partitions work with scalar indexing disabled.
+Loading a GPUArrays-based backend such as CUDA or JLArrays automatically
+enables public `any` and `all` methods for `ArrayPartition`s whose immediate
+blocks are all GPU arrays. Full reductions on these partitions work with scalar
+indexing disabled. CPU partitions use Julia's generic reductions by default.
 
-The direct methods are opt-in because they can invalidate compiled
-specializations of `any` and `all` on Julia versions before 1.13.
+Loading this subpackage provides partition-wise full reductions for CPU,
+mixed-storage and nested partitions. These broader methods are opt-in because
+they can invalidate compiled code on older Julia versions.
 
 ```julia
 using RecursiveArrayToolsArrayPartitionAnyAll
