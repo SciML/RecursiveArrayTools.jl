@@ -11,7 +11,7 @@ module RecursiveArrayTools
     using ArrayInterface: ArrayInterface
     using LinearAlgebra: LinearAlgebra, Adjoint, I, LU, LowerTriangular, Transpose,
         Tridiagonal, UnitLowerTriangular,
-        UnitUpperTriangular, UpperTriangular, ldiv!, mul!
+        UnitUpperTriangular, UpperTriangular, dot, ldiv!, mul!, norm
     using RecipesBase: RecipesBase, @recipe
     using SciMLPublic: @public
     using SciMLStructures: SciMLStructures, Tunable
@@ -24,6 +24,7 @@ module RecursiveArrayTools
         variable_symbols
 
     import Adapt
+    import GPUArraysCore
 
     """
         AbstractVectorOfArray{T, N, A}
@@ -225,7 +226,6 @@ module RecursiveArrayTools
     end
     # AbstractVectorOfArray uses AbstractArray's show
 
-    import GPUArraysCore
     # GPU conversion via stack (stays on device, avoids materializing dense Array).
     # Only define convert — do NOT define a constructor (::Type{<:AbstractGPUArray})(::AbstractVectorOfArray)
     # because it creates an unresolvable ambiguity with CUDA.jl's CuArray(::AbstractArray{T,N}).

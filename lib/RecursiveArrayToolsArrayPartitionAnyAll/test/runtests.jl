@@ -52,4 +52,13 @@ if TEST_GROUP == "Core" || TEST_GROUP == "All"
         @test !any(x -> true, ap_empty)
         @test all(x -> true, ap_empty)
     end
+
+    @testset "Dimensions and missing values" begin
+        ap = ArrayPartition([false], [true])
+        @test any(ap; dims = 1) == [true]
+        @test all(identity, ap; dims = 1) == [false]
+        @test all(identity, ap; dims = 2) == [false, true]
+        @test any(ArrayPartition([missing], [false])) === missing
+        @test all(ArrayPartition([true], [missing])) === missing
+    end
 end

@@ -1,4 +1,4 @@
-using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt, OffsetArrays
+using RecursiveArrayTools, Test, Statistics, ArrayInterface, Adapt, OffsetArrays, LinearAlgebra
 using RecursiveArrayToolsShorthandConstructors
 
 @test length(ArrayPartition()) == 0
@@ -167,6 +167,65 @@ end
 @inferred y + y
 @inferred y - y
 
+function mixed_norm_allocations(n)
+    ap = ArrayPartition(ones(Int, n), ones(Float64, n))
+    norm(ap)
+    return @allocated norm(ap)
+end
+
+@testset "Partition-wise Vector, norm, and dot" begin
+    ap = ArrayPartition([1, 2], [3.0, 4.0])
+    dense = collect(ap)
+    @test Vector(ap) == dense
+    @test Vector(ap) isa Vector{Float64}
+    @test Vector(ArrayPartition([1 2], [3.0 4.0])) == [1.0, 2.0, 3.0, 4.0]
+    @test Vector(ArrayPartition(1.0, -2.0)) == [1.0, -2.0]
+    @test isempty(Vector(ArrayPartition()))
+
+    @test norm(ap) ≈ sqrt(30.0)
+    for p in (0, 1, 2, 3, Inf, -Inf, 0.5, -0.5, -2)
+        @test norm(ap, p) ≈ norm(dense, p)
+    end
+    @test norm(ArrayPartition([1 2], [3.0 4.0])) ≈ sqrt(30.0)
+    @test norm(ArrayPartition(Float64[], Float64[])) == 0.0
+    @test norm(ArrayPartition(Float16[1], [1.0e8]), 3) ≈ 1.0e8
+    @test norm(ArrayPartition(Float64[], [3.0, 4.0]), -0.5) ≈ 0.86156123669389
+    @test isnan(norm(ArrayPartition([Inf], [NaN])))
+    tiny = nextfloat(0.0)
+    @test norm(ArrayPartition([tiny], [tiny, tiny])) === 2tiny
+    mixed = ArrayPartition(Float16[1], [1.0])
+    @test norm(mixed, 0) === Float16(2)
+    @test norm(mixed, 0.5) === Float16(4)
+    @test norm(ArrayPartition(Float16[60000, 60000], [1.0])) ≈ hypot(60000.0, 60000.0, 1.0)
+    mixed_norm_allocations(500)
+    @test mixed_norm_allocations(500_000) <= mixed_norm_allocations(500)
+
+    @test dot(ap, ap) == 30.0
+    @test dot(
+        ArrayPartition([1.0, 2.0], Any[]),
+        ArrayPartition([3.0, 4.0], Any[])
+    ) == 11.0
+    @test dot(
+        ArrayPartition([1.0e16], [1.0, -1.0e16, 1.0]),
+        ArrayPartition([1.0], [1.0, 1.0, 1.0])
+    ) == 1.0
+    @test dot(ArrayPartition([typemax(Int)], [1.0]), ArrayPartition([2, 1])) == -1.0
+    @test dot(
+        ArrayPartition([1, 2], [3.0, 4.0]),
+        ArrayPartition([1.0, 2.0, 3.0], [4.0])
+    ) == 30.0
+    @test dot(ArrayPartition(1.0, -2.0), ArrayPartition(1.0, -2.0)) == 5.0
+    @test dot(
+        ArrayPartition(Float64[], Float64[]),
+        ArrayPartition(Float64[], Float64[])
+    ) == 0.0
+    @test_throws DimensionMismatch dot(ap, ArrayPartition([1.0], [2.0]))
+
+    complex_ap = ArrayPartition(ComplexF64[1 + 2im], ComplexF64[3 - im])
+    @test dot(complex_ap, complex_ap) == 15.0
+    @test norm(complex_ap) ≈ sqrt(15.0)
+end
+
 # indexing
 @inferred first(x)
 @inferred last(x)
@@ -202,13 +261,13 @@ recursivecopy!(dest_ap, src_ap)
 @inferred mapreduce(string, *, x)
 @test mapreduce(i -> string(i) * "q", *, x) == "1q2q3.0q4.0q"
 
-# any/all — optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll
-# to avoid ~780 invalidations. Without the extension, Base's AbstractArray fallback is used.
-# On GPU arrays, the fallback triggers scalar indexing errors — load the subpackage to fix.
+# CPU partitions use Base's public reductions unless the subpackage is loaded.
 @test which(any, Tuple{Function, ArrayPartition}).module === Base
 @test which(all, Tuple{Function, ArrayPartition}).module === Base
+@test any(AP[[false], [true]]; dims = 1) == [true]
+@test all(identity, AP[[false], [true]]; dims = 1) == [false]
 
-# Correctness tests (work via AbstractArray fallback on CPU)
+# Correctness tests, including Base's three-valued missing semantics.
 @test !any(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !any(isnan, AP[[3.0, 4.0]])
 @test  any(isnan, AP[[NaN], [3.0, 4.0]])
@@ -216,6 +275,11 @@ recursivecopy!(dest_ap, src_ap)
 @test  any(isnan, AP[AP[[NaN]]])
 @test  any(isnan, AP[[2], [NaN]])
 @test  any(isnan, AP[[2], AP[[NaN]]])
+
+@test any(isnan, AP[[missing], [1.0]]) === missing
+@test any(isnan, AP[[missing], [NaN]]) === true
+@test all(isnan, AP[[missing], [NaN]]) === missing
+@test all(isnan, AP[[missing], [1.0]]) === false
 
 @test !all(isnan, AP[[1, 2], [3.0, 4.0]])
 @test !all(isnan, AP[[3.0, 4.0]])
@@ -411,8 +475,7 @@ for i in 1:length(part_a.x)
     @test typeof(sub_a) === typeof(sub_b) # Test type equality
 end
 
-# ArrayPartition `all` with a functor (works via AbstractArray fallback,
-# optimized partition-level iteration requires RecursiveArrayToolsArrayPartitionAnyAll)
+# ArrayPartition `all` with a functor uses the same partition-wise Base hook.
 struct TestIsnanFunctor end
 (::TestIsnanFunctor)(x) = isnan(x)
 @test all(TestIsnanFunctor(), AP[[NaN], [NaN]])
