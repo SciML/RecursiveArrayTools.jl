@@ -947,7 +947,8 @@ Base.@propagate_inbounds function Base.setindex!(
             )
         end
     end
-    return u_col[inner_I...] = v
+    inner_indices = ntuple(d -> inner_I[d] + firstindex(u_col, d) - 1, length(inner_I))
+    return u_col[inner_indices...] = v
 end
 
 # Core N-dimensional getindex for AbstractArray interface
@@ -971,26 +972,29 @@ Base.@propagate_inbounds function Base.getindex(
     # still required since `u`'s own axes need not be `1:length(u)`.
     if N > 1 && 1 <= col <= length(u) && checkbounds(Bool, u, col)
         u_col = @inbounds u[col]
+        inner_axes = axes(u_col)
         in_inner_bounds = true
         for d in 1:(N - 1)
-            if !(1 <= inner_I[d] <= size(u_col, d))
+            if !(1 <= inner_I[d] <= length(inner_axes[d]))
                 in_inner_bounds = false
                 break
             end
         end
         if in_inner_bounds
-            return @inbounds u_col[inner_I...]
+            inner_indices = ntuple(d -> inner_I[d] + first(inner_axes[d]) - 1, Val(N - 1))
+            return @inbounds u_col[inner_indices...]
         end
     end
     @boundscheck checkbounds(A, I...)
-    u_col = u[col]
+    fallback_col = u[col]
     # Return zero for indices outside ragged storage
     for d in 1:(N - 1)
-        if inner_I[d] > size(u_col, d)
+        if inner_I[d] > size(fallback_col, d)
             return zero(T)
         end
     end
-    return @inbounds u_col[inner_I...]
+    inner_indices = ntuple(d -> inner_I[d] + firstindex(fallback_col, d) - 1, Val(N - 1))
+    return @inbounds fallback_col[inner_indices...]
 end
 
 function Base.:(==)(A::AbstractVectorOfArray, B::AbstractVectorOfArray)
